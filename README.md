@@ -1,6 +1,6 @@
 # fairbox-ahk
 
-fairbox-ahk is a modification of [b0xx-ahk](https://github.com/agirardeau/b0xx-ahk) that was created by agirardeaudale which in turn is an adaptation of a [similar script](https://github.com/tlandegger/smashbox-AHK) for Smashbox created by tlandegger. fairbox-ahk serves as a ground to experiment with ways to implement features, such as pivot nerfs and sdi nerfs, that the playerbase has been integrating into their controllers. Currently, fairbox-ahk is in the middle of development and has not reached yet its intended fully playable state.
+fairbox-ahk is a modification of [b0xx-ahk](https://github.com/agirardeau/b0xx-ahk) that was created by agirardeaudale which in turn is an adaptation of a [similar script](https://github.com/tlandegger/smashbox-AHK) for Smashbox created by tlandegger. fairbox-ahk serves as a ground to experiment with ways to implement features that are new to keyboard players, such as pivot nerfs and sdi nerfs; features that the playerbase has been integrating into their rectangle controllers. Currently, fairbox-ahk is in a design stage.
 
 I am unaffiliated with the creators/producers of the B0XX. 
 
