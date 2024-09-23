@@ -115,6 +115,8 @@ myStick := vJoyInterface.Devices[1]
 ; Alert User that script has started
 TrayTip, B0XX, modded Script Started, 3, 0
 
+
+
 ; DRON the idea and comments behind these constants is copied from CarVac/HayBox
 ANALOG_STEP := 0.0125
 MS_PER_FRAME := 1000 / 60  ; game runs at 60 fps
@@ -260,7 +262,7 @@ FINAL_SDIZONE := 1<<1
     
 ; analog history
 aHistory := []
-Loop,%AHISTORYLEN% { 
+Loop, % AHISTORYLEN { 
   aHistory[A_Index, ah.x] := ANALOG_STICK_NEUTRAL
   aHistory[A_Index, ah.y] := ANALOG_STICK_NEUTRAL
   aHistory[A_Index, ah.timestamp] := 0
@@ -270,7 +272,7 @@ currentIndexA := 1 ; DRON the index for accessing analog history
 
 ; // for sdi nerfs, we want to record only movement between sdi zones, ignoring movement within zones
 sdiZoneHist := []
-Loop,%SHISTORYLEN% {
+Loop, % SHISTORYLEN {
   sdiZoneHist[A_Index, zh.timestamp] := 0
   sdiZoneHist[A_Index, zh.stale] := true
   sdiZoneHist[A_Index, zh.zone] := ZONE_CENTER
@@ -281,7 +283,7 @@ sdiSimultTimestamp := -1000
 
 ; // for pivot nerfs, we want to record only movement between dash zones, ignoring movement within zones
 dashZoneHist := []
-Loop,%DHISTORYLEN% {
+Loop, % DHISTORYLEN {
   dashZoneHist[A_Index, zh.timestamp] := 0
   dashZoneHist[A_Index, zh.stale] := true
   dashZoneHist[A_Index, zh.zone] := NOT_DASH
@@ -295,6 +297,11 @@ savedDirection := P_NONE
 detectorPivotTimestamp := -1000
 unsavedPivotTimestamp := -1000
 savedPivotTimestamp := -1000
+
+
+
+
+
 
 
 ; b0xx constants. ; DRON coordinates get mirrored and rotated appropiately thanks to reflectCoords()
@@ -328,15 +335,15 @@ coordsAirdodgeQuadrant34ModY := [0.5, 0.85] ; 59.53 deg b0xx default
    magnitude, which can be small, inconsistent
    Player accesses them by pressing a diagonal, a mod button and a C-button
 */
-coordsFirefoxModXCDown := [0.7, 0.3625]     ; ~27 deg
-coordsFirefoxModXCLeft := [0.7875, 0.4875]  ; ~32 deg
-coordsFirefoxModXCUp := [0.7, 0.5125]       ; ~36 deg
-coordsFirefoxModXCRight := [0.6125, 0.525]  ; ~41 deg
-coordsFirefoxModYCRight := [0.6375, 0.7625] ; ~50 deg
-coordsFirefoxModYCUp := [0.5125, 0.7]       ; ~54 deg
-coordsFirefoxModYCLeft := [0.4875, 0.7875]  ; ~58 deg
-coordsFirefoxModYCDown := [0.3625, 0.7]     ; ~63 deg
 
+coordsFirefoxModXCClosestToAxis := [0.7, 0.3625]     ; ~27 deg
+coordsFirefoxModXCSecondClosestToAxis := [0.7875, 0.4875]  ; ~32 deg
+coordsFirefoxModXCSecondClosestTo45Deg := [0.7, 0.5125]       ; ~36 deg
+coordsFirefoxModXCClosestTo45Deg := [0.6125, 0.525]  ; ~41 deg
+coordsFirefoxModYCClosestTo45Deg := [0.6375, 0.7625] ; ~50 deg
+coordsFirefoxModYCSecondClosestTo45Deg := [0.5125, 0.7]       ; ~54 deg
+coordsFirefoxModYCSecondClosestToAxis := [0.4875, 0.7875]  ; ~58 deg
+coordsFirefoxModYCClosestToAxis := [0.3625, 0.7]     ; ~63 deg
 
 /* DRON    "Extended Up-B Angles" 
    Note to Self: These are not for use with Fox or Falco but with other characters
@@ -346,16 +353,76 @@ coordsFirefoxModYCDown := [0.3625, 0.7]     ; ~63 deg
    and the B button; C-button angling is optional
  */
 coordsExtendedFirefoxModX := [0.9125, 0.3875]       ; ~23 deg
-coordsExtendedFirefoxModXCDown := [0.875, 0.45]     ; ~27 deg
-coordsExtendedFirefoxModXCLeft := [0.85, 0.525]     ; ~32 deg
-coordsExtendedFirefoxModXCUp := [0.7375, 0.5375]    ; ~36 deg
-coordsExtendedFirefoxModXCRight := [0.6375, 0.5375] ; ~40 deg
-coordsExtendedFirefoxModYCRight := [0.5875, 0.7125] ; ~50 deg
-coordsExtendedFirefoxModYCUp := [0.5875, 0.8]       ; ~54 deg
-coordsExtendedFirefoxModYCLeft := [0.525, 0.85]     ; ~58 deg
-coordsExtendedFirefoxModYCDown := [0.45, 0.875]     ; ~63 deg
+coordsExtendedFirefoxModXCClosestToAxis := [0.875, 0.45]     ; ~27 deg
+coordsExtendedFirefoxModXCSecondClosestToAxis := [0.85, 0.525]     ; ~32 deg
+coordsExtendedFirefoxModXCSecondClosestTo45Deg := [0.7375, 0.5375]    ; ~36 deg
+coordsExtendedFirefoxModXCClosestTo45Deg := [0.6375, 0.5375] ; ~40 deg
+coordsExtendedFirefoxModYCClosestTo45Deg := [0.5875, 0.7125] ; ~50 deg
+coordsExtendedFirefoxModYCSecondClosestTo45Deg := [0.5875, 0.8]       ; ~54 deg
+coordsExtendedFirefoxModYCSecondClosestToAxis := [0.525, 0.85]     ; ~58 deg
+coordsExtendedFirefoxModYCClosestToAxis := [0.45, 0.875]     ; ~63 deg
 coordsExtendedFirefoxModY := [0.3875, 0.9125]       ; ~67 deg
 
+cStickAngling := ["ClosestToAxis", "SecondClosestToAxis", "SecondClosestTo45Deg", "ClosestTo45Deg"]
+cIniCompleteness := 0
+cIniDir := A_ScriptDir "\c-stick-angling.ini"
+; if c-stick-angling.ini doesn't exist, create it
+AttributeString := FileExist(cIniDir)
+if (!AttributeString) {
+  cIniTextDefault := "
+  (
+[cStickAngling]
+" cStickAngling[1] "=c-down
+" cStickAngling[2] "=c-left
+" cStickAngling[3] "=c-up
+" cStickAngling[4] "=c-right
+  )"
+  FileAppend, % cIniTextDefault, % cIniDir
+}
+; c-stick-angling ini completeness check
+for index, element in cStickAngling {
+  IniRead, cButtonBringsAngle%element%, c-stick-angling.ini, cStickAngling, % element, %A_Space% 
+  if (cButtonBringsAngle%element% = "cDown" or cButtonBringsAngle%element% = "c-down") {
+    cIniCompleteness |= 1
+  } else if (cButtonBringsAngle%element% = "cLeft" or cButtonBringsAngle%element% = "c-left") {
+    cIniCompleteness |= 1<<1
+  } else if (cButtonBringsAngle%element% = "cUp" or cButtonBringsAngle%element% = "c-up") {
+    cIniCompleteness |= 1<<2
+  } else if (cButtonBringsAngle%element% = "cRight" or cButtonBringsAngle%element% = "c-right") {
+    cIniCompleteness |= 1<<3
+  }
+}
+; dealing with an incomplete c-stick-angling ini
+if (cIniCompleteness != (1<<4) - 1) {
+  cIniDefault := ["cDown", "cLeft", "cUp", "cRight"]
+  for index, element in cStickAngling {
+    cButtonBringsAngle%element% := cIniDefault[index]
+  }
+}  
+; assigning firefox angles and c-stick extended up-B angles according to c-stick-angling ini
+for index, element in cStickAngling {
+  if (cButtonBringsAngle%element% = "cDown" or cButtonBringsAngle%element% = "c-down") {
+    coordsFirefoxModXCDown := coordsFirefoxModXC%element%
+    coordsFirefoxModYCDown := coordsFirefoxModYC%element%
+    coordsExtendedFirefoxModXCDown := coordsExtendedFirefoxModXC%element%
+    coordsExtendedFirefoxModYCDown := coordsExtendedFirefoxModYC%element%
+  } else if (cButtonBringsAngle%element% = "cLeft" or cButtonBringsAngle%element% = "c-left") {
+    coordsFirefoxModXCLeft := coordsFirefoxModXC%element%
+    coordsFirefoxModYCLeft := coordsFirefoxModYC%element%
+    coordsExtendedFirefoxModXCLeft := coordsExtendedFirefoxModXC%element%
+    coordsExtendedFirefoxModYCLeft := coordsExtendedFirefoxModYC%element%
+  } else if (cButtonBringsAngle%element% = "cUp" or cButtonBringsAngle%element% = "c-up") {
+    coordsFirefoxModXCUp := coordsFirefoxModXC%element%
+    coordsFirefoxModYCUp := coordsFirefoxModYC%element%
+    coordsExtendedFirefoxModXCUp := coordsExtendedFirefoxModXC%element%
+    coordsExtendedFirefoxModYCUp := coordsExtendedFirefoxModYC%element%
+  } else if (cButtonBringsAngle%element% = "cRight" or cButtonBringsAngle%element% = "c-right") {
+    coordsFirefoxModXCRight := coordsFirefoxModXC%element%
+    coordsFirefoxModYCRight := coordsFirefoxModYC%element%
+    coordsExtendedFirefoxModXCRight := coordsExtendedFirefoxModXC%element%
+    coordsExtendedFirefoxModYCRight := coordsExtendedFirefoxModYC%element%
+  }
+}
 
 
  /* DRON the banned coordinate list should be near here if we are going to put it in the script */
