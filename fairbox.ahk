@@ -42,7 +42,7 @@ DHISTORYLEN := 3 ; MINIMUM 3
   DRON 
   ctrl-f this: For_Easy_Nerf_Testing
  */
-nerfTestMode := 0
+nerfTestMode :=1
 
 hotkeys := [ "Analog Up"             ; 1
            , "Analog Down"           ; 2
@@ -299,11 +299,6 @@ unsavedPivotTimestamp := -1000
 savedPivotTimestamp := -1000
 
 
-
-
-
-
-
 ; b0xx constants. ; DRON coordinates get mirrored and rotated appropiately thanks to reflectCoords()
 coordsOrigin := [0, 0]
 coordsVertical := [0, 1]
@@ -363,10 +358,11 @@ coordsExtendedFirefoxModYCSecondClosestToAxis := [0.525, 0.85]     ; ~58 deg
 coordsExtendedFirefoxModYCClosestToAxis := [0.45, 0.875]     ; ~63 deg
 coordsExtendedFirefoxModY := [0.3875, 0.9125]       ; ~67 deg
 
+; We are going to set personalized c-button angle bindings
 cStickAngling := ["ClosestToAxis", "SecondClosestToAxis", "SecondClosestTo45Deg", "ClosestTo45Deg"]
 cIniCompleteness := 0
-cIniDir := A_ScriptDir "\c-stick-angling.ini"
-; if c-stick-angling.ini doesn't exist, create it
+cIniDir := A_ScriptDir "\c-stick-angle-bindings.ini"
+; if c-stick-angle-bindings.ini doesn't exist, create it
 AttributeString := FileExist(cIniDir)
 if (!AttributeString) {
   cIniTextDefault := "
@@ -379,9 +375,9 @@ if (!AttributeString) {
   )"
   FileAppend, % cIniTextDefault, % cIniDir
 }
-; c-stick-angling ini completeness check
+; c-stick-angle-bindings ini completeness check
 for index, element in cStickAngling {
-  IniRead, cButtonBringsAngle%element%, c-stick-angling.ini, cStickAngling, % element, %A_Space% 
+  IniRead, cButtonBringsAngle%element%, c-stick-angle-bindings.ini, cStickAngling, % element, %A_Space% 
   if (cButtonBringsAngle%element% = "cDown" or cButtonBringsAngle%element% = "c-down") {
     cIniCompleteness |= 1
   } else if (cButtonBringsAngle%element% = "cLeft" or cButtonBringsAngle%element% = "c-left") {
@@ -392,14 +388,14 @@ for index, element in cStickAngling {
     cIniCompleteness |= 1<<3
   }
 }
-; dealing with an incomplete c-stick-angling ini
+; dealing with an incomplete c-stick-angle-bindings ini
 if (cIniCompleteness != (1<<4) - 1) {
   cIniDefault := ["cDown", "cLeft", "cUp", "cRight"]
   for index, element in cStickAngling {
     cButtonBringsAngle%element% := cIniDefault[index]
   }
 }  
-; assigning firefox angles and c-stick extended up-B angles according to c-stick-angling ini
+; assigning firefox angles and c-stick extended up-B angles according to c-stick-angle-bindings ini
 for index, element in cStickAngling {
   if (cButtonBringsAngle%element% = "cDown" or cButtonBringsAngle%element% = "c-down") {
     coordsFirefoxModXCDown := coordsFirefoxModXC%element%
@@ -425,7 +421,8 @@ for index, element in cStickAngling {
 }
 
 
- /* DRON the banned coordinate list should be near here if we are going to put it in the script */
+ /* DRON the banned coordinate list should be near here if we are going to put it in the script 
+ */
 
 
 /* DRON For_Easy_Nerf_Testing
@@ -437,7 +434,7 @@ for index, element in cStickAngling {
     then pivoting and inputting an up-tilt or d-tilt under 5 frames
   n Crouching to u-tilt range in less than 3 frames
 
-  follow instructions below
+  follow execution instructions below
 */
 Switch nerfTestMode
 {
@@ -563,7 +560,6 @@ detectPivot(aX) {
   pivotDebug := false ; if you want to enable detectPivot() testing, set this true
   pivotDiscarded := -1 ; for testing
   detectorDashZone := dashZone(aX)
-
   /* ; DRON ignoring timing, has the player inputted the correct sequence?
     pivot inputs:
     --- past --- current
@@ -587,10 +583,10 @@ detectPivot(aX) {
 
   /*
   debugMessage := detectorDashZone . "-"
-  Loop,%DHISTORYLEN% {
+  Loop, % DHISTORYLEN {
     debugMessage .= dashZoneHist[A_Index, zh.zone] . "-"
   }
-  Msgbox %debugMessage%
+  Msgbox % debugMessage
   */ 
 
   if (result != P_NONE) {  ; this is the code block for discarding pivot attempts
@@ -791,7 +787,7 @@ isBurstSDI1Button(outputIn) {
     and sdiZoneHist[2, zh.zone] == sdiZoneHist[4, zh.zone]) {
     ;//check the time duration
     timePressToPress := sdiZoneHist[1, zh.timestamp] - sdiZoneHist[3, zh.timestamp]
-    ;//We want to nerf it if there is more than one press every %TIMELIMIT_BURSTSDI%, 
+    ;//We want to nerf it if there is more than one press every TIMELIMIT_BURSTSDI ms, 
     ;//but not if the previous release duration is less than 1 frame
     if (sdiZoneHist[4, zh.stale] == false and timePressToPress < TIMELIMIT_BURSTSDI and timePressToPress > TIMELIMIT_DEBOUNCE) {
       if (sdiZoneHist[1, zh.zone] == ZONE_CENTER or sdiZoneHist[2, zh.zone] == ZONE_CENTER) {
@@ -908,7 +904,7 @@ detectBurstSDI(aX, aY) {
   output := isBurstSDIQuarterCircle(output)
 
   ;//return the last cardinal in the zone list before the last diagonal, useful for SDI diagonal nerfs.
-  Loop,%SHISTORYLEN% {
+  Loop, % SHISTORYLEN {
     if (sdiZoneHist[A_Index, zh.popcount] == POP_DIAG) {
       i := A_Index + 1
       while (i <= SHISTORYLEN) {
@@ -973,7 +969,8 @@ updateDashZoneHistory() {
   global
 
   /* we need to see if enough time has passed for the input to not be part of a multiple key single input. and that it is different
-     from the last entry and so we need a new entry*/
+  from the last entry and so we need a new entry
+  */
   if (currentTimeMS - dashSimultTimestamp >= TIMELIMIT_SIMULTANEOUS
     and dashZoneHist[1, zh.zone] != unsavedDashZone) {
     i := DHISTORYLEN - 1
@@ -1002,7 +999,7 @@ updateDashZoneHistory() {
 makeDashZoneStale() {
   global
   ; check if a dash entry (and subsequent ones) are stale, and flag them
-  Loop,%DHISTORYLEN% { 
+  Loop, % DHISTORYLEN { 
     if ((currentTimeMS - dashZoneHist[A_Index, zh.timestamp]) > (TIMESTALE_PIVOT_INPUTSEQUENCE)) {
       staleIndex := A_Index ; found stale entry
       while (staleIndex <= DHISTORYLEN) {
@@ -1080,7 +1077,7 @@ updateSDIZoneHistory() {
 makeSDIZoneStale() {
   global
 
-  Loop,%SHISTORYLEN% { ; check if a sdi zone entry (and subsequent ones) are stale, and flag them
+  Loop, % SHISTORYLEN { ; check if a sdi zone entry (and subsequent ones) are stale, and flag them
     if (currentTimeMS - sdiZoneHist[A_Index, zh.timestamp] > TIMESTALE_SDI_INPUTSEQUENCE) {
       staleIndex := A_Index ; found stale entry
       while(staleIndex <= SHISTORYLEN) {
@@ -1150,7 +1147,7 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
   ; these are the coordinates that this function will return. they will include any necessary nerf
   limitedOutput := {leftStickX : rawCoords[XComp], leftStickY : rawCoords[YComp]}
   
-  ; a jump that lasts for %JUMP_TIME% frames that is a way to nerf u-tilt attempts
+  ; a jump that lasts for JUMP_TIME ms (2 frames) that is a way to nerf u-tilt attempts
   if (currentTimeMS - force2FJumpTimestamp < JUMP_TIME 
     and ((pivotForced2FJump and unsavedDirection == P_NONE) 
     or crouchForced2FJump)) { 
@@ -1188,7 +1185,7 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
       if (unsavedDirection != P_NONE and dashZone(limitedOutput.leftStickX) == unsavedDashZone) { 
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, unsavedDirection, unsavedPivotTimestamp)
         pivotWasNerfed := true
-      ; nerfing the output is considered until %TIMELIMIT_PIVOTTILT% milliseconds pass
+      ; nerfing the output is considered until TIMELIMIT_PIVOTTILT milliseconds pass
       } else if (currentTimeMS - savedPivotTimestamp < TIMELIMIT_PIVOTTILT and not pivotWasNerfed) {
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, savedDirection, savedPivotTimestamp)
         pivotWasNerfed := true
@@ -1783,7 +1780,6 @@ Label6_UP:
 Label7:
   buttonA := true
   myStick.SetBtn(1,5)
-  updateAnalogStick()
   return
 
 Label7_UP:
