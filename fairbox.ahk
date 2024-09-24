@@ -6,7 +6,8 @@ SetBatchLines, -1
 /* DRON hello.
 
  this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
- with a small modification in behavior.
+ dron-link is weaving new features into it, thus creating 'fairbox'
+
  sdi and pivot nerfs adapted from CarVac 's work  https://github.com/CarVac/HayBox
  more info extracted from B0XX documentation  https://b0xx.com/pages/resources
  and B0XX: The Movie  https://www.youtube.com/watch?v=uTYSgyca8cI
@@ -19,7 +20,9 @@ SetBatchLines, -1
  - implemented pivot nerfing. it will need lots of testing and timing enhancement, but as of now it basically works
  - reimplemented reverse neutral-B lockout nerf
  - implement crouch to uptilt nerf
- - TODO change upYTimestamp, downYTimestamp, uncrouchTimestamp mechanics to simultaneous-vs-saved type mechanics
+ - TODO explore creating a function that will handle all nerfs the same way, kind of
+   nerfManager(pivotDirection, pivotTimestamp, dashZone, dashTimestamp)
+ - TODO explore writing a function nerfConflictManager () to deal with pivot vs. sdi, and uncrouch vs. sdi
  - TODO implement SDI nerfs
  - TODO use setTimer to lift nerfs without waiting for player input
  - TODO use setTimer to call updateAnalogStick and possibly lift pivot nerfs after 4 frames, 5 frames and 8 frames
@@ -40,7 +43,7 @@ DHISTORYLEN := 3 ; MINIMUM 3
   DRON 
   ctrl-f this: For_Easy_Nerf_Testing
  */
-nerfTestMode :=5
+nerfTestMode :=0
 
 hotkeys := [ "Analog Up"             ; 1
            , "Analog Down"           ; 2
@@ -218,11 +221,9 @@ upYTimestamp := -1000
 downY := false
 downYTimestamp := -1000
 pivotForce2FJumpTimestamp := -1000   ; CarVac HayBox timed nerf. Inactive by default.
-force2FJumpTimestamp := -1000   ; CarVac HayBox timed nerf. Inactive by default.
 pivotForced2FJump := false                ; <--- Search references for this
 uncrouchForced2FJump := false               ; <-- and this if you want to activate it
 uncrouchForce2FJumpTimestamp := -1000
-; uncrouchTimestamp := -1000 ; ms, DRON how long since the player exited the crouch range
 
 finalCoords := [ANALOG_STICK_NEUTRAL, ANALOG_STICK_NEUTRAL] ; DRON left stick coordinates that are intended to be sent to vjoy
 
@@ -294,6 +295,7 @@ dashZone := {unsaved : NOT_DASH}
 dashTimestamp := {unsaved : -1000, simultaneous : -1000}
 pivotDirection := {fromDetector : P_NONE, unsaved : P_NONE, saved : P_NONE} ; pivot values : P_NONE , P_RIGHTLEFT , P_LEFTRIGHT
 pivotTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
+pivotWasNerfed := false
 
 ; DRON WIP
 crouchRange := {unsaved : false, saved : false}
@@ -631,7 +633,7 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
   global
 
   result := [aX, aY]
-
+  pivotWasNerfed := true ; true when pivotNerf() runs
   ; unityDistanceFactor in combination with scaler() will set the result's magnitude as ~0.9875. don't want to go past the unit circle
   unityDistanceFactor := (ANALOG_STICK_MAX - ANALOG_STEP) / sqrt(aX**2 + aY**2) ;                                   for no good reason
 
@@ -1038,12 +1040,6 @@ crouchRangeOf(aY) {
 
 detectUncrouch(aY) {
   global
-  ; crouch -> upY
-  ; or crouch -> middle -> upY
-  ; upY is not the trigger for the nerf, but rather the uncrouching is, and
-  ; upY is the kind of range that gets nerfed while others escape it
-  ; crouch stale : TIMELIMIT_DOWNUP
-
   if (not crouchRangeOf(aY) and crouchRange.saved) {
     result := U_FD_YES
   } else {
@@ -1052,17 +1048,19 @@ detectUncrouch(aY) {
   return result
 }
 
-uncrouchNerf(aX, aY, uncrouchTimestampIn) {
+uncrouchNerf(aX, aY) {
   global
   result := [aX, aY]
 
-  if (currentTimeMS - uncrouchTimestampIn < TIMELIMIT_DOWNUP and upY and Abs(aX) <= ANALOG_DEAD_MAX) {
-    result[XComp] := ANALOG_STICK_NEUTRAL  
-    result[YComp] := ANALOG_STICK_MAX        
-    uncrouchForced2FJump := false ; change to true to activate CarVac HayBox style timed nerf 
-    uncrouchForce2FJumpTimestamp := currentTimeMS
+
     uncrouchWasNerfed := true
-  }
+    if (upY and Abs(aX) <= ANALOG_DEAD_MAX) {
+      result[XComp] := ANALOG_STICK_NEUTRAL  
+      result[YComp] := ANALOG_STICK_MAX        
+      uncrouchForced2FJump := false ; change to true to activate CarVac HayBox style timed nerf 
+      uncrouchForce2FJumpTimestamp := currentTimeMS
+    }
+  
 
   return result
 }
@@ -1205,31 +1203,26 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
         pivotTimestamp.fromDetector := currentTimeMS
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
           , pivotDirection.fromDetector, pivotTimestamp.fromDetector)
-        pivotWasNerfed := true
       ; if the player spoiled the successful pivot instantaneously after inputting it...
       } else if (currentTimeMS - dashTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
           and dashTimestamp.simultaneous <= pivotTimestamp.fromDetector) {
           pivotForced2FJump := false
       }
     }
-
     ; if the instantaneous pivot detector didn't alert of a newfound pivot, we check to see if we need to nerf based on previous pivots
     if (!pivotWasNerfed) {
       ; if there's a pivot outputted previously and the player hasn't spoiled it with simultaneous inputs yet
       if (pivotDirection.unsaved != P_NONE and dashZoneOf(limitedOutput.leftStickX) == dashZone.unsaved) { 
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
           , pivotDirection.unsaved, pivotTimestamp.unsaved)
-        pivotWasNerfed := true
       ; nerfing the output is considered until TIMELIMIT_PIVOTTILT milliseconds pass
-      } else if (currentTimeMS - pivotTimestamp.saved < TIMELIMIT_PIVOTTILT and not pivotWasNerfed) { ; is this time check redundant?
+      } else if (currentTimeMS - pivotTimestamp.saved < TIMELIMIT_PIVOTTILT) {
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
           , pivotDirection.saved, pivotTimestamp.saved)
-        pivotWasNerfed := true
       } else {
         pivotForced2FJump := false
       }
     }
-
     if pivotWasNerfed {
       limitedOutput.leftStickX := nerfedPivotCoords[XComp]
       limitedOutput.leftStickY := nerfedPivotCoords[YComp]
@@ -1243,20 +1236,19 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
       if (uncrouched.fromDetector == U_FD_YES) {
         uncrouchForced2FJump := false
         uncrouchTimestamp.fromDetector := currentTimeMS
-        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, uncrouchTimestamp.fromDetector)
-      } else if (currentTimeMS - uncrouchTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
-          and uncrouchTimestamp.simultaneous <= uncrouchTimestamp.fromDetector) {
+        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
+      } else if (currentTimeMS - crouchRangeTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
+          and crouchRangeTimestamp.simultaneous <= uncrouchTimestamp.fromDetector) {
           uncrouchForced2FJump := false
       }
     }
     if (!uncrouchWasNerfed) {
       if (uncrouched.unsaved and crouchRangeOf(limitedOutput.leftStickY) == crouchRange.unsaved) {
-        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, uncrouchTimestamp.unsaved)
-      } else {
-        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, uncrouchTimestamp.saved)
-        if !uncrouchWasNerfed {
+        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
+      } else if (currentTimeMS - uncrouchTimestamp.saved < TIMELIMIT_DOWNUP) {
+        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
+      } else { ; if !uncrouchWasNerfed
           uncrouchForced2FJump := false
-        }
       }
     }
     if uncrouchWasNerfed {
@@ -1307,7 +1299,7 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
 
   ; memorizes realtime leftstick coordinates passed to the game
   updateAnalogHistory(limitedOutput.leftStickX, limitedOutput.leftStickY)
-  
+
   return limitedOutput
 }
 
