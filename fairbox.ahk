@@ -21,7 +21,7 @@ SetBatchLines, -1
  - reimplemented reverse neutral-B lockout nerf
  - implement crouch to uptilt nerf
  - TODO explore creating a function that will handle all nerfs the same way, kind of
-   nerfManager(pivotDirection, pivotTimestamp, dashZone, dashTimestamp)
+   nerfManager(pivotDirection, pivotTimestamp, dashZone, dashZoneTimestamp)
  - TODO explore writing a function nerfConflictManager () to deal with pivot vs. sdi, and uncrouch vs. sdi
  - TODO implement SDI nerfs
  - TODO use setTimer to lift nerfs without waiting for player input
@@ -261,6 +261,7 @@ POP_DIAG := 2
 ; DRON analog history simultFinal bits
 FINAL_DASHZONE := 1
 FINAL_SDIZONE := 1<<1
+FINAL_CROUCHRANGE := 1<<2
 
     
 ; analog history
@@ -292,7 +293,7 @@ Loop, % DHISTORYLEN {
   dashZoneHist[A_Index, zh.zone] := NOT_DASH
 }
 dashZone := {unsaved : NOT_DASH}
-dashTimestamp := {unsaved : -1000, simultaneous : -1000}
+dashZoneTimestamp := {unsaved : -1000, simultaneous : -1000}
 pivotDirection := {fromDetector : P_NONE, unsaved : P_NONE, saved : P_NONE} ; pivot values : P_NONE , P_RIGHTLEFT , P_LEFTRIGHT
 pivotTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
 pivotWasNerfed := false
@@ -933,7 +934,7 @@ updateDashZoneHistory() {
   /* we need to see if enough time has passed for the input to not be part of a multiple key single input. and that it is different
   from the last entry and so we need a new entry
   */
-  if (currentTimeMS - dashTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS
+  if (currentTimeMS - dashZoneTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS
     and dashZoneHist[1, zh.zone] != dashZone.unsaved) {
     i := DHISTORYLEN - 1
     ; push everything 1 slot towards the back of the timeline
@@ -944,12 +945,12 @@ updateDashZoneHistory() {
       i -= 1
     }
 
-    dashZoneHist[1, zh.timestamp] := dashTimestamp.unsaved
+    dashZoneHist[1, zh.timestamp] := dashZoneTimestamp.unsaved
     dashZoneHist[1, zh.stale] := false
     dashZoneHist[1, zh.zone] := dashZone.unsaved    
   } 
   /* debug tool
-  else if (currentTimeMS - dashTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
+  else if (currentTimeMS - dashZoneTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
     and dashZoneHist[1, zh.zone] != dashZone.unsaved) {
     Msgbox simultaneous change in dash zones
   }
@@ -982,9 +983,9 @@ savePivotHistory() {
   makeDashZoneStale()
 
   ; if there's an unsaved direction and the window for simultaneous inputs expired...
-  if (pivotDirection.unsaved != P_NONE and currentTimeMS - dashTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
-    pivotTimestamp.saved := pivotTimestamp.unsaved
+  if (pivotDirection.unsaved != P_NONE and currentTimeMS - dashZoneTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
     pivotDirection.saved := pivotDirection.unsaved
+    pivotTimestamp.saved := pivotTimestamp.unsaved
     ; .saved will deal with the nerf from now on - .unsaved set to P_NONE means that an unsaved pivot was already taken care of
     pivotDirection.unsaved := P_NONE  
   }
@@ -997,11 +998,11 @@ rememberDashZonesNotSaved(aX) {
   ; if the dashzone that will sent to the game is different from the previous, then we record
   if (dashZoneOf(aX) != dashZone.unsaved) {
     dashZone.unsaved := dashZoneOf(aX)
-    dashTimestamp.unsaved := currentTimeMS
+    dashZoneTimestamp.unsaved := currentTimeMS
     ; we need to see if the current input actually represents a fresh new dash zone (either from a lone input or 
     ; as the FIRST keystroke of a group of simultaneous keystrokes) in order to assign a timestamp to it
-    if (currentTimeMS - dashTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
-      dashTimestamp.simultaneous := currentTimeMS
+    if (currentTimeMS - dashZoneTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
+      dashZoneTimestamp.simultaneous := currentTimeMS
       aHistory[currentIndexA, ah.simultFinal] |= FINAL_DASHZONE
     }
   }
@@ -1016,8 +1017,8 @@ saveUncrouchHistory() {
   from the last entry and so we need a new entry
   */
   if (currentTimeMS - crouchRangeTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
-    if (crouchRange.unsaved != crouchRange.saved) { ; requiring this is dumb...
-      crouchRange.saved := crouchRange.unsaved ; obligatory
+    if (crouchRange.unsaved != crouchRange.saved) { ; requiring this to be true is not useful but we focus on showing all the steps
+      crouchRange.saved := crouchRange.unsaved
     }
     if uncrouched.unsaved {
       uncrouched.saved := uncrouched.unsaved
@@ -1071,6 +1072,7 @@ rememberCrouchesNotSaved(aY) {
     crouchRange.unsaved := crouchRangeOf(aY)
     if (currentTimeMS - crouchRangeTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
       crouchRangeTimestamp.simultaneous := currentTimeMS
+      aHistory[currentIndexA, ah.simultFinal] |= FINAL_CROUCHRANGE
     }
   }
   return
@@ -1127,8 +1129,6 @@ saveSDIHistory() {
 
   return
 }
-
-
 
 rememberSDIZonesNotSaved(aX, aY) {
   global
@@ -1204,8 +1204,8 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
           , pivotDirection.fromDetector, pivotTimestamp.fromDetector)
       ; if the player spoiled the successful pivot instantaneously after inputting it...
-      } else if (currentTimeMS - dashTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
-          and dashTimestamp.simultaneous <= pivotTimestamp.fromDetector) {
+      } else if (currentTimeMS - dashZoneTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
+          and dashZoneTimestamp.simultaneous <= pivotTimestamp.fromDetector) {
           pivotForced2FJump := false
       }
     }
@@ -1238,7 +1238,7 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
         uncrouchTimestamp.fromDetector := currentTimeMS
         nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
       } else if (currentTimeMS - crouchRangeTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
-          and crouchRangeTimestamp.simultaneous <= uncrouchTimestamp.fromDetector) {
+          and crouchRangeTimestamp.simultaneous <= uncrouchTimestamp.fromDetector) { ; and uncrouched.fromDetector == U_FD_NO
           uncrouchForced2FJump := false
       }
     }
