@@ -14,14 +14,12 @@ SetBatchLines, -1
  https://docs.google.com/document/d/1abMqoatAGh_ZhQD1qJaQx6YqFAppCjU5KyF3mgvDQVw/
 
  rough change list
- - DRON comments is me trying to understand the blocks of code
  - neutral SOCD implementation, did away with the old SOCD handling
  - implemented 1.0 cardinal fuzzing (in a way that doesn't affect UCF latest ver. players at all)
  - implemented pivot nerfing. it will need lots of testing and timing enhancement, but as of now it basically works
  - reimplemented reverse neutral-B lockout nerf
  - implement crouch to uptilt nerf
  - TODO change upYTimestamp, downYTimestamp, uncrouchTimestamp mechanics to simultaneous-vs-saved type mechanics
- - TODO make the sea of detector, unsaved, and saved named variables, into objects. (it will tidy up code)
  - TODO implement SDI nerfs
  - TODO use setTimer to lift nerfs without waiting for player input
  - TODO use setTimer to call updateAnalogStick and possibly lift pivot nerfs after 4 frames, 5 frames and 8 frames
@@ -42,7 +40,7 @@ DHISTORYLEN := 3 ; MINIMUM 3
   DRON 
   ctrl-f this: For_Easy_Nerf_Testing
  */
-nerfTestMode :=1
+nerfTestMode :=5
 
 hotkeys := [ "Analog Up"             ; 1
            , "Analog Down"           ; 2
@@ -215,22 +213,26 @@ simultaneousHorizontalModifierLockout := false  ;  DRON will go unused in the ne
 
 currentTimeMS := 0
 nerfLiftFire := false ; DRON if a nerf lift timer fires this will be set true
-upY := false ; DRON if current Y is above deadzone 
+upY := false ; if current Y is above deadzone 
 upYTimestamp := -1000
 downY := false
 downYTimestamp := -1000
+pivotForce2FJumpTimestamp := -1000   ; CarVac HayBox timed nerf. Inactive by default.
 force2FJumpTimestamp := -1000   ; CarVac HayBox timed nerf. Inactive by default.
 pivotForced2FJump := false                ; <--- Search references for this
-crouchForced2FJump := false               ; <-- and this if you want to activate it
-uncrouchTimestamp := -1000 ; ms, DRON how long since the player exited the crouch range
+uncrouchForced2FJump := false               ; <-- and this if you want to activate it
+uncrouchForce2FJumpTimestamp := -1000
+; uncrouchTimestamp := -1000 ; ms, DRON how long since the player exited the crouch range
 
 finalCoords := [ANALOG_STICK_NEUTRAL, ANALOG_STICK_NEUTRAL] ; DRON left stick coordinates that are intended to be sent to vjoy
 
 ;  DRON these variables are to be used as value identifiers. not keys
 DIDNT_SCAN := -1
 P_NONE := 0 ; id: no pivot
+P_RIGHTLEFT := 1 ; id: right to left pivot
 P_LEFTRIGHT := 2 ; id: left to right pivot
-P_RIGHTLEFT := 1
+U_FD_NO := 0 ; id: no uncrouch from detector
+U_FD_YES := 1 ; id: uncrouched from detector
 NOT_DASH := 0 ; id: when the x coordinate is in neither of the zones that trigger dash
 ZONE_CENTER := 0 ; id: when the x and y coordinate is in no zone that can trigger SDI
 ; DRON for bitwise:
@@ -288,16 +290,17 @@ Loop, % DHISTORYLEN {
   dashZoneHist[A_Index, zh.stale] := true
   dashZoneHist[A_Index, zh.zone] := NOT_DASH
 }
-dashSimultTimestamp := -1000
-unsavedDashZone := NOT_DASH
-unsavedDashTimestamp := -1000
-detectorDirection := P_NONE
-unsavedDirection := P_NONE  ; pivot values : P_NONE , P_RIGHTLEFT , P_LEFTRIGHT
-savedDirection := P_NONE
-detectorPivotTimestamp := -1000
-unsavedPivotTimestamp := -1000
-savedPivotTimestamp := -1000
+dashZone := {unsaved : NOT_DASH}
+dashTimestamp := {unsaved : -1000, simultaneous : -1000}
+pivotDirection := {fromDetector : P_NONE, unsaved : P_NONE, saved : P_NONE} ; pivot values : P_NONE , P_RIGHTLEFT , P_LEFTRIGHT
+pivotTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
 
+; DRON WIP
+crouchRange := {unsaved : false, saved : false}
+crouchRangeTimestamp := {simultaneous : -1000}
+uncrouchTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
+uncrouched := {fromDetector : false, unsaved : false, saved : false}
+uncrouchWasNerfed := false
 
 ; b0xx constants. ; DRON coordinates get mirrored and rotated appropiately thanks to reflectCoords()
 coordsOrigin := [0, 0]
@@ -432,7 +435,7 @@ for index, element in cStickAngling {
   3 pivoting, to down-angled f-tilt in less than 8 frames
   4 dashing above or below deadzone (to time out the tap-jump or d-smash execution window by placing the stick in the same active y zone)
     then pivoting and inputting an up-tilt or d-tilt under 5 frames
-  n Crouching to u-tilt range in less than 3 frames
+  5 Crouching to u-tilt range in less than 3 frames
 
   follow execution instructions below
 */
@@ -451,7 +454,8 @@ Switch nerfTestMode
   case 4:  ; pivot by left/right NSOCD while holding one of the vertical keys (optional: then press A)
       coordsQuadrant := [0.9000 + ANALOG_STEP, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
       coordsVertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
-
+  case 5:  ; crouch by holding down and tapping modY and then attempt to uptilt using up with no modX
+      coordsVertical := [0, -ANALOG_CROUCH]
 }
 
 ; Debug info
@@ -518,7 +522,7 @@ yDeadzoneTrackAndFlag(aX, aY) {
 }
 
 
-dashZone(aX) { ; 
+dashZoneOf(aX) { ; 
   global ANALOG_DASH_LEFT
   global ANALOG_DASH_RIGHT
   global NOT_DASH
@@ -535,31 +539,14 @@ dashZone(aX) { ;
 }
 
 
-  /*
 
-              y ^
-                |
-                |
-    dashL |           |dashR
-   ---- 2 |     o     | 1 ---->
-                   (aX)rX    x
-                |
-                |
-      
-
-    .a pivot is detected by examining the limitedOutput x (aX). its timestamp is currentTime and its staleness is none
-    .(aX) needs to be nerfed because its below y deadzone 
-    .output is nerfed, yielding rX
-    .dashHistory updates but because rX is in the same zone as 1, no new entries are added into the dash history
-    .---> in the next pass, the pivot detector will detect a failure in dash length
-  */
 detectPivot(aX) {
   global
 
   result := P_NONE
   pivotDebug := false ; if you want to enable detectPivot() testing, set this true
   pivotDiscarded := -1 ; for testing
-  detectorDashZone := dashZone(aX)
+  detectorDashZone := dashZoneOf(aX)
   /* ; DRON ignoring timing, has the player inputted the correct sequence?
     pivot inputs:
     --- past --- current
@@ -596,12 +583,12 @@ detectPivot(aX) {
     ; //check for staleness (meaning that some inputs are too old for this to be a successful pivot)
     if dashZoneHist[2, zh.stale] {
       result := P_NONE
-      if (pivotDiscarded == false) {
+      if !pivotDiscarded {
         pivotDiscarded := 1
       }
     } else if (dashZoneHist[2, zh.zone] == NOT_DASH and dashZoneHist[3, zh.stale]) { ; aX neutral  1 opposite  2 neutral  3 cardinal
       result := P_NONE
-      if (pivotDiscarded == false) {
+      if !pivotDiscarded {
         pivotDiscarded := 1
       }
 
@@ -609,7 +596,7 @@ detectPivot(aX) {
     } else if (pivotLength < TIMELIMIT_HALFFRAME or pivotLength > TIMELIMIT_FRAME + TIMELIMIT_HALFFRAME) {
       ; //less than 50% chance it was a successful pivot
       result := P_NONE
-      if (pivotDiscarded == false) {
+      if !pivotDiscarded {
         pivotDiscarded := 2
       }    
     }
@@ -640,7 +627,7 @@ scaler(component, factor) { ; just in case, let me say this will return a coordi
 }
 
 
-pivotNerf(aX, aY, direction, pivotTimestamp) { 
+pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) { 
   global
 
   result := [aX, aY]
@@ -662,9 +649,9 @@ pivotNerf(aX, aY, direction, pivotTimestamp) {
   */
 
   ; if upY and the player has not shut off tap jump WITH actions done before completing the pivot (such as upY dashes)
-  if (upY and (currentTimeMS - upYTimestamp < TIMELIMIT_TAPSHUTOFF or upYTimestamp >= pivotTimestamp) and not pivotForced2FJump) { 
+  if (upY and (currentTimeMS - upYTimestamp < TIMELIMIT_TAPSHUTOFF or upYTimestamp >= pivotTimestampIn) and not pivotForced2FJump) { 
     pivotForced2FJump := false ; change to true to activate CarVac HayBox style timed nerf 
-    force2FJumpTimestamp := currentTimeMS
+    pivotForce2FJumpTimestamp := currentTimeMS
 
     if (Abs(aX) > aY) {   ; //Force all upward angles to a minimum of 45deg away from the horizontal
                           ; //to prevent pivot uftilt and ensure tap jump
@@ -687,52 +674,31 @@ pivotNerf(aX, aY, direction, pivotTimestamp) {
     result[YComp] := scaler(aY, unityDistanceFactor)
 
   ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
-  } else if (upY and upYTimestamp < pivotTimestamp
-    and currentTimeMS - pivotTimestamp < TIMELIMIT_PIVOTTILT_YDASH and not pivotForced2FJump) {
+  } else if (upY and upYTimestamp < pivotTimestampIn
+    and currentTimeMS - pivotTimestampIn < TIMELIMIT_PIVOTTILT_YDASH and not pivotForced2FJump) {
               
-    if (direction == P_RIGHTLEFT) {
+    if (pivotDirectionIn == P_RIGHTLEFT) {
       result[XComp] := - FORCE_FTILT                ; apparently CarVac uses the opposite x directions for the ftilt.
-    } else if (direction == P_LEFTRIGHT) {          ; what does the proposal team mean when saying pressing A too early?
+    } else if (pivotDirectionIn == P_LEFTRIGHT) {          ; what does the proposal team mean when saying pressing A too early?
       result[XComp] := FORCE_FTILT
     }
     result[YComp] := FORCE_FTILT
 
-  ; if the player shut off tap downsmash, by pivoting with upY dashes
-  } else if (downY and downYTimestamp < pivotTimestamp and currentTimeMS - pivotTimestamp < TIMELIMIT_PIVOTTILT_YDASH) {
-    if (direction == P_RIGHTLEFT) {
+  ; if the player shut off tap downsmash, by pivoting with downY dashes
+  } else if (downY and downYTimestamp < pivotTimestampIn and currentTimeMS - pivotTimestampIn < TIMELIMIT_PIVOTTILT_YDASH) {
+    if (pivotDirectionIn == P_RIGHTLEFT) {
       result[XComp] := - FORCE_FTILT  
-    } else if (direction == P_LEFTRIGHT) {
+    } else if (pivotDirectionIn == P_LEFTRIGHT) {
       result[XComp] := FORCE_FTILT
     }
     result[YComp] := - FORCE_FTILT
-  } ; else if (downY and downYTimestamp >= pivotTimestamp) no nerfs are applied
+  } ; else if (downY and downYTimestamp >= pivotTimestampIn) no nerfs are applied
 
   return result
 }
 
 
-crouchUptiltLockout(aX, aY) {
-  global
-  result := [aX, aY]
 
-  if (aY > ANALOG_CROUCH) {
-    if (aHistory[currentIndexA, ah.y] <= ANALOG_CROUCH) { 
-      uncrouchTimestamp := currentTimeMS ; the player just uncrouched (or rather exited the crouch range)
-    }
-  }
-
-  if (aY > ANALOG_DEAD_MAX and Abs(aX) <= ANALOG_DEAD_MAX
-    and currentTimeMS - uncrouchTimestamp < TIMELIMIT_DOWNUP and not crouchForced2FJump) {
-    result[XComp] := ANALOG_STICK_NEUTRAL  
-    result[YComp] := ANALOG_STICK_MAX        
-    crouchForced2FJump := false ; change to true to activate CarVac HayBox style timed nerf 
-    force2FJumpTimestamp := currentTimeMS
-  } else if (currentTimeMS - uncrouchTimestamp >= TIMELIMIT_DOWNUP) {
-    crouchForced2FJump := false
-  }
-
-  return result
-}
 
 
 countPopulation(bitsIn) { ; //not a general purpose popcount, this is specifically for sdi zones
@@ -959,20 +925,14 @@ getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {   ; DRON if you in
 }
 
 
-miscellaneousTimestamps() {
-  global
-  return
-}
-
-
 updateDashZoneHistory() {
   global
 
   /* we need to see if enough time has passed for the input to not be part of a multiple key single input. and that it is different
   from the last entry and so we need a new entry
   */
-  if (currentTimeMS - dashSimultTimestamp >= TIMELIMIT_SIMULTANEOUS
-    and dashZoneHist[1, zh.zone] != unsavedDashZone) {
+  if (currentTimeMS - dashTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS
+    and dashZoneHist[1, zh.zone] != dashZone.unsaved) {
     i := DHISTORYLEN - 1
     ; push everything 1 slot towards the back of the timeline
     while (i >= 1) { 
@@ -982,13 +942,13 @@ updateDashZoneHistory() {
       i -= 1
     }
 
-    dashZoneHist[1, zh.timestamp] := unsavedDashTimestamp
+    dashZoneHist[1, zh.timestamp] := dashTimestamp.unsaved
     dashZoneHist[1, zh.stale] := false
-    dashZoneHist[1, zh.zone] := unsavedDashZone    
+    dashZoneHist[1, zh.zone] := dashZone.unsaved    
   } 
   /* debug tool
-  else if (currentTimeMS - dashSimultTimestamp < TIMELIMIT_SIMULTANEOUS
-    and dashZoneHist[1, zh.zone] != unsavedDashZone) {
+  else if (currentTimeMS - dashTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
+    and dashZoneHist[1, zh.zone] != dashZone.unsaved) {
     Msgbox simultaneous change in dash zones
   }
   */
@@ -1020,11 +980,11 @@ savePivotHistory() {
   makeDashZoneStale()
 
   ; if there's an unsaved direction and the window for simultaneous inputs expired...
-  if (unsavedDirection != P_NONE and currentTimeMS - dashSimultTimestamp >= TIMELIMIT_SIMULTANEOUS) {
-    savedPivotTimestamp := unsavedPivotTimestamp
-    savedDirection := unsavedDirection
-    ; savedDirection/pivotTimestamp will deal with the nerf from now on - and we need to avoid re-firing this "if"
-    unsavedDirection := P_NONE  
+  if (pivotDirection.unsaved != P_NONE and currentTimeMS - dashTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
+    pivotTimestamp.saved := pivotTimestamp.unsaved
+    pivotDirection.saved := pivotDirection.unsaved
+    ; .saved will deal with the nerf from now on - .unsaved set to P_NONE means that an unsaved pivot was already taken care of
+    pivotDirection.unsaved := P_NONE  
   }
 
   return
@@ -1033,13 +993,13 @@ savePivotHistory() {
 rememberDashZonesNotSaved(aX) {
   global
   ; if the dashzone that will sent to the game is different from the previous, then we record
-  if (dashZone(aX) != unsavedDashZone) {
-    unsavedDashZone := dashZone(aX)
-    unsavedDashTimestamp := currentTimeMS
+  if (dashZoneOf(aX) != dashZone.unsaved) {
+    dashZone.unsaved := dashZoneOf(aX)
+    dashTimestamp.unsaved := currentTimeMS
     ; we need to see if the current input actually represents a fresh new dash zone (either from a lone input or 
     ; as the FIRST keystroke of a group of simultaneous keystrokes) in order to assign a timestamp to it
-    if (currentTimeMS - dashSimultTimestamp >= TIMELIMIT_SIMULTANEOUS) {
-      dashSimultTimestamp := currentTimeMS
+    if (currentTimeMS - dashTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
+      dashTimestamp.simultaneous := currentTimeMS
       aHistory[currentIndexA, ah.simultFinal] |= FINAL_DASHZONE
     }
   }
@@ -1047,6 +1007,76 @@ rememberDashZonesNotSaved(aX) {
   return
 }
 
+saveUncrouchHistory() {
+  global
+
+  /* we need to see if enough time has passed for the input to not be part of a multiple key single input. and that it is different
+  from the last entry and so we need a new entry
+  */
+  if (currentTimeMS - crouchRangeTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
+    if (crouchRange.unsaved != crouchRange.saved) { ; requiring this is dumb...
+      crouchRange.saved := crouchRange.unsaved ; obligatory
+    }
+    if uncrouched.unsaved {
+      uncrouched.saved := uncrouched.unsaved
+      uncrouchTimestamp.saved := uncrouchTimestamp.unsaved
+      uncrouched.unsaved := false
+    }
+  }
+  return
+}
+
+crouchRangeOf(aY) {
+  global ANALOG_CROUCH
+  if (aY <= ANALOG_CROUCH) {
+    result := true
+  } else {
+    result := false
+  }
+  return result
+}
+
+detectUncrouch(aY) {
+  global
+  ; crouch -> upY
+  ; or crouch -> middle -> upY
+  ; upY is not the trigger for the nerf, but rather the uncrouching is, and
+  ; upY is the kind of range that gets nerfed while others escape it
+  ; crouch stale : TIMELIMIT_DOWNUP
+
+  if (not crouchRangeOf(aY) and crouchRange.saved) {
+    result := U_FD_YES
+  } else {
+    result := U_FD_NO
+  }
+  return result
+}
+
+uncrouchNerf(aX, aY, uncrouchTimestampIn) {
+  global
+  result := [aX, aY]
+
+  if (currentTimeMS - uncrouchTimestampIn < TIMELIMIT_DOWNUP and upY and Abs(aX) <= ANALOG_DEAD_MAX) {
+    result[XComp] := ANALOG_STICK_NEUTRAL  
+    result[YComp] := ANALOG_STICK_MAX        
+    uncrouchForced2FJump := false ; change to true to activate CarVac HayBox style timed nerf 
+    uncrouchForce2FJumpTimestamp := currentTimeMS
+    uncrouchWasNerfed := true
+  }
+
+  return result
+}
+
+rememberCrouchesNotSaved(aY) {
+  global
+  if (crouchRangeOf(aY) != crouchRange.unsaved) {
+    crouchRange.unsaved := crouchRangeOf(aY)
+    if (currentTimeMS - crouchRangeTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
+      crouchRangeTimestamp.simultaneous := currentTimeMS
+    }
+  }
+  return
+}
 
 updateSDIZoneHistory() {
   global
@@ -1100,6 +1130,8 @@ saveSDIHistory() {
   return
 }
 
+
+
 rememberSDIZonesNotSaved(aX, aY) {
   global
 
@@ -1142,15 +1174,15 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
   savePivotHistory()
 
   saveSDIHistory()
-  miscellaneousTimestamps()
+
+  saveUncrouchHistory()
 
   ; these are the coordinates that this function will return. they will include any necessary nerf
   limitedOutput := {leftStickX : rawCoords[XComp], leftStickY : rawCoords[YComp]}
   
   ; a jump that lasts for JUMP_TIME ms (2 frames) that is a way to nerf u-tilt attempts
-  if (currentTimeMS - force2FJumpTimestamp < JUMP_TIME 
-    and ((pivotForced2FJump and unsavedDirection == P_NONE) 
-    or crouchForced2FJump)) { 
+  if ((currentTimeMS - pivotForce2FJumpTimestamp < JUMP_TIME and pivotForced2FJump and pivotDirection.unsaved == P_NONE) 
+    or (currentTimeMS - uncrouchForce2FJumpTimestamp < JUMP_TIME and uncrouchForced2FJump and !uncrouched.unsaved)) { 
     limitedOutput.leftStickX := aHistory[currentIndexA, ah.x] ; force output to keep the last coordinate (a jump)
     limitedOutput.leftStickY := aHistory[currentIndexA, ah.y]
   
@@ -1160,34 +1192,38 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
     limitedOutput.leftStickX := processed[XComp]
     limitedOutput.leftStickY := processed[YComp]
 
+    ; updates upY, downY, upYTimestamp, downYTimestamp
     yDeadzoneTrackAndFlag(limitedOutput.leftStickX, limitedOutput.leftStickY)
 
     ; if the dash zone of the player input changes, we need to see if this marks a successful input of a pivot 
-    detectorDirection := DIDNT_SCAN
+    pivotDirection.fromDetector := DIDNT_SCAN
     pivotWasNerfed := false
-    if (dashZone(limitedOutput.leftStickX) != unsavedDashZone) {
-      detectorDirection := detectPivot(limitedOutput.leftStickX)
-      if (detectorDirection != P_NONE) {
+    if (dashZoneOf(limitedOutput.leftStickX) != dashZone.unsaved) {
+      pivotDirection.fromDetector := detectPivot(limitedOutput.leftStickX)
+      if (pivotDirection.fromDetector != P_NONE) {
         pivotForced2FJump := false
-        detectorPivotTimestamp := currentTimeMS
-        nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, detectorDirection, detectorPivotTimestamp)
+        pivotTimestamp.fromDetector := currentTimeMS
+        nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
+          , pivotDirection.fromDetector, pivotTimestamp.fromDetector)
         pivotWasNerfed := true
       ; if the player spoiled the successful pivot instantaneously after inputting it...
-      } else if (currentTimeMS - dashSimultTimestamp < TIMELIMIT_SIMULTANEOUS
-          and dashSimultTimestamp <= detectorPivotTimestamp) {
+      } else if (currentTimeMS - dashTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
+          and dashTimestamp.simultaneous <= pivotTimestamp.fromDetector) {
           pivotForced2FJump := false
       }
     }
 
     ; if the instantaneous pivot detector didn't alert of a newfound pivot, we check to see if we need to nerf based on previous pivots
-    if (detectorDirection != P_LEFTRIGHT and detectorDirection != P_RIGHTLEFT and not pivotWasNerfed) {
+    if (!pivotWasNerfed) {
       ; if there's a pivot outputted previously and the player hasn't spoiled it with simultaneous inputs yet
-      if (unsavedDirection != P_NONE and dashZone(limitedOutput.leftStickX) == unsavedDashZone) { 
-        nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, unsavedDirection, unsavedPivotTimestamp)
+      if (pivotDirection.unsaved != P_NONE and dashZoneOf(limitedOutput.leftStickX) == dashZone.unsaved) { 
+        nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
+          , pivotDirection.unsaved, pivotTimestamp.unsaved)
         pivotWasNerfed := true
       ; nerfing the output is considered until TIMELIMIT_PIVOTTILT milliseconds pass
-      } else if (currentTimeMS - savedPivotTimestamp < TIMELIMIT_PIVOTTILT and not pivotWasNerfed) {
-        nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, savedDirection, savedPivotTimestamp)
+      } else if (currentTimeMS - pivotTimestamp.saved < TIMELIMIT_PIVOTTILT and not pivotWasNerfed) { ; is this time check redundant?
+        nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
+          , pivotDirection.saved, pivotTimestamp.saved)
         pivotWasNerfed := true
       } else {
         pivotForced2FJump := false
@@ -1199,10 +1235,34 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
       limitedOutput.leftStickY := nerfedPivotCoords[YComp]
     }
 
-    ; crouch u-tilt nerf
-    processed := crouchUptiltLockout(limitedOutput.leftStickX, limitedOutput.leftStickY)
-    limitedOutput.leftStickX := processed[XComp]
-    limitedOutput.leftStickY := processed[YComp]
+    ; roundabout way to determine if we should nerf uncrouching...
+    uncrouched.fromDetector := DIDNT_SCAN
+    uncrouchWasNerfed := false
+    if (crouchRangeOf(limitedOutput.leftStickY) != crouchRange.unsaved) {
+      uncrouched.fromDetector := detectUncrouch(limitedOutput.leftStickY)
+      if (uncrouched.fromDetector == U_FD_YES) {
+        uncrouchForced2FJump := false
+        uncrouchTimestamp.fromDetector := currentTimeMS
+        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, uncrouchTimestamp.fromDetector)
+      } else if (currentTimeMS - uncrouchTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
+          and uncrouchTimestamp.simultaneous <= uncrouchTimestamp.fromDetector) {
+          uncrouchForced2FJump := false
+      }
+    }
+    if (!uncrouchWasNerfed) {
+      if (uncrouched.unsaved and crouchRangeOf(limitedOutput.leftStickY) == crouchRange.unsaved) {
+        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, uncrouchTimestamp.unsaved)
+      } else {
+        nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY, uncrouchTimestamp.saved)
+        if !uncrouchWasNerfed {
+          uncrouchForced2FJump := false
+        }
+      }
+    }
+    if uncrouchWasNerfed {
+      limitedOutput.leftStickX := nerfedUncrouchCoords[XComp]
+      limitedOutput.leftStickY := nerfedUncrouchCoords[YComp]
+    }
 
     ; DRON WIP
     ; sdi := detectBurstSDI(limitedOutput.leftStickX, limitedOutput.leftStickY)
@@ -1213,15 +1273,28 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
 
     ; if the detected pivot will be passed to the game, record it as "unsaved" 
     ; handles the case of nerfing the "neutral" of a pivot into a dash, so it damages the successful pivot input
-    if (detectorDirection == P_RIGHTLEFT or detectorDirection == P_LEFTRIGHT) {
-      if (dashZone(limitedOutput.leftStickX) == NOT_DASH) {
-        unsavedPivotTimestamp := detectorPivotTimestamp
-        unsavedDirection := detectorDirection
-      } else if (dashZone(limitedOutput.leftStickX) != NOT_DASH) {
-        unsavedDirection := P_NONE
+    if (pivotDirection.fromDetector == P_RIGHTLEFT or pivotDirection.fromDetector == P_LEFTRIGHT) {
+      if (dashZoneOf(limitedOutput.leftStickX) == NOT_DASH) {
+        pivotTimestamp.unsaved := pivotTimestamp.fromDetector
+        pivotDirection.unsaved := pivotDirection.fromDetector
+      } else if (dashZoneOf(limitedOutput.leftStickX) != NOT_DASH) {
+        pivotDirection.unsaved := P_NONE
       }
-    } else if (detectorDirection == P_NONE){
-      unsavedDirection := P_NONE
+    } else if (pivotDirection.fromDetector == P_NONE){
+      pivotDirection.unsaved := P_NONE
+    }
+
+    ; if the detected uncrouch will be passed to the game, record it as "unsaved" 
+    ; handles the case of nerfing the uncrouch input into a crouch, so it damages the successful uncrouch input
+    if (uncrouched.fromDetector == U_FD_YES) {
+      if (not crouchRangeOf(limitedOutput.leftStickY)) {
+        uncrouchTimestamp.unsaved := uncrouchTimestamp.fromDetector
+        uncrouched.unsaved := true
+      } else { ; if crouchRangeOf(limitedOutput.leftStickY)
+        uncrouched.unsaved := false
+      }
+    } else if (uncrouched.fromDetector == U_FD_NO) {
+      uncrouched.unsaved := false
     }
 
   } ; end of processing the player input and converting it into legal output
@@ -1230,9 +1303,10 @@ limitOutputs(rawCoords) { ; DRON -----------------------------------------------
 
   rememberDashZonesNotSaved(limitedOutput.leftStickX)
 
+  rememberCrouchesNotSaved(limitedOutput.leftStickY)
+
   ; memorizes realtime leftstick coordinates passed to the game
   updateAnalogHistory(limitedOutput.leftStickX, limitedOutput.leftStickY)
-
   
   return limitedOutput
 }
