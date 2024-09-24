@@ -18,4 +18,4 @@ Refer to [b0xx-ahk](https://github.com/agirardeau/b0xx-ahk).
 
 ## General
 
-After making changes to b0xx.ahk, recompile b0xx.exe by right-clicking b0xx.ahk and selecting "Compile Script." Autohotkey must be installed.
+After making changes to fairbox.ahk, compile fairbox.exe by right-clicking fairbox.ahk and selecting "Compile Script." Autohotkey must be installed.
