@@ -14,7 +14,7 @@ Refer to [b0xx-ahk](https://github.com/agirardeau/b0xx-ahk).
 
 1. Install Autohotkey from https://autohotkey.com/.
 2. Install AHK-CvJoyInterface, a library for linking Autohotkey and vJoy. Download CvJoyInterface.ahk from https://github.com/evilC/AHK-CvJoyInterface and place it inside Autohotkey's Lib folder (for me this was located at C:\Program Files\AutoHotkey\Lib). Create the Lib folder if it does not already exist.
-3. Place fairbox.ahk into an existing b0xx-ahk folder.
+3. Place all ahk files into an existing b0xx-ahk folder.
 
 ## General
 
