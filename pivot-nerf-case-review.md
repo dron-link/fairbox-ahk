@@ -1,4 +1,4 @@
-
+```
               y ^
                 |
                 |
@@ -16,3 +16,4 @@
     * output is nerfed, yielding rX
     * dashHistory updates but because rX is in the same zone as 1, no new entries are added into the dash history
     * ---> in the next pass, the pivot detector will detect a failure in dash length
+```
