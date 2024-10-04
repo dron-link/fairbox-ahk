@@ -1,5 +1,6 @@
 target := new baseTarget
 
+modeIsUnitCircle := true ; don't set to false because the code hasn't been tested yet with that condition
 ; assign the coordinates of c-stick modifier action
 target.fireFox.modXC.closestToAxis := [0.7, 0.3625]   ; ~27 deg
 target.fireFox.modXC.secondClosestToAxis := [0.7875, 0.4875]  ; ~32 deg
@@ -42,7 +43,7 @@ coordsAirdodgeQuadrantModX := [0.6375, 0.375] ; 30.47 deg. b0xx default
 coordsAirdodgeQuadrant12ModY := [0.475, 0.875] ; 61.50 deg. b0xx default
 coordsAirdodgeQuadrant34ModY := [0.5, 0.85] ; 59.53 deg b0xx default
 
-coordsFirefoxModX := [0.9125, 0.3875]   ; ~23 deg
-coordsFirefoxModY := [0.3875, 0.9125]   ; ~67 deg
+coordsFirefoxModX := coordsQuadrantModX
+coordsFirefoxModY := coordsQuadrantModY
 coordsExtendedFirefoxModX := [0.9125, 0.3875]       ; ~23 deg
 coordsExtendedFirefoxModY := [0.3875, 0.9125]       ; ~67 deg
