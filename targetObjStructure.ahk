@@ -1,19 +1,20 @@
+#Requires AutoHotkey v1.1
 
 ; order must correspond to cDefaultBindings
-keysModCAngleRole := ["closestToAxis", "secondClosestToAxis", "secondClosestTo45Deg", "closestTo45Deg"]
+keysModCAngleRole := ["ClosestToAxis", "SecondClosestToAxis", "SecondClosestTo45Deg", "ClosestTo45Deg"]
 modCAngleRole := {}
 for index, roleKey in keysModCAngleRole {
-    modCAngleRole[roleKey] := ""
+    modCAngleRole["modXC" roleKey] := ""
+    modCAngleRole["modYC" roleKey] := ""
 }
+
 class baseTarget {
 
     ; to store coordinates. 
-    fireFox := {}
-    fireFox.modXC := new modCAngleRole
-    fireFox.modYC := new modCAngleRole
-    extendedB := {}
-    extendedB.modXC := new modCAngleRole
-    extendedB.modYC := new modCAngleRole
+    normal := {}
+    airdodge := {}
+    fireFox := new modCAngleRole
+    extendedB := new modCAngleRole
   
     bindAnglesToCStick() { ; We are going to set personalized c-button angle bindings 
         global keysModCAngleRole   
@@ -74,25 +75,25 @@ class baseTarget {
         ; assigning firefox angles and c-stick extended up-B angles according to values read from ini
         for index, roleKey in keysModCAngleRole {
             if (readModCAngleRole[roleKey] = "cDown") {
-                this.fireFox.modXC.down := this.fireFox.modXC[roleKey]
-                this.fireFox.modYC.down := this.fireFox.modYC[roleKey]
-                this.extendedB.modXC.down := this.extendedB.modXC[roleKey]
-                this.extendedB.modYC.down := this.extendedB.modYC[roleKey]
+                this.fireFox.modXCDown := this.fireFox["modXC" roleKey]
+                this.fireFox.modYCDown := this.fireFox["modYC" roleKey]
+                this.extendedB.modXCDown := this.extendedB["modXC" roleKey]
+                this.extendedB.modYCDown := this.extendedB["modYC" roleKey]
             } else if (readModCAngleRole[roleKey] = "cLeft") {
-                this.fireFox.modXC.left := this.fireFox.modXC[roleKey]
-                this.fireFox.modYC.left := this.fireFox.modYC[roleKey]
-                this.extendedB.modXC.left := this.extendedB.modXC[roleKey]
-                this.extendedB.modYC.left := this.extendedB.modYC[roleKey]
+                this.fireFox.modXCLeft := this.fireFox["modXC" roleKey]
+                this.fireFox.modYCLeft := this.fireFox["modYC" roleKey]
+                this.extendedB.modXCLeft := this.extendedB["modXC" roleKey]
+                this.extendedB.modYCLeft := this.extendedB["modYC" roleKey]
             } else if (readModCAngleRole[roleKey] = "cUp") {
-                this.fireFox.modXC.up := this.fireFox.modXC[roleKey]
-                this.fireFox.modYC.up := this.fireFox.modYC[roleKey]
-                this.extendedB.modXC.up := this.extendedB.modXC[roleKey]
-                this.extendedB.modYC.up := this.extendedB.modYC[roleKey]
+                this.fireFox.modXCUp := this.fireFox["modXC" roleKey]
+                this.fireFox.modYCUp := this.fireFox["modYC" roleKey]
+                this.extendedB.modXCUp := this.extendedB["modXC" roleKey]
+                this.extendedB.modYCUp := this.extendedB["modYC" roleKey]
             } else if (readModCAngleRole[roleKey] = "cRight") {
-                this.fireFox.modXC.right := this.fireFox.modXC[roleKey]
-                this.fireFox.modYC.right := this.fireFox.modYC[roleKey]
-                this.extendedB.modXC.right := this.extendedB.modXC[roleKey]
-                this.extendedB.modYC.right := this.extendedB.modYC[roleKey]
+                this.fireFox.modXCRight := this.fireFox["modXC" roleKey]
+                this.fireFox.modYCRight := this.fireFox["modYC" roleKey]
+                this.extendedB.modXCRight := this.extendedB["modXC" roleKey]
+                this.extendedB.modYCRight := this.extendedB["modYC" roleKey]
             }
         }
         return

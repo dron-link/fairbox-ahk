@@ -5,6 +5,7 @@
 !LICENSE
 !why-no-travel-time-in-the-works.md
 !pivot-nerf-case-review.md
-!targetCoordinateObject.ahk
-!targetCoordinateAssignations.ahk
 !engineConstants.ahk
+!targetObjStructure.ahk
+!targetCoordinateValues.ahk 
+!targetFormatting.ahk

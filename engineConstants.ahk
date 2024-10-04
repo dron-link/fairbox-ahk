@@ -1,3 +1,4 @@
+#Requires AutoHotkey v1.1
 ; the idea and comments behind these constants is copied from CarVac/HayBox
 ANALOG_STEP := 1
 MS_PER_FRAME := 1000 / 60  ; game runs at 60 fps

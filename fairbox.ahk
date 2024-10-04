@@ -1,12 +1,13 @@
+#Requires AutoHotkey v1.1.37
 #SingleInstance force
 #NoEnv
 #include <CvJoyInterface>
 #include %A_ScriptDir%
 #include, engineConstants.ahk
-#include, nerfConstants.ahk
-#include, targetCoordinateObject.ahk ; creates object 'target'
-#include, targetCoordinateAssignations.ahk ; configure target coordinates
-#include, limitOutputs.ahk
+#include, targetObjStructure.ahk
+target := new baseTarget
+#include, targetCoordinateValues.ahk 
+#include, targetFormatting.ahk
 SetBatchLines, -1
 /*
    this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
@@ -319,20 +320,20 @@ uncrouchWasNerfed := false
 Switch nerfTestMode
 {
   case 1:  ; pivot by left/right NSOCD while pressing up or down (optional: then press A)
-      coordsVertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
-      coordsQuadrant := [79, 1]
+      target.normal.vertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
+      target.normal.quadrant := [79, 1]
   case 2:  ; pivot by modX while pressing up (optional: then press A)
-      coordsQuadrant := [79, 1]
-      coordsvertical := coordsOrigin
+      target.normal.quadrant := [79, 1]
+      target.normal.vertical := target.normal.origin
   case 3:  ; pivot by modX while pressing down (optional: then press A)
-      coordsQuadrant := [79, 1]
-      coordsvertical := coordsOrigin
-      coordsQuadrantModX := [ANALOG_DEAD_MAX + 7 * ANALOG_STEP, ANALOG_DEAD_MAX + ANALOG_STEP]
+      target.normal.quadrant := [79, 1]
+      target.normal.vertical := target.normal.origin
+      target.normal.quadrantModX := [ANALOG_DEAD_MAX + 7 * ANALOG_STEP, ANALOG_DEAD_MAX + ANALOG_STEP]
   case 4:  ; pivot by left/right NSOCD while holding one of the vertical keys (optional: then press A)
-      coordsQuadrant := [72 + ANALOG_STEP, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
-      coordsVertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
+      target.normal.quadrant := [72 + ANALOG_STEP, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
+      target.normal.vertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
   case 5:  ; crouch by holding down and tapping modY and then attempt to uptilt using up with no modX
-      coordsVertical := [0, -ANALOG_CROUCH]
+      target.normal.vertical := [0, -ANALOG_CROUCH]
 }
 
 ; Debug info
@@ -1031,29 +1032,6 @@ updateAnalogHistory(aX, aY) {
   return
 }
 
-trimToCircle(aX, aY) {
-  global xComp
-  global yComp
-  global ANALOG_STICK_MAX
-  result := [aX, aY]
-
-  if (aX != 0 or aY != 0) {
-    clampFactor := ANALOG_STICK_MAX / Sqrt(aX**2 + aY**2)
-    if (clampFactor < 1) {
-      if (aX >= 0) {
-          result[xComp] := Floor(aX * clampFactor)
-      } else { ; if aX < 0
-          result[XComp] := Ceil(aX * clampFactor)
-      }
-      if (aY >= 0) {
-          result[yComp] := Floor(aY * clampFactor)
-      } else { ; if aY < 0
-          result[yComp] := Ceil(aY * clampFactor)
-      }
-    }
-  }
-  return result
-}
 
 limitOutputs(rawCoords) {
   global
@@ -1069,16 +1047,8 @@ limitOutputs(rawCoords) {
   limitedOutput := {}
 
   ; these are the coordinates that this function will return. they will include any necessary nerf
-  if modeIsUnitCircle {
-      limitedOutput.leftStickX := Round(80 * rawCoords[xComp])
-      limitedOutput.leftStickY := Round(80 * rawCoords[yComp])
-  } else {
-      limitedOutput.leftStickX := Round(rawCoords[xComp])
-      limitedOutput.leftStickY := Round(rawCoords[yComp])
-  }
-  processed := trimToCircle(limitedOutput.leftStickX, limitedOutput.leftStickY)
-  limitedOutput.leftStickX := processed[xComp]
-  limitedOutput.leftStickY := processed[yComp]
+  limitedOutput.leftStickX := rawCoords[xComp]
+  limitedOutput.leftStickY := rawCoords[yComp]
   
   ; a jump that lasts for JUMP_TIME ms (2 frames) that is a way to nerf u-tilt attempts
   if ((currentTimeMS - pivotForce2FJumpTimestamp < JUMP_TIME and pivotForced2FJump and pivotDirection.unsaved == P_NONE)
@@ -1358,39 +1328,39 @@ getAnalogCoordsAirdodge() {
   global
   if (neither(anyVert(), anyHoriz())) {
     lastCoordTrace := "L-O"
-    return coordsOrigin
+    return target.normal.origin
   } else if (anyQuadrant()) {
     if (modX()) {
       lastCoordTrace := "L-Q-X"
-      return coordsAirdodgeQuadrantModX
+      return target.airdodge.quadrantModX
     } else if (modY()) {
       lastCoordTrace := "L-Q-Y"
-      return up() ? coordsAirdodgeQuadrant12ModY : coordsAirdodgeQuadrant34ModY
+      return up() ? target.airdodge.quadrant12ModY : target.airdodge.quadrant34ModY
     } else {
       lastCoordTrace := "L-Q"
-      return up() ? coordsAirdodgeQuadrant12 : coordsAirdodgeQuadrant34
+      return up() ? target.airdodge.quadrant12 : target.airdodge.quadrant34
     }
   } else if (anyVert()) {
 	if (modX()) {
       lastCoordTrace := "L-V-X"
-      return coordsAirdodgeVerticalModX
+      return target.airdodge.verticalModX
     } else if (modY()) {
       lastCoordTrace := "L-V-Y"
-      return coordsAirdodgeVerticalModY
+      return target.airdodge.verticalModY
     } else {
       lastCoordTrace := "L-V"
-      return coordsAirdodgeVertical
+      return target.airdodge.vertical
     }
   } else { ; if (anyHoriz())
     if (modX()) {
       lastCoordTrace := "L-H-X"
-      return coordsAirdodgeHorizontalModX
+      return target.airdodge.horizontalModX
     } else if (modY()) {
       lastCoordTrace := "L-H-Y"
-      return coordsAirdodgeHorizontalModY
+      return target.airdodge.horizontalModY
     } else {
       lastCoordTrace := "L-H"
-      return coordsAirdodgeHorizontal
+      return target.airdodge.horizontal
     }
   }
 }
@@ -1399,39 +1369,39 @@ getAnalogCoordsWithNoShield() {
   global
   if (neither(anyVert(), anyHoriz())) {
     lastCoordTrace := "N-O"
-    return coordsOrigin
+    return target.normal.origin
   } else if (anyQuadrant()) {
     if (modX()) {
       lastCoordTrace := "N-Q-X"
-      return coordsQuadrantModX
+      return target.normal.quadrantModX
     } else if (modY()) {
       lastCoordTrace := "N-Q-Y"
-      return coordsQuadrantModY
+      return target.normal.quadrantModY
     } else {
       lastCoordTrace := "N-Q"
-      return coordsQuadrant
+      return target.normal.quadrant
     }
   } else if (anyVert()) {
     if (modX()) {
       lastCoordTrace := "N-V-X"
-      return coordsVerticalModX
+      return target.normal.verticalModX
     } else if (modY()) {
       lastCoordTrace := "N-V-Y"
-      return coordsVerticalModY
+      return target.normal.verticalModY
     } else {
       lastCoordTrace := "N-V"
-      return coordsVertical
+      return target.normal.vertical
     }
   } else { ; if (anyHoriz())
     if (modX()) {
       lastCoordTrace := "N-H-X"
-      return coordsHorizontalModX
+      return target.normal.horizontalModX
     } else if (modY()) {
       lastCoordTrace := "N-H-Y"
-      return coordsHorizontalModY
+      return target.normal.horizontalModY
     } else {
       lastCoordTrace := "N-H"
-      return coordsHorizontal
+      return target.normal.horizontal
     }
   }
 }
@@ -1441,36 +1411,38 @@ getAnalogCoordsFirefox() {
   if (modX()) {
     if (cUp()) {
       lastCoordTrace := "F-X-U"
-      return buttonB ? target.extendedB.modXC.up : target.fireFox.modXC.up
+      return buttonB ? target.extendedB.modXCUp : target.fireFox.modXCUp
     } else if (cDown()) {
       lastCoordTrace := "F-X-D"
-      return buttonB ? target.extendedB.modXC.down : target.fireFox.modXC.down
+      return buttonB ? target.extendedB.modXCDown : target.fireFox.modXCDown
     } else if (cLeft()) {
       lastCoordTrace := "F-X-L"
-      return buttonB ? target.extendedB.modXC.left : target.fireFox.modXC.left
+      return buttonB ? target.extendedB.modXCLeft : target.fireFox.modXCLeft
     } else if (cRight()) {
       lastCoordTrace := "F-X-R"
-      return buttonB ? target.extendedB.modXC.right : target.fireFox.modXC.right
+      return buttonB ? target.extendedB.modXCRight : target.fireFox.modXCRight
     } else {
       lastCoordTrace := "F-X"
-      return buttonB ? coordsExtendedFirefoxModX : coordsFirefoxModX
+      ; if buttonB
+      return target.extendedB.modX
     }
   } else if (modY()) {
     if (cUp()) {
       lastCoordTrace := "F-Y-U"
-      return buttonB ? target.extendedB.modYC.up : target.fireFox.modYC.up
+      return buttonB ? target.extendedB.modYCUp : target.fireFox.modYCUp
     } else if (cDown()) {
       lastCoordTrace := "F-Y-D"
-      return buttonB ? target.extendedB.modYC.down : target.fireFox.modYC.down
+      return buttonB ? target.extendedB.modYCDown : target.fireFox.modYCDown
     } else if (cLeft()) {
       lastCoordTrace := "F-Y-L"
-      return buttonB ? target.extendedB.modYC.left : target.fireFox.modYC.left
+      return buttonB ? target.extendedB.modYCLeft : target.fireFox.modYCLeft
     } else if (cRight()) {
       lastCoordTrace := "F-Y-R"
-      return buttonB ? target.extendedB.modYC.right : target.fireFox.modYC.right
+      return buttonB ? target.extendedB.modYCRight : target.fireFox.modYCRight
     } else {
       lastCoordTrace := "F-Y"
-      return buttonB ? coordsExtendedFirefoxModY : coordsFirefoxModY
+      ; if buttonB
+      return target.extendedB.modY
     }
   }
 }
