@@ -65,6 +65,7 @@ SetBatchLines, -1
  - TODO 0.1 + 0.2 == 0.3 is false. change all floating point coordinates into integer coordinates
  - TODO make some global variables into static locals
  - TODO make debug flangs and debugACertainProcess? outputDebug, % expression
+ - TODO provide a calibrated controller profile
 
 setTimer firing rate is apparently 15.6ms, don't expect much precision from it 
 (at least it's shorter than a game cube input polling interval), but I expect that most nerf lifts will be one frame late sometimes.

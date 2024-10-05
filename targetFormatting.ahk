@@ -106,8 +106,8 @@ for context in target {
             OutputDebug, % " excess_magnitude " Format("{:.4f}", debugPrintExcessMagnitude)
             . ". Clamped to circle`n"
         }
-        ;specificCoordinate[1] := trimmedCoordinate[1]
-        ;specificCoordinate[2] := trimmedCoordinate[2]
+        specificCoordinate[1] := trimmedCoordinate[1]
+        specificCoordinate[2] := trimmedCoordinate[2]
         detectNonIntegers(specificCoordinate[1], specificCoordinate[2])
         
     }
