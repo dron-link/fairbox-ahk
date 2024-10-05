@@ -9,13 +9,13 @@ target.centerOffsetBy128 := false
 
 ; b0xx constants. ; coordinates get mirrored and rotated appropiately thanks to reflectCoords()
 target.normal.origin := [0, 0]
-target.normal.vertical := [0, 1]
+target.normal.vertical := [0, 1] ; for calibration [0, 127]
 target.normal.verticalModX := [0, 0.5375]
 target.normal.verticalModY := [0, 0.7375]
-target.normal.horizontal := [1, 0]
+target.normal.horizontal := [1, 0] ; for calibration [127, 0]
 target.normal.horizontalModX := [0.6625, 0]
 target.normal.horizontalModY := [0.3375, 0]
-target.normal.quadrant := [0.7, 0.7]
+target.normal.quadrant := [0.7, 0.7] ; for calibration [90, 90]
 target.normal.quadrantModX := [0.7375, 0.3125]
 target.normal.quadrantModY := [0.3125, 0.7375]
 

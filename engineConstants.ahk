@@ -4,11 +4,13 @@ ANALOG_STEP := 1
 MS_PER_FRAME := 1000 / 60  ; game runs at 60 fps
 PI := 3.141592653589793
 DEG_TO_RADIAN := PI / 180
+UNITCIRC_TO_INT := 80 ; factor for converting coordinate formats
+INT_TO_UNITCIRC := 1/80
 
-ANALOG_STICK_MIN := -80 ; > coordinate, then it's out of stick range
+ANALOG_STICK_MIN := -80 ; > coordinate, then it's out of unit circle range
 ANALOG_DEAD_MIN := -22 ; > coordinate, then it's outside the deadzone and to the left/down
 ANALOG_DEAD_MAX := 22 ; < coordinate, then it's outside the deadzone and to the right/up
-ANALOG_STICK_MAX := 80 ; < coordinate, then it's out of stick range
+ANALOG_STICK_MAX := 80 ; < coordinate, then it's out of unit circle range
 ANALOG_CROUCH := -50 ; >= y coordinate, then the character is holding crouch
 ANALOG_DOWNSMASH := -53 ; >= y coordinate, then the character could downsmash, shield drop, fastfall, drop from platform etc
 ANALOG_TAPJUMP := 55 ; <= y coordinate, then the character is in u-smash or tap-jump range

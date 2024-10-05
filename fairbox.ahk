@@ -506,7 +506,8 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
 
   result := [aX, aY]
   pivotWasNerfed := true ; true when pivotNerf() runs
-  unityDistanceFactor := (ANALOG_STICK_MAX) / sqrt(aX**2 + aY**2)
+  if (aX != 0 or aY != 0) {
+    unityDistanceFactor := 2 * (ANALOG_STICK_MAX) / sqrt(aX**2 + aY**2)
   /* 
       if upY and the player has not shut off tap jump with actions done before completing the pivot (such as angled dash)
       and tap jump hasn't been forced already for this pivot
@@ -528,11 +529,11 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
     if (Abs(aX) > aY) {   ; //Force all upward angles to a minimum of 45deg away from the horizontal
                           ; //to prevent pivot uftilt and ensure tap jump
       if (aX > 0) {
-        result[xComp] := ANALOG_STICK_MAX * cos(45*DEG_TO_RADIAN)
+        result[xComp] := 2 * ANALOG_STICK_MAX * cos(45*DEG_TO_RADIAN)
       } else if (aX < 0) {
-        result[xComp] := ANALOG_STICK_MIN * cos(45*DEG_TO_RADIAN)
+        result[xComp] := 2 * ANALOG_STICK_MIN * cos(45*DEG_TO_RADIAN)
       }
-      result[yComp] := ANALOG_STICK_MIN * cos(45*DEG_TO_RADIAN)
+      result[yComp] := 2 * ANALOG_STICK_MIN * cos(45*DEG_TO_RADIAN)
 
     } else {
       result[xComp] := aX * unityDistanceFactor
@@ -567,6 +568,8 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
   } ; else if (downY and downYTimestamp >= pivotTimestampIn) no nerfs are applied
 
   result := trimToCircle(result[xComp], result[yComp])
+  }
+  
 
   return result
 }
@@ -1132,11 +1135,11 @@ limitOutputs(rawCoords) {
 
       ; WIP
       ; sdi := detectBurstSDI(limitedOutput.leftStickX, limitedOutput.leftStickY)
-
+      
       ; fuzz the x +1.00 or -1.00
       limitedOutput.leftStickX := getFuzzyHorizontal100(limitedOutput.leftStickX, limitedOutput.leftStickY
           , analogHistory[currentIndexA].x, analogHistory[currentIndexA].y)
-
+          
       ; if the detected pivot will be passed to the game, record it as "unsaved"
       ; handles the case of nerfing the "neutral" of a pivot into a dash, so it damages the successful pivot input
       if (pivotDirection.fromDetector == P_RIGHTLEFT or pivotDirection.fromDetector == P_LEFTRIGHT) {
@@ -1285,12 +1288,11 @@ anyC() {
 ; Updates the position on the analog stick based on the current held buttons
 updateAnalogStick() {
   global finalCoords
+  global INT_TO_UNITCIRC
 
   coords := getAnalogCoords()
-  finalOutput := limitOutputs(coords) ; this finalCoords that we pass is what we set last time
-  finalCoords := [finalOutput.leftStickX / 80, finalOutput.leftStickY / 80]    ; and these are the coordinates that will be set next
-  ; finalCoords := coords
-  ; setAnalogStick(coords
+  finalOutput := limitOutputs(coords)
+  finalCoords := [finalOutput.leftStickX, finalOutput.leftStickY]
   setAnalogStick(finalCoords)
 }
 
@@ -1451,7 +1453,8 @@ getAnalogCoordsFirefox() {
 setAnalogStick(finalCoords) {
   global myStick
   ;convertedCoords := convertCoords(coords)
-  convertedCoords := convertCoords(finalCoords)
+  convertedCoords := convertIntegerCoords(finalCoords)
+  OutputDebug, % "convertedCoords x " convertedCoords[1] " y " convertedCoords[2] "`n"
   myStick.SetAxisByIndex(convertedCoords[1], 1)
   myStick.SetAxisByIndex(convertedCoords[2], 2)
 }
@@ -1494,6 +1497,20 @@ setCStick(cCoords) {
   convertedCoords := convertCoords(cCoords)
   myStick.SetAxisByIndex(convertedCoords[1], 4)
   myStick.SetAxisByIndex(convertedCoords[2], 5)
+}
+
+; Converts coordinates from box integers (-128 to 127) to vJoy values (0 to 32767).
+convertIntegerCoords(xAndY) {
+  ; 32768/256 is 128
+  ; boxInt    -128, -127, -126, ... ,   127   (, 128)
+  ; vjoyValX    64,  192,  320, ... , 32704 (, 32832)
+  ; vjoyValY  32704, ...................... (, 64)
+  ; vjRange [0, ........................, 32767] 
+  ; fulfills vjoyValX = 128 * (boxInt+128) + 64
+  result := []
+  result[1] :=  (32768/256) * (xAndY[1]) + 16384
+  result[2] := -(32768/256) * (xAndY[2]) + 16384
+  return result
 }
 
 ; Converts coordinates from melee values (-1 to 1) to vJoy values (0 to 32767).
