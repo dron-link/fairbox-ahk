@@ -10,6 +10,8 @@ for index, roleKey in keysModCAngleRole {
 
 class baseTarget {
 
+    unitCircleMode := false ; overwritten later
+    centerOffsetBy128 := true ; overwritten later
     ; to store coordinates. 
     normal := {}
     airdodge := {}

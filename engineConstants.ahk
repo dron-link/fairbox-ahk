@@ -7,7 +7,6 @@ DEG_TO_RADIAN := PI / 180
 
 ANALOG_STICK_MIN := -80 ; > coordinate, then it's out of stick range
 ANALOG_DEAD_MIN := -22 ; > coordinate, then it's outside the deadzone and to the left/down
-ANALOG_STICK_NEUTRAL := 0
 ANALOG_DEAD_MAX := 22 ; < coordinate, then it's outside the deadzone and to the right/up
 ANALOG_STICK_MAX := 80 ; < coordinate, then it's out of stick range
 ANALOG_CROUCH := -50 ; >= y coordinate, then the character is holding crouch
@@ -36,6 +35,8 @@ ANALOG_SPECIAL_UP := 44 ; <= y coordinate, then it's up-B range
 ANALOG_SPOTDODGE_MIN_LEFT := -55 ; <= x coordinate, and-
 ANALOG_SPOTDODGE_MIN_RIGHT := 55 ; >= x coordinate, then you are in spotdodge or middle shield-drop horizontal range 
 ANALOG_SPOTDODGE_MIN_VERTICAL := -56 ; >= y coordinate, then you are in spotdodge vertical (and below middle shield-drop) range
+
+ANALOG_STICK_OFFSETCANCEL := -128
 
 ; nerf constants
 

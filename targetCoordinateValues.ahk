@@ -1,11 +1,11 @@
 #Requires AutoHotkey v1.1
 
-; true if components are in format <-1, -0.9875, ..., -0.0125, 0, 0.0125, ..., 0.9875, 1>
-; false if format <-80, -79, ..., -1, 0, -1, ..., 79, 80>  or <48, 49, ... 127, 128, 129, ..., 207, 208>
-modeIsUnitCircle := true 
+; true if components are in form: <-1, ..., -0.0125, 0, 0.0125, 0.0250, 0.0375, 0.0500, ..., 0.9875, 1>
+; false if they're in form <-80, -79, ..., -1, 0, -1, ..., 79, 80>  OR  <48, 49, ... 127, 128, 129, ..., 207, 208>
+target.unitCircleMode := true 
+
 ; set to true if the values are centered around 128 instead of 0
-circleNeutralOffset := false 
-; assign the coordinates of c-stick modifier action
+target.centerOffsetBy128 := false 
 
 ; b0xx constants. ; coordinates get mirrored and rotated appropiately thanks to reflectCoords()
 target.normal.origin := [0, 0]
@@ -19,12 +19,12 @@ target.normal.quadrant := [0.7, 0.7]
 target.normal.quadrantModX := [0.7375, 0.3125]
 target.normal.quadrantModY := [0.3125, 0.7375]
 
-target.airdodge.vertical := target.normal.vertical
-target.airdodge.verticalModX := target.normal.verticalModX
-target.airdodge.verticalModY := target.normal.verticalModY
-target.airdodge.horizontal := target.normal.horizontal
-target.airdodge.horizontalModX := target.normal.horizontalModX
-target.airdodge.horizontalModY := target.normal.horizontalModY
+target.airdodge.vertical := [0, 1]
+target.airdodge.verticalModX := [0, 0.5375]
+target.airdodge.verticalModY := [0, 0.7375]
+target.airdodge.horizontal := [1, 0]
+target.airdodge.horizontalModX := [0.6625, 0]
+target.airdodge.horizontalModY := [0.3375, 0]
 target.airdodge.quadrant12 := [0.7, 0.7]
 target.airdodge.quadrant34 := [0.7, 0.6875]
 target.airdodge.quadrantModX := [0.6375, 0.375]

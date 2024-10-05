@@ -1,12 +1,13 @@
 #Requires AutoHotkey v1.1.37
+#Warn All, OutputDebug
 #SingleInstance force
 #NoEnv
 #include <CvJoyInterface>
 #include %A_ScriptDir%
-#include, engineConstants.ahk
-#include, targetObjStructure.ahk
+#include, engineConstants.ahk ; needed for everything else
+#include, targetObjStructure.ahk ; needed for creating baseTarget class
 target := new baseTarget
-#include, targetCoordinateValues.ahk 
+#include, targetCoordinateValues.ahk ; you can customize the coordinates here
 #include, targetFormatting.ahk
 SetBatchLines, -1
 /*
@@ -63,6 +64,7 @@ SetBatchLines, -1
  - TODO change 1.0 cardinal fuzzing from x fuzzing to y fuzzing
  - TODO 0.1 + 0.2 == 0.3 is false. change all floating point coordinates into integer coordinates
  - TODO make some global variables into static locals
+ - TODO make debug flangs and debugACertainProcess? outputDebug, % expression
 
 setTimer firing rate is apparently 15.6ms, don't expect much precision from it 
 (at least it's shorter than a game cube input polling interval), but I expect that most nerf lifts will be one frame late sometimes.
@@ -238,7 +240,7 @@ pivotForced2FJump := false                ; <--- Search references for this
 uncrouchForced2FJump := false               ; <-- and this if you want to activate it
 uncrouchForce2FJumpTimestamp := -1000
 
-finalCoords := [ANALOG_STICK_NEUTRAL, ANALOG_STICK_NEUTRAL] ; left stick coordinates that are intended to be sent to vjoy
+finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to vjoy
 
 ; coordinate components simple array keys
 xComp := 1, yComp := 2
@@ -268,7 +270,7 @@ FINAL_DASHZONE := 1, FINAL_SDIZONE := 1<<1, FINAL_CROUCHRANGE := 1<<2
 ; analog history
 analogHistory := []
 Loop, % ANALOG_HISTORY_LENGTH {
-  analogHistory[A_Index] := {x : ANALOG_STICK_NEUTRAL, y : ANALOG_STICK_NEUTRAL, timestamp : -1000, simultaneousFinish : 0}
+  analogHistory[A_Index] := {x : 0, y : 0, timestamp : -1000, simultaneousFinish : 0}
 }
 currentIndexA := 1 ; the index for accessing analog history
 
@@ -364,10 +366,10 @@ reverseNeutralBNerf(aX, aY) {
   if (buttonB and Abs(aX) > ANALOG_DEAD_MAX and Abs(aY) <= ANALOG_DEAD_MAX) { ; out of x deadzone and in y deadzone
     if (aX < 0 and aX > ANALOG_SPECIAL_LEFT) { ; inside leftward neutral-B range
       result[xComp] := ANALOG_STICK_MIN
-      result[yComp] := ANALOG_STICK_NEUTRAL
+      result[yComp] := 0
     } else if (aX > 0 and aX < ANALOG_SPECIAL_RIGHT) {
       result[xComp] := ANALOG_STICK_MAX
-      result[yComp] := ANALOG_STICK_NEUTRAL
+      result[yComp] := 0
     } 
   }
 
@@ -762,7 +764,6 @@ detectBurstSDI(aX, aY) {
 
 getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {   ; if you input +/- 80, that value may be passed to the game
   global ANALOG_STICK_MIN                                       ; as +/- 79 for as long as you hold the stick in the same place
-  global ANALOG_STICK_NEUTRAL
   global ANALOG_STICK_MAX
   global ANALOG_STEP
   global FUZZ_1_00_PROBABILITY
@@ -779,8 +780,8 @@ getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {   ; if you input +
   else no action
   */
 
-  if (Abs(outputX) >= ANALOG_STICK_MAX - ANALOG_STEP and outputY == ANALOG_STICK_NEUTRAL) {
-    if (Abs(historyX) >= ANALOG_STICK_MAX - ANALOG_STEP and historyY == ANALOG_STICK_NEUTRAL
+  if (Abs(outputX) >= ANALOG_STICK_MAX - ANALOG_STEP and outputY == 0) {
+    if (Abs(historyX) >= ANALOG_STICK_MAX - ANALOG_STEP and historyY == 0
       and not ((outputX > 0) ^ (historyX > 0)) ) {
       result := historyX
     } else {
@@ -925,7 +926,7 @@ uncrouchNerf(aX, aY) {
 
     uncrouchWasNerfed := true
     if (upY and Abs(aX) <= ANALOG_DEAD_MAX) {
-      result[xComp] := ANALOG_STICK_NEUTRAL  
+      result[xComp] := 0
       result[yComp] := ANALOG_STICK_MAX        
       uncrouchForced2FJump := false ; change to true to activate CarVac HayBox style timed nerf 
       uncrouchForce2FJumpTimestamp := currentTimeMS
@@ -1044,11 +1045,10 @@ limitOutputs(rawCoords) {
 
   saveUncrouchHistory()
 
+  ; this will contain the coordinates that this function will return. they will include any necessary nerf
   limitedOutput := {}
 
-  ; these are the coordinates that this function will return. they will include any necessary nerf
-  limitedOutput.leftStickX := rawCoords[xComp]
-  limitedOutput.leftStickY := rawCoords[yComp]
+  
   
   ; a jump that lasts for JUMP_TIME ms (2 frames) that is a way to nerf u-tilt attempts
   if ((currentTimeMS - pivotForce2FJumpTimestamp < JUMP_TIME and pivotForced2FJump and pivotDirection.unsaved == P_NONE)
@@ -1057,7 +1057,9 @@ limitOutputs(rawCoords) {
       limitedOutput.leftStickY := analogHistory[currentIndexA].y
 
   } else { ; process the player input and converts it into legal output
-
+      
+      limitedOutput.leftStickX := rawCoords[xComp]
+      limitedOutput.leftStickY := rawCoords[yComp]
       processed := reverseNeutralBNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
       limitedOutput.leftStickX := processed[xComp]
       limitedOutput.leftStickY := processed[yComp]
@@ -1171,8 +1173,7 @@ limitOutputs(rawCoords) {
   ; memorizes realtime leftstick coordinates passed to the game
   updateAnalogHistory(limitedOutput.leftStickX, limitedOutput.leftStickY)
 
-  limitedOutput.leftStickX /= 80
-  limitedOutput.leftStickY /= 80
+  
 
   return limitedOutput
 }
@@ -1287,7 +1288,7 @@ updateAnalogStick() {
 
   coords := getAnalogCoords()
   finalOutput := limitOutputs(coords) ; this finalCoords that we pass is what we set last time
-  finalCoords := [finalOutput.leftStickX, finalOutput.leftStickY]    ; and these are the coordinates that will be set next
+  finalCoords := [finalOutput.leftStickX / 80, finalOutput.leftStickY / 80]    ; and these are the coordinates that will be set next
   ; finalCoords := coords
   ; setAnalogStick(coords
   setAnalogStick(finalCoords)
@@ -1328,39 +1329,39 @@ getAnalogCoordsAirdodge() {
   global
   if (neither(anyVert(), anyHoriz())) {
     lastCoordTrace := "L-O"
-    return target.normal.origin
+    return new target.normal.origin
   } else if (anyQuadrant()) {
     if (modX()) {
       lastCoordTrace := "L-Q-X"
-      return target.airdodge.quadrantModX
+      return new target.airdodge.quadrantModX
     } else if (modY()) {
       lastCoordTrace := "L-Q-Y"
-      return up() ? target.airdodge.quadrant12ModY : target.airdodge.quadrant34ModY
+      return up() ? new target.airdodge.quadrant12ModY : new target.airdodge.quadrant34ModY
     } else {
       lastCoordTrace := "L-Q"
-      return up() ? target.airdodge.quadrant12 : target.airdodge.quadrant34
+      return up() ? new target.airdodge.quadrant12 : new target.airdodge.quadrant34
     }
   } else if (anyVert()) {
 	if (modX()) {
       lastCoordTrace := "L-V-X"
-      return target.airdodge.verticalModX
+      return new target.airdodge.verticalModX
     } else if (modY()) {
       lastCoordTrace := "L-V-Y"
-      return target.airdodge.verticalModY
+      return new target.airdodge.verticalModY
     } else {
       lastCoordTrace := "L-V"
-      return target.airdodge.vertical
+      return new target.airdodge.vertical
     }
   } else { ; if (anyHoriz())
     if (modX()) {
       lastCoordTrace := "L-H-X"
-      return target.airdodge.horizontalModX
+      return new target.airdodge.horizontalModX
     } else if (modY()) {
       lastCoordTrace := "L-H-Y"
-      return target.airdodge.horizontalModY
+      return new target.airdodge.horizontalModY
     } else {
       lastCoordTrace := "L-H"
-      return target.airdodge.horizontal
+      return new target.airdodge.horizontal
     }
   }
 }
@@ -1369,39 +1370,39 @@ getAnalogCoordsWithNoShield() {
   global
   if (neither(anyVert(), anyHoriz())) {
     lastCoordTrace := "N-O"
-    return target.normal.origin
+    return new target.normal.origin
   } else if (anyQuadrant()) {
     if (modX()) {
       lastCoordTrace := "N-Q-X"
-      return target.normal.quadrantModX
+      return new target.normal.quadrantModX
     } else if (modY()) {
       lastCoordTrace := "N-Q-Y"
-      return target.normal.quadrantModY
+      return new target.normal.quadrantModY
     } else {
       lastCoordTrace := "N-Q"
-      return target.normal.quadrant
+      return new target.normal.quadrant
     }
   } else if (anyVert()) {
     if (modX()) {
       lastCoordTrace := "N-V-X"
-      return target.normal.verticalModX
+      return new target.normal.verticalModX
     } else if (modY()) {
       lastCoordTrace := "N-V-Y"
-      return target.normal.verticalModY
+      return new target.normal.verticalModY
     } else {
       lastCoordTrace := "N-V"
-      return target.normal.vertical
+      return new target.normal.vertical
     }
   } else { ; if (anyHoriz())
     if (modX()) {
       lastCoordTrace := "N-H-X"
-      return target.normal.horizontalModX
+      return new target.normal.horizontalModX
     } else if (modY()) {
       lastCoordTrace := "N-H-Y"
-      return target.normal.horizontalModY
+      return new target.normal.horizontalModY
     } else {
       lastCoordTrace := "N-H"
-      return target.normal.horizontal
+      return new target.normal.horizontal
     }
   }
 }
@@ -1411,38 +1412,38 @@ getAnalogCoordsFirefox() {
   if (modX()) {
     if (cUp()) {
       lastCoordTrace := "F-X-U"
-      return buttonB ? target.extendedB.modXCUp : target.fireFox.modXCUp
+      return buttonB ? new target.extendedB.modXCUp : new target.fireFox.modXCUp
     } else if (cDown()) {
       lastCoordTrace := "F-X-D"
-      return buttonB ? target.extendedB.modXCDown : target.fireFox.modXCDown
+      return buttonB ? new target.extendedB.modXCDown : new target.fireFox.modXCDown
     } else if (cLeft()) {
       lastCoordTrace := "F-X-L"
-      return buttonB ? target.extendedB.modXCLeft : target.fireFox.modXCLeft
+      return buttonB ? new target.extendedB.modXCLeft : new target.fireFox.modXCLeft
     } else if (cRight()) {
       lastCoordTrace := "F-X-R"
-      return buttonB ? target.extendedB.modXCRight : target.fireFox.modXCRight
+      return buttonB ? new target.extendedB.modXCRight : new target.fireFox.modXCRight
     } else {
       lastCoordTrace := "F-X"
       ; if buttonB
-      return target.extendedB.modX
+      return new target.extendedB.modX
     }
   } else if (modY()) {
     if (cUp()) {
       lastCoordTrace := "F-Y-U"
-      return buttonB ? target.extendedB.modYCUp : target.fireFox.modYCUp
+      return buttonB ? new target.extendedB.modYCUp : new target.fireFox.modYCUp
     } else if (cDown()) {
       lastCoordTrace := "F-Y-D"
-      return buttonB ? target.extendedB.modYCDown : target.fireFox.modYCDown
+      return buttonB ? new target.extendedB.modYCDown : new target.fireFox.modYCDown
     } else if (cLeft()) {
       lastCoordTrace := "F-Y-L"
-      return buttonB ? target.extendedB.modYCLeft : target.fireFox.modYCLeft
+      return buttonB ? new target.extendedB.modYCLeft : new target.fireFox.modYCLeft
     } else if (cRight()) {
       lastCoordTrace := "F-Y-R"
-      return buttonB ? target.extendedB.modYCRight : target.fireFox.modYCRight
+      return buttonB ? new target.extendedB.modYCRight : new target.fireFox.modYCRight
     } else {
       lastCoordTrace := "F-Y"
       ; if buttonB
-      return target.extendedB.modY
+      return new target.extendedB.modY
     }
   }
 }
