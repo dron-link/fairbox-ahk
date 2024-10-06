@@ -1,7 +1,7 @@
 #Requires AutoHotkey v1.1
 
 if !allowTrimming {
-    OutputDebug, % "allowTrimming is false. Turn to true when you finish testing`n"
+    OutputDebug, % "allowTrimming is FALSE. set true when you finish testing`n"
 }
 
 trimToCircle(aX, aY) { ; the game considers coordinates outside the circle as coordinates on the rim of the circle,
@@ -24,9 +24,6 @@ trimToCircle(aX, aY) { ; the game considers coordinates outside the circle as co
             } else { ; if aY < 0
                 result[2] := Ceil(80 * aY / Sqrt(squaredRadius))
             }
-        } else {
-            result[1] := Round(result[1])
-            result[2] := Round(result[2])
         }
     }
 
@@ -73,12 +70,14 @@ OutputDebug, % "trimToCircle test concluded"
 
 countCoordinatesOutsideUnit := 0
 for context in target {
-    if (context = "format") {
+    if (context = "format") { ; target.format doesn't contain coordinates in itself
         Continue
     }
-    for keyName, specificCoordinate in target[context] {
-        ; if this never evaluates to true, it's likely that the coordinates are in unit circle format 
-        if (specificCoordinate[1] >= 3 or specificCoordinate[2] >= 3) {
+    for keyName, specificCoordinate in target[context] { ; such as target.fireFox, target.airdodge, etc
+        /* if countCoordinatesOutsideUnit(circle) ends as 0, it's likely that the coordinates are in unit circle format 
+        and if many coordinates are outside the unit circle then it's likely that the coordinates are in integer format
+        */ 
+        if (specificCoordinate[1] >= 2 or specificCoordinate[2] >= 2) {
             countCoordinatesOutsideUnit += 1
         }
 
@@ -95,6 +94,8 @@ for context in target {
         specificCoordinate[1] := Round(specificCoordinate[1])
         specificCoordinate[2] := Round(specificCoordinate[2])
         trimmedCoordinate := trimToCircle(specificCoordinate[1], specificCoordinate[2])
+
+        ; start of trimmed-values alert
         if (trimmedCoordinate[1] != specificCoordinate [1] or trimmedCoordinate[2] != specificCoordinate [2]) {
             if target.format.unitCircle {
                 debugPrintX := specificCoordinate[1] * INT_TO_UNITCIRC
@@ -115,7 +116,8 @@ for context in target {
 
             OutputDebug, % " excess_magnitude " Format("{:.4f}", debugPrintExcessMagnitude)
             . ". Clamped to circle`n"
-        }
+        } ; end of trimmed-values alert
+
         specificCoordinate[1] := trimmedCoordinate[1]
         specificCoordinate[2] := trimmedCoordinate[2]
         detectNonIntegers(specificCoordinate[1], specificCoordinate[2])
@@ -129,11 +131,9 @@ if (!target.format.unitCircle and countCoordinatesOutsideUnit < 1) {
     suggestedUnitCircleMode := "FALSE"
 }
 if (suggestedUnitCircleMode != "") {
-    OutputDebug, % "Alert. It was detected that target.format.unitCircle likely needs to be edited to "
+    warningMsg := "Warning. It was detected that target.format.unitCircle likely needs to be edited to "
     . suggestedUnitCircleMode
     . " inside the file targetCoordinateValues.ahk ! `n"
-    . "^ countCoordinatesOutsideUnit evaluates to " countCoordinatesOutsideUnit "`n"
-    MsgBox % "Alert. It was detected that target.format.unitCircle likely needs to be edited to "
-    . suggestedUnitCircleMode
-    . " inside the file targetCoordinateValues.ahk !"
+    OutputDebug, % warningMsg "var countCoordinatesOutsideUnit evaluates to " countCoordinatesOutsideUnit "`n"
+    MsgBox % warningMsg
 }
