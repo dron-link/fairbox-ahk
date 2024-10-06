@@ -2,20 +2,20 @@
 
 ; true if components are in form: <-1, ..., -0.0125, 0, 0.0125, 0.0250, 0.0375, 0.0500, ..., 0.9875, 1>
 ; false if they're in form <-80, -79, ..., -1, 0, -1, ..., 79, 80>  OR  <48, 49, ... 127, 128, 129, ..., 207, 208>
-target.unitCircleMode := true 
+target.format.unitCircle := false 
 
 ; set to true if the values are centered around 128 instead of 0
-target.centerOffsetBy128 := false 
+target.format.centerOffsetBy128 := false 
 
 ; b0xx constants. ; coordinates get mirrored and rotated appropiately thanks to reflectCoords()
 target.normal.origin := [0, 0]
-target.normal.vertical := [0, 1] ; for calibration [0, 127]
+target.normal.vertical := [0, 127] ; for calibration [0, 127], target.format.unitCircle := false
 target.normal.verticalModX := [0, 0.5375]
 target.normal.verticalModY := [0, 0.7375]
-target.normal.horizontal := [1, 0] ; for calibration [127, 0]
+target.normal.horizontal := [127, 0] ; for calibration [127, 0]
 target.normal.horizontalModX := [0.6625, 0]
 target.normal.horizontalModY := [0.3375, 0]
-target.normal.quadrant := [0.7, 0.7] ; for calibration [90, 90]
+target.normal.quadrant := [90, 90] ; for calibration [90, 90], else if unitCircleFormat then [0.7, 0.7]
 target.normal.quadrantModX := [0.7375, 0.3125]
 target.normal.quadrantModY := [0.3125, 0.7375]
 
