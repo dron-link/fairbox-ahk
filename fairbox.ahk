@@ -4,7 +4,7 @@
 #NoEnv
 #include <CvJoyInterface>
 
-allowTrimming := true
+allowTrimming := true ; trim to the coordinate circle
 
 #include %A_ScriptDir%
 #include, engineConstants.ahk ; needed for everything else
@@ -510,6 +510,7 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
   global
 
   preliminary := [aX, aY]
+
   pivotWasNerfed := true ; true when pivotNerf() runs
   doTrimCoordinate := true
   if (aX != 0 or aY != 0) {
@@ -536,11 +537,11 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
       if (Abs(aX) > aY) {   ; //Force all upward angles to a minimum of 45deg away from the horizontal
                             ; //to prevent pivot uftilt and ensure tap jump
         if (aX > 0) {
-          preliminary[xComp] := 90
+          preliminary[xComp] := 90 ; = 127 cos 45deg
         } else if (aX < 0) {
-          preliminary[xComp] := 90
+          preliminary[xComp] := -90
         }
-        preliminary[yComp] := 90
+        preliminary[yComp] := 90 ; 127 sin 45deg
   
       } else {
         preliminary[xComp] := aX * unityDistanceFactor
@@ -563,6 +564,7 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
         preliminary[xComp] := FORCE_FTILT
       }
       preliminary[yComp] := FORCE_FTILT
+      doTrimCoordinate := false
   
     ; if the player shut off tap downsmash, by pivoting with downY dashes
     } else if (downY and downYTimestamp < pivotTimestampIn 
@@ -573,16 +575,19 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
         preliminary[xComp] := FORCE_FTILT
       }
       preliminary[yComp] := - FORCE_FTILT
+      doTrimCoordinate := false
     } else {
       doTrimCoordinate := false
     }
-  
   }
+
   if doTrimCoordinate {
     result := trimToCircle(preliminary[xComp], preliminary[yComp]) 
+    return result
+  } else {
+    return preliminary
   }
   
-  return result
 }
 
 

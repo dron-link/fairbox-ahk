@@ -3,8 +3,6 @@
 !fairbox.ahk
 !README.md
 !LICENSE
-!why-no-travel-time-in-the-works.md
-!pivot-nerf-case-review.md
 !engineConstants.ahk
 !fairbox-keyboard.ini
 !hkIniAutogenerator.ahk
@@ -13,3 +11,4 @@
 !targetFormatting.ahk
 !default-layout.jpg
 !suggested-layouts.png
+!miscellaneous-notes.md
