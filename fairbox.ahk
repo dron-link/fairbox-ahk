@@ -9,6 +9,7 @@ allowTrimming := true ; trim to the coordinate circle
 #include %A_ScriptDir%
 #include, engineConstants.ahk ; needed for everything else
 #include, hkIniAutogenerator.ahk
+#include, testingTools.ahk
 #include, targetObjStructure.ahk ; needed for creating baseTarget class
 target := new baseTarget
 #include, targetCoordinateValues.ahk ; you can customize the coordinates here
@@ -16,7 +17,7 @@ target := new baseTarget
 SetBatchLines, -1
 /*
    this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
-   i, dron-link, am weaving new features into it, thus creating 'fairbox'
+   i, dron-link, am weaving new features into it, creating 'fairbox'
 
  DISCLAIMER
  I AM NOT A PROGRAMMER BY TRADE. i believe that the community would appreciate if you, a programmer,
@@ -342,6 +343,7 @@ Switch nerfTestMode
   case 5:  ; crouch by holding down and tapping modY and then attempt to uptilt using up with no modX
       target.normal.vertical := [0, -ANALOG_CROUCH]
 }
+
 
 ; Debug info
 /*
@@ -1502,13 +1504,11 @@ setCStick(cCoords) {
   myStick.SetAxisByIndex(convertedCoords[2], 5)
 }
 
-; Converts coordinates from box integers (-128 to 127) to vJoy values (0 to 32767).
+; Converts coordinates from box integers (circle diameter -80 to 80) to vJoy values (full range 0 to 32767).
 convertIntegerCoords(xAndY) {
-  ; 32768/256 is 128
-  ; 32768/2 is 16384
   result := []
-  result[1] :=  128 * (xAndY[1]) + 16384
-  result[2] := -128 * (xAndY[2]) + 16384
+  result[1] :=  16384 + Round(128.63 * xAndY[1])
+  result[2] := 16301 - Round(128.38 * xAndY[2])
   return result
 }
 

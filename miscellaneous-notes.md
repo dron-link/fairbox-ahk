@@ -4,16 +4,13 @@ Keyboard players on the cheap end are probably a majority. If people have enough
 Unlike controllers, with their gaming-oriented firmware written by professionals, pc/keyboard setups have presumably no widespread consistency in their latency and scan rates. Some setups bring input polling rates as large as 15.6ms (that's slow from the perspective of player microtiming) and there will be probably many cases where we can do nothing about it from Autohotkey. Coupling that with the need to simulate travel time properly, and possible unexpected behaviors from Autohotkey, it becomes a daunting problem to solve. 
 
 ## Ideas:
-  *getting the polling latency from somewhere and decide if we should apply TT based on that info
-
-  *rewrite portions of the program to work with more granular timing to send to Dolphin. 
-
-  *figuring out how to test the quality of the implementation.
-
+* getting the polling latency from somewhere and decide if we should apply TT based on that info
+* rewrite portions of the program to work with more granular timing to send to Dolphin. 
+* figuring out how to test the quality of the implementation.
 
 Gaming keyboards + gaming pc's: their low scanning latency might translate into low output latency to the game. That favors consistency and maybe it's worth to try to implement travel time for those setups, but let's not put TT simulation in cheap keyboards and software with too much latency and with inconsistent input delay.
 
-For that matter [I](dron-link) won't be focusing on implementing travel time simulation.
+For that matter I (dron-link) won't be focusing on implementing travel time simulation.
 
 
 # A pivot nerf case review

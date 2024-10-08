@@ -4,7 +4,7 @@
 !README.md
 !LICENSE
 !engineConstants.ahk
-!fairbox-keyboard.ini
+!testingTools.ahk
 !hkIniAutogenerator.ahk
 !targetObjStructure.ahk
 !targetCoordinateValues.ahk 
@@ -12,3 +12,5 @@
 !default-layout.jpg
 !suggested-layouts.png
 !miscellaneous-notes.md
+!fairbox-dolpin-5-keyboard.ini
+!fairbox-slippi-keyboard.ini
