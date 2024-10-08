@@ -17,7 +17,9 @@ Refer to [b0xx-ahk](https://github.com/agirardeau/b0xx-ahk).
 ## Setup
 
 1. (Skip this step if you already use b0xx-ahk) Download vJoy from https://sourceforge.net/projects/vjoystick/?source=typ_redirect. After installing, run "Configure vJoy" (can be found by searching in the start menu). Set the number of buttons to 12 and hit apply.
-2. Place the fairbox-keyboard.ini file inside the \<YourDolphinInstallation\>\User\Config\Profiles\GCPad folder, creating any subfolders that do not already exist. If you're using SmashLadder Dolphin Launcher, your Dolphin instances might be in C:\Users\\\<YourUsername\>\AppData\Roaming\SmashLadder Dolphin Launcher\dolphin_downloads.
+2.a. If you're using Slippi, place the fairbox-slippi-keyboard.ini file inside the  __C:\Users\\\<YourUsername\>\AppData\Roaming\Slippi Launcher\netplay__ folder. 
+2.b. If you're using Dolphin 5.0, place the fairbox-dolphin-5-keyboard.ini file inside the  __C:\Users\\\<YourUsername\>\AppData\Roaming\Dolphin Emulator\Config\Profiles\GCPad__ folder or __\<YourDolphinInstallation\>\Sys\Profiles\GCPad__ folder, creating any subfolders that do not already exist. (For older Dolphin versions look for __\<YourDolphinInstallation\>\User\Config\Profiles\GCPad__ and place fairbox-slippi-keyboard.ini inside) 
+2.c. If you're using SmashLadder Dolphin Launcher, your Dolphin instances might be in __C:\Users\\\<YourUsername\>\AppData\Roaming\SmashLadder Dolphin Launcher\dolphin_downloads__.
 3. In Dolphin, open up the controller config. Set player 1 to Standard Controller, then hit configure. Under Profile, select fairbox-keyboard and hit load. Verify that Device is set to DInput/0/vJoy. Hit OK.
 3. Place all the ahk files in a folder for fairbox. All ahk files must be on the same folder. (If you already use b0xx-ahk you can choose to reuse your custom layout: hotkeys.ini, by copying it, then pasting it in your fairbox folder).
 4. To play, run fairbox.ahk, or compile it and then run fairbox.exe
