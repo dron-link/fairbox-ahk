@@ -3,12 +3,9 @@
 #SingleInstance force
 #NoEnv
 #include <CvJoyInterface>
-
-allowTrimming := true ; trim to the coordinate circle
-
 #include %A_ScriptDir%
-#include, engineConstants.ahk ; needed for everything else
-#include, hkIniAutogenerator.ahk
+#include, engineConstants.ahk ; needed for most other things
+#include, hkIniAutogenerator.ahk ; create hotkeys.ini
 #include, testingTools.ahk
 #include, targetObjStructure.ahk ; needed for creating baseTarget class
 target := new baseTarget
@@ -126,7 +123,7 @@ DASH_HISTORY_LENGTH := 3 ; MINIMUM 3
   ctrl-f this: Manual_Nerf_Testing
   SET TO 0 TO MAKE THE SCRIPT BEHAVE NORMALLY
  */
-nerfTestMode :=0
+nerfManualTestMode :=0
 
 hotkeys := [ "Analog Up"             ; 1
            , "Analog Down"           ; 2
@@ -325,7 +322,7 @@ uncrouchWasNerfed := false
 
   follow execution instructions below
 */
-Switch nerfTestMode
+Switch nerfManualTestMode
 {
   case 1:  ; pivot by left/right NSOCD while pressing up or down (optional: then press A)
       target.normal.vertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]

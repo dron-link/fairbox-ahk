@@ -1,19 +1,17 @@
 #Requires AutoHotkey v1.1
 
-if !allowTrimming {
-    OutputDebug, % "allowTrimming is FALSE. set true when you finish testing`n"
-}
-
-trimToCircle(aX, aY) { ; the game considers coordinates outside the circle as coordinates on the rim of the circle,
-                       ; preserving the angle. rest of this program isn't suited to handle coordinates out of
-                       ; circle though
+trimToCircle(aX, aY) { 
+    /*
+    the game considers coordinates outside the circle as coordinates on the rim of the circle,
+    (preserving the original angle). rest of this program isn't suited to handle coordinates out of
+    circle though
+    */
     global target
     global ANALOG_STICK_MAX
-    global allowTrimming
     result := [aX, aY]
     if (aX != 0 or aY != 0) {
         squaredRadius := aX**2 + aY**2
-        if (squaredRadius > ANALOG_STICK_MAX**2 and allowTrimming) {
+        if (squaredRadius > ANALOG_STICK_MAX**2) {
             if (aX > 0) {
                 result[1] := Floor(80 * aX / Sqrt(squaredRadius))
             } else { ; if aX < 0
@@ -41,8 +39,11 @@ for context in target {
         Continue
     }
     for keyName, specificCoordinate in target[context] { ; such as target.fireFox, target.airdodge, etc
-        /* if countCoordinatesOutsideUnit(circle) ends as 0, it's likely that the coordinates are in unit circle format 
-        and if many coordinates are outside the unit circle then it's likely that the coordinates are in integer format
+
+        /* 
+        if countCoordinatesOutsideUnit(circle) ends as 0, it's likely that the 
+        coordinates are in unit circle format, and, if many coordinates are outside 
+        the unit circle then it's likely that the coordinates are in integer format
         */ 
         if (specificCoordinate[1] >= 2 or specificCoordinate[2] >= 2) {
             countCoordinatesOutsideUnit += 1
