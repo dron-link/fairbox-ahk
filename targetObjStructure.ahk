@@ -9,7 +9,6 @@ for index, roleKey in keysModCAngleRole {
 }
 
 class baseTarget {
-
     format := {unitCircle : false, centerOffsetBy128 : false}
 
     ; to store coordinates. 

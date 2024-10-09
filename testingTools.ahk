@@ -1,12 +1,63 @@
 #Requires AutoHotkey v1.1
 
-detectNonIntegers(aX, aY) {
-    if aX is not Integer
-        OutputDebug, detectNonIntegers() problem . coordinate x type is not integer`n
-    if aY is not Integer
-        OutputDebug, detectNonIntegers() problem . coordinate y type is not integer`n
+testNerfsByHand(activation) {
+    global
+    if activation {
+        nerfManualTestMode := 1
+        /* Manual_Nerf_Testing
+          0 no test mode
+          1 pivoting, to u-tilt or d-tilt range in less than 8 frames
+          2 pivoting, to up-angled f-tilt in less than 8 frames
+          3 pivoting, to down-angled f-tilt in less than 8 frames
+          4 dashing above or below deadzone (to time out the tap-jump or d-smash execution window by placing the stick in the same active y zone)
+            then pivoting and inputting an up-tilt or d-tilt under 5 frames
+          5 Crouching to u-tilt range in less than 3 frames
+
+          follow execution instructions shown on debug message screen or below
+        */
+        
+        /*
+            says: testNerfsByHand  
+            mode N (cont.)
+        */ 
+
+        OutputDebug, % "testNerfsByHand`nmode: " nerfManualTestMode ". "
+
+        Switch nerfManualTestMode
+        {
+        case 1: ; pivot with left/right NSOCD while pressing up or down (optional: then press A)
+            target.normal.vertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
+            target.normal.quadrant := [79, 1]
+            OutputDebug, % "pivoting, to u-tilt or d-tilt range in less than 8 frames`n"
+            . "INSTRUCTIONS: pivot with left/right NSOCD while pressing up or down (optional: then press A)"
+
+        case 2: ; pivot with modX while pressing up (optional: then press A)
+            target.normal.quadrant := [79, 1]
+            target.normal.vertical := target.normal.origin
+            OutputDebug, % "pivoting, to up-angled f-tilt in less than 8 frames`n"
+            . "INSTRUCTIONS: pivot with modX while pressing up (optional: then press A)"
+        case 3: ; pivot with modX while pressing down (optional: then press A)
+            target.normal.quadrant := [79, 1]
+            target.normal.vertical := target.normal.origin
+            target.normal.quadrantModX := [ANALOG_DEAD_MAX + 7 * ANALOG_STEP, ANALOG_DEAD_MAX + ANALOG_STEP]
+            OutputDebug, % "pivoting, to down-angled f-tilt in less than 8 frames`n"
+            . "INSTRUCTIONS: pivot by modX while pressing down (optional: then press A)"
+        case 4: ; pivot with left/right NSOCD while holding one of the vertical keys (optional: then press A)
+            target.normal.quadrant := [72 + ANALOG_STEP, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
+            target.normal.vertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
+        OutputDebug, % "dashing above or below deadzone (to time out the tap-jump or d-smash execution window by placing`n"
+            . "the stick in the same active y zone) then pivoting and inputting an up-tilt or d-tilt under 5 frames`n"
+            . "INSTRUCTIONS: pivot by left/right NSOCD while holding one of the vertical keys (optional: then press A)"
+        case 5: ; crouch by holding down and tapping modY and then attempt to uptilt using up with no modX
+            target.normal.vertical := [0, -ANALOG_CROUCH]
+            OutputDebug, % "Crouching to u-tilt range in less than 3 frames`n"
+            . "INSTRUCTIONS: crouch by holding down and tapping modY and then attempt to uptilt using up with no modX"
+        }
+        OutputDebug, % "`n"
+    }
     return
-}  
+}
+
 
 testTrimToCircle() {
     global
@@ -18,18 +69,18 @@ testTrimToCircle() {
             testCoordinates := trimToCircle(testX, testY)
             if (testCoordinates[1] != testX or testCoordinates[2] != testY) {
                 if (testCoordinates[1]**2 + testCoordinates[2]**2 > ANALOG_STICK_MAX**2) {
-                    OutputDebug, % "trimToCircle overshoot " 
-                    . testX " " testY "`n" testCoordinates[1] " " testCoordinates[2] "`n"
+                    OutputDebug, % "trimToCircle overshoot "
+                        . testX " " testY "`n" testCoordinates[1] " " testCoordinates[2] "`n"
                 }
                 if (testCoordinates[1]**2 + testCoordinates[2]**2 <= 56**2 + 55**2) {
-                    OutputDebug, % "trimToCircle undershoot " 
-                    . testX " " testY "`n" testCoordinates[1] " " testCoordinates[2] "`n"
+                    OutputDebug, % "trimToCircle undershoot "
+                        . testX " " testY "`n" testCoordinates[1] " " testCoordinates[2] "`n"
                 }
             } else if (testCoordinates[1]**2 + testCoordinates[2]**2 > ANALOG_STICK_MAX**2) {
-                OutputDebug, % "trimToCircle ignored or didn't change coord out of circle " 
-                . testX " " testY "`n" testCoordinates[1] " " testCoordinates[2] "`n"
+                OutputDebug, % "trimToCircle ignored or didn't change coord out of circle "
+                    . testX " " testY "`n" testCoordinates[1] " " testCoordinates[2] "`n"
             }
-            
+
         }
     }
     OutputDebug, % "trimToCircle test concluded"
@@ -37,21 +88,30 @@ testTrimToCircle() {
     return
 }
 
+detectNonIntegers(aX, aY) {
+    if aX is not Integer
+        OutputDebug, detectNonIntegers() problem . coordinate x type is not integer`n
+    if aY is not Integer
+        OutputDebug, detectNonIntegers() problem . coordinate y type is not integer`n
+    return
+}
+
+
 calibrationTest() {
     ; helps checking that the coordinates show up correctly in the game
     global
-  
-    stickResetCoords := convertIntegerCoords(0, 0)
+
+    stickResetCoords := convertIntegerCoords([0, 0])
     myStick.SetAxisByIndex(stickResetCoords[1], 1)
     myStick.SetAxisByIndex(stickResetCoords[2], 2)
     OutputDebug, % "calibrationTest begin`n"
     MsgBox, % "calibrationTest begin?"
     Loop, 50 {
-      myStick.SetAxisByIndex(stickResetCoords[1], 1)
-      myStick.SetAxisByIndex(stickResetCoords[2], 2)
-      Sleep, 15
+        myStick.SetAxisByIndex(stickResetCoords[1], 1)
+        myStick.SetAxisByIndex(stickResetCoords[2], 2)
+        Sleep, 15
     }
-  
+
     /* ; for using the stepper
     startIntended := 0
     endIntended := 10
@@ -72,26 +132,26 @@ calibrationTest() {
     currentIntended := startIntended
     OutputDebug, % "testing current convertIntegerCoords. Please focus the game window by clicking on it"
     Loop, % Abs(endIntended - startIntended) + 1 {
-        convertIntegerCoords(currentIntended, 0)
+        convertIntegerCoords([currentIntended, 0])
         OutputDebug, % currentIntended "`n"
         Sleep, sleepTime
         if (startIntended < endIntended) {
-            currentIntended += 1 
+            currentIntended += 1
         } else if (startIntended > endIntended) {
-            currentIntended -= 1 
+            currentIntended -= 1
         }
     }
     ; */
-    
+
     OutputDebug, % "calibrationTest end`n"
     Sleep, 1000
     myStick.SetAxisByIndex(stickResetCoords[1], 1)
     myStick.SetAxisByIndex(stickResetCoords[2], 2)
     OutputDebug, % "stick reset`n"
     ExitApp
-    
+
     /*
-      findings: 
+      findings:
       FASTER MELEE / SLIPPI
         b0xx-ahk controller config
             ; To get an x coordinate ingame, the vjoy axis must be in the interval [axisMin, axisMax]
@@ -110,7 +170,7 @@ calibrationTest() {
             if x in [64 ... 80]
                 axisMin = 129x - 64
             if x >= 80
-                axis >= 129*(80) - 64 
+                axis >= 129*(80) - 64
             ; To get a y coordinate ingame, the vjoy axis must be in the interval [axisMin, axisMax]
             if y <= -80
                 axis >= -129(-80) - 193
@@ -137,14 +197,13 @@ calibrationTest() {
     */
 
     return
-  }
+}
 
-
-rangeStepper(axisIndex, startStep, endStep, sleepTime) { 
+rangeStepper(axisIndex, startStep, endStep, sleepTime) {
     /*
     steps from a starting coordinate towards an ending coordinate,
-    advancing through the vjoy axis range according to a function that converts game coordinate-->vjoy axis value 
-    */ 
+    advancing through the vjoy axis range according to a function that converts game coordinate-->vjoy axis value
+    */
     global
     OutputDebug, % "rangeStepper`n"
     stepTotal := Abs(endStep - startStep) + 1
@@ -170,7 +229,7 @@ rangeStepper(axisIndex, startStep, endStep, sleepTime) {
 rangeCrawler(axisIndex, startAxis, endAxis, sleepTime) {
     /*
         advances from a axis position (relative to center) to another axis position,
-        stopping in every possible value 
+        stopping in every possible value
     */
     global
     OutputDebug, % "rangeCrawler`n"

@@ -7,11 +7,14 @@
 #include, engineConstants.ahk ; needed for most other things
 #include, hkIniAutogenerator.ahk ; create hotkeys.ini
 #include, testingTools.ahk
-#include, targetObjStructure.ahk ; needed for creating baseTarget class
+#include, targetObjStructure.ahk ; defines baseTarget class
 target := new baseTarget
 #include, targetCoordinateValues.ahk ; you can customize the coordinates here
 #include, targetFormatting.ahk
+
+#include, fairboxGlobalDeclarations.ahk
 SetBatchLines, -1
+testNerfsByHand(false)
 /*
    this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
    i, dron-link, am weaving new features into it, creating 'fairbox'
@@ -115,15 +118,7 @@ Maybe we can improve the script by increasing the polling frequency? solution us
   
 */
 
-ANALOG_HISTORY_LENGTH := 5 ; MINIMUM 1
-SDI_HISTORY_LENGTH := 5 ; MINIMUM 5
-DASH_HISTORY_LENGTH := 3 ; MINIMUM 3
 
-/* 
-  ctrl-f this: Manual_Nerf_Testing
-  SET TO 0 TO MAKE THE SCRIPT BEHAVE NORMALLY
- */
-nerfManualTestMode :=0
 
 hotkeys := [ "Analog Up"             ; 1
            , "Analog Down"           ; 2
@@ -151,7 +146,7 @@ hotkeys := [ "Analog Up"             ; 1
            , "D-pad Right"           ; 24
            , "Debug"]                ; 25
 
-; this method reads c-stick-angle-bindings.ini and assigns coordinates appropiately
+; method reads c-stick-angle-bindings.ini and assigns coordinates appropiately
 target.bindAnglesToCStick()
 
 Menu, Tray, Click, 1
@@ -196,10 +191,11 @@ myStick := vJoyInterface.Devices[1]
 
 
 ; Alert User that script has started
-TrayTip, B0XX, modded Script Started, 3, 0
+TrayTip, fairbox, Script Started, 3, 0
 
 
 ; state variables
+; if true, keyboard key pressed
 buttonUp := false
 buttonDown := false
 buttonLeft := false
@@ -224,122 +220,20 @@ buttonCDown := false
 buttonCLeft := false
 buttonCRight := false
 
-mostRecentVertical := ""  ; this pair will go unused because of neutral SOCD
+mostRecentVertical := ""  ; this pair of variables went unused because of neutral SOCD
 mostRecentHorizontal := ""
 
-mostRecentVerticalC := ""  ; this pair will go unused because of neutral SOCD
+mostRecentVerticalC := ""  ; this pair of variables went unused because of neutral SOCD
 mostRecentHorizontalC := ""
 
-simultaneousHorizontalModifierLockout := false  ; will go unused in the new code because of neutral SOCD
+simultaneousHorizontalModifierLockout := false  ; this variable went unused because of neutral SOCD
 
-currentTimeMS := 0
-nerfLiftFire := false ; if a nerf lift timer fires this will be set true
-upY := false ; if current Y is above deadzone 
-upYTimestamp := -1000
-downY := false
-downYTimestamp := -1000
-pivotForce2FJumpTimestamp := -1000   ; CarVac HayBox timed nerf. Inactive by default.
-pivotForced2FJump := false                ; <--- Search references for this
-uncrouchForced2FJump := false               ; <-- and this if you want to activate it
-uncrouchForce2FJumpTimestamp := -1000
-
-finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to vjoy
-
-; coordinate components simple array keys
-xComp := 1, yComp := 2
-
-; these variables are to be used as value identifiers. not keys
-DIDNT_SCAN := -1
-P_NONE := 0, P_RIGHTLEFT := 1, P_LEFTRIGHT := 2 ; id: no pivot, right to left pivot, or left to right pivot 
-U_NOT := 0 , U_YES := 1 ; id: no uncrouch or yes uncrouched from detector
-NOT_DASH := 0 ; id: when the x coordinate is in neither of the zones that trigger dash
-ZONE_CENTER := 0 ; id: when the x and y coordinate is in no zone that can trigger SDI
-; for bitwise calculations:
-ZONE_DIR := ((1<<4) - 1)  ; 0b0000'1111
-ZONE_U := 1               ; 0b0000'0001
-ZONE_D := 1<<1            ; 0b0000'0010
-ZONE_L := 1<<2
-ZONE_R := 1<<3
-BITS_SDI := ((1<<4) - 1) << 4 ; 0b1111'0000
-BITS_SDI_QUARTERC := 1<<4     ; 0b0001'0000
-BITS_SDI_TAP_CARD := 1<<5     ; 0b0010'0000
-BITS_SDI_TAP_DIAG := 1<<6
-BITS_SDI_TAP_CRDG := 1<<7
-; mapping sdi zone bit population count, to direction type
-POP_CENTER := 0, POP_CARD := 1, POP_DIAG := 2
-; analog history simultaneousFinish bits
-FINAL_DASHZONE := 1, FINAL_SDIZONE := 1<<1, FINAL_CROUCHRANGE := 1<<2
-
-; analog history
-analogHistory := []
-Loop, % ANALOG_HISTORY_LENGTH {
-  analogHistory[A_Index] := {x : 0, y : 0, timestamp : -1000, simultaneousFinish : 0}
-}
-currentIndexA := 1 ; the index for accessing analog history
-
-
-; // for sdi nerfs, we want to record only movement between sdi zones, ignoring movement within zones
-sdiZoneHist := []
-Loop, % SDI_HISTORY_LENGTH {
-  sdiZoneHist[A_Index] := {timestamp : -1000, stale : true, zone : ZONE_CENTER, popcount : 0}
-}
-sdiSimultZone := ZONE_CENTER
-sdiSimultTimestamp := -1000
-
-; // for pivot nerfs, we want to record only movement between dash zones, ignoring movement within zones
-dashZoneHist := []
-Loop, % DASH_HISTORY_LENGTH {
-  dashZoneHist[A_Index] := {timestamp : -1000, stale : true, zone : NOT_DASH}
-}
-dashZone := {unsaved : NOT_DASH}
-dashZoneTimestamp := {unsaved : -1000, simultaneous : -1000}
-pivotDirection := {fromDetector : P_NONE, unsaved : P_NONE, saved : P_NONE} ; pivot values : P_NONE , P_RIGHTLEFT , P_LEFTRIGHT
-pivotTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
-pivotWasNerfed := false
-
-crouchRange := {unsaved : false, saved : false}
-crouchRangeTimestamp := {simultaneous : -1000}
-uncrouchTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
-uncrouched := {fromDetector : false, unsaved : false, saved : false}
-uncrouchWasNerfed := false
 
 ; b0xx constants. ; coordinates get mirrored and rotated appropiately thanks to reflectCoords()
-; MOVED TO targetCoordinateAssignations
+; RELOCATED TO targetCoordinateAssignations
 
 
- /* the banned coordinate list should be near here if we are going to put it in the script 
- */
 
-
-/* Manual_Nerf_Testing
-  0 no test mode
-  1 pivoting, to u-tilt or d-tilt range in less than 8 frames
-  2 pivoting, to up-angled f-tilt in less than 8 frames
-  3 pivoting, to down-angled f-tilt in less than 8 frames
-  4 dashing above or below deadzone (to time out the tap-jump or d-smash execution window by placing the stick in the same active y zone)
-    then pivoting and inputting an up-tilt or d-tilt under 5 frames
-  5 Crouching to u-tilt range in less than 3 frames
-
-  follow execution instructions below
-*/
-Switch nerfManualTestMode
-{
-  case 1:  ; pivot by left/right NSOCD while pressing up or down (optional: then press A)
-      target.normal.vertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
-      target.normal.quadrant := [79, 1]
-  case 2:  ; pivot by modX while pressing up (optional: then press A)
-      target.normal.quadrant := [79, 1]
-      target.normal.vertical := target.normal.origin
-  case 3:  ; pivot by modX while pressing down (optional: then press A)
-      target.normal.quadrant := [79, 1]
-      target.normal.vertical := target.normal.origin
-      target.normal.quadrantModX := [ANALOG_DEAD_MAX + 7 * ANALOG_STEP, ANALOG_DEAD_MAX + ANALOG_STEP]
-  case 4:  ; pivot by left/right NSOCD while holding one of the vertical keys (optional: then press A)
-      target.normal.quadrant := [72 + ANALOG_STEP, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
-      target.normal.vertical := [0, ANALOG_DEAD_MAX + 2 * ANALOG_STEP]
-  case 5:  ; crouch by holding down and tapping modY and then attempt to uptilt using up with no modX
-      target.normal.vertical := [0, -ANALOG_CROUCH]
-}
 
 
 ; Debug info
