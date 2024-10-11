@@ -1,5 +1,7 @@
 #Requires AutoHotkey v1.1
 
+; can i migrate everything that is in here?
+
 ANALOG_HISTORY_LENGTH := 5 ; MINIMUM 1
 SDI_HISTORY_LENGTH := 5 ; MINIMUM 5
 DASH_HISTORY_LENGTH := 3 ; MINIMUM 3
@@ -7,9 +9,10 @@ DASH_HISTORY_LENGTH := 3 ; MINIMUM 3
 ; named values------------------------------------------------------------------------------
 
 DIDNT_SCAN := -1
-P_NONE := 0, P_RIGHTLEFT := 1, P_LEFTRIGHT := 2 ; id: no pivot, right to left pivot, or left to right pivot 
+P_NO := 0, P_RIGHTLEFT := 1, P_LEFTRIGHT := 2 ; id: no pivot, right to left pivot, or left to right pivot 
 U_NO := 0 , U_YES := 1 ; id: no uncrouch or did uncrouch. (uncrouch detector function return)
 NOT_DASH := 0 ; id: when the x coordinate is in neither of the zones that trigger dash
+TALL := 0 ; opposite of crouch or ZONE_D
 ZONE_CENTER := 0 ; id: when the x and y coordinate is in no zone that can trigger SDI
 ; for bitwise calculations:
 ZONE_DIR := ((1<<4) - 1)  ; 0b0000'1111
@@ -38,10 +41,9 @@ upY := false ; if current Y is above deadzone
 upYTimestamp := -1000
 downY := false
 downYTimestamp := -1000
-pivotForce2FJumpTimestamp := -1000   ; CarVac HayBox timed nerf. Inactive by default.
-pivotForced2FJump := false                ; <--- Search references for this
-uncrouchForced2FJump := false               ; <-- and this if you want to activate it
-uncrouchForce2FJumpTimestamp := -1000
+
+pivot2FJump := {force: false, timestamp: -1000} ; CarVac HayBox timed nerf. Inactive by default. Working on it
+uncrouch2FJump := {force: false, timestamp: -1000}
 
 finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to vjoy
 
@@ -57,6 +59,59 @@ Loop, % ANALOG_HISTORY_LENGTH {
 }
 currentIndexA := 1 ; the index for accessing analog history
 
+; for a system that's to be universally applied for this script's technique detections and nerf applications
+class rewriteInputsSupport {
+	fromDetector := ""
+	unsaved := ""
+	saved := ""
+}
+
+; // for pivot nerfs, we want to record only movement between dash zones, ignoring movement within zones
+class dashZoneHistoryEntry {
+  timestamp := 0, stale := true, zone := NOT_DASH
+}
+
+dashZoneHist := []
+Loop, % DASH_HISTORY_LENGTH {
+  dashZoneHist.Push(new dashZoneHistoryEntry)
+}
+dashZone := {unsaved : new dashZoneHistoryEntry, saved : ""} ; saved := dashZoneHist[1]
+oldestUnsavedDashZoneTimestamp := -1000
+
+class pivotInfo {
+	did := false, timestamp := 0
+}
+
+pivot := new rewriteInputsSupport
+for stage in pivot {
+	pivot[stage] := new pivotInfo
+}
+
+nerfedPivotWasCalc := false ; ...static
+nerfedPivotCoords := [0,0] ; ... temp
+lookedForPivot := false ; ...temp
+pivot2FJump := {force: false, timestamp: -1000} ; ...static
+
+class crouchZoneHistoryEntry {
+  timestamp := 0, zone := TALL ; alternative, ZONE_D
+}
+
+crouchZone := {unsaved: new crouchZoneHistoryEntry, saved: new crouchZoneHistoryEntry}
+oldestUnsavedCrouchZoneTimestamp := -1000
+
+class uncrouchInfo {
+  did := false, timestamp := 0
+}
+
+uncrouch := new rewriteInputsSupport
+for stage in uncrouch {
+  uncrouch[stage] := new uncrouchInfo
+}
+
+nerfedUncrouchWasCalc := False
+nerfedUncrouchCoords := [0,0]
+lookedForUncrouch := false
+uncrouch2FJump := {did: false, timestamp: -1000}
 
 ; // for sdi nerfs, we want to record only movement between sdi zones, ignoring movement within zones
 class sdiZoneHistoryEntry {
@@ -69,23 +124,3 @@ Loop, % SDI_HISTORY_LENGTH {
 sdiSimultZone := ZONE_CENTER
 sdiSimultTimestamp := -1000
 
-; // for pivot nerfs, we want to record only movement between dash zones, ignoring movement within zones
-class dashZoneHistoryEntry {
-  timestamp := -1000, stale := true, zone := NOT_DASH
-}
-dashZoneHist := []
-Loop, % DASH_HISTORY_LENGTH {
-  dashZoneHist.Push(new dashZoneHistoryEntry)
-}
-
-dashZone := {unsaved : NOT_DASH}
-dashZoneTimestamp := {unsaved : -1000, simultaneous : -1000}
-pivotDirection := {fromDetector : P_NONE, unsaved : P_NONE, saved : P_NONE} ; pivot values : P_NONE , P_RIGHTLEFT , P_LEFTRIGHT
-pivotTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
-pivotWasNerfed := false
-
-crouchRange := {unsaved : false, saved : false}
-crouchRangeTimestamp := {simultaneous : -1000}
-uncrouchTimestamp := {fromDetector : -1000, unsaved : -1000, saved : -1000}
-uncrouched := {fromDetector : false, unsaved : false, saved : false}
-uncrouchWasNerfed := false

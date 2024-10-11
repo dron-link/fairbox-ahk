@@ -100,7 +100,7 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
 
     preliminary := [aX, aY]
 
-    pivotWasNerfed := true ; true when pivotNerf() runs
+    nerfedPivotWasCalc := true ; true when pivotNerf() runs
     doTrimCoordinate := true
     if (aX != 0 or aY != 0) {
         unityDistanceFactor := 1.1 * (ANALOG_STICK_MAX) / sqrt(aX**2 + aY**2)
@@ -119,9 +119,9 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
 
         ; if upY and the player has not shut off tap jump WITH actions done before completing the pivot (such as upY dashes)
         if (upY and (currentTimeMS - upYTimestamp < TIMELIMIT_TAPSHUTOFF or upYTimestamp >= pivotTimestampIn)
-            and not pivotForced2FJump) {
-            pivotForced2FJump := false ; change to true to activate CarVac HayBox style timed nerf
-            pivotForce2FJumpTimestamp := currentTimeMS
+            and not pivot2FJump.force) {
+            pivot2FJump.force := false ; change to true to activate CarVac HayBox style timed nerf
+            pivot2FJump.timestamp := currentTimeMS
 
             if (Abs(aX) > aY) { ; //Force all upward angles to a minimum of 45deg away from the horizontal
                 ; //to prevent pivot uftilt and ensure tap jump
@@ -145,7 +145,7 @@ pivotNerf(aX, aY, pivotDirectionIn, pivotTimestampIn) {
 
             ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
         } else if (upY and upYTimestamp < pivotTimestampIn
-            and currentTimeMS - pivotTimestampIn < TIMELIMIT_PIVOTTILT_YDASH and not pivotForced2FJump) {
+            and currentTimeMS - pivotTimestampIn < TIMELIMIT_PIVOTTILT_YDASH and not pivot2FJump.force) {
 
             if (pivotDirectionIn == P_RIGHTLEFT) {
                 preliminary[xComp] := - FORCE_FTILT ; apparently CarVac uses the opposite x directions for the ftilt.
@@ -185,13 +185,13 @@ updateDashZoneHistory() {
     /* we need to see if enough time has passed for the input to not be part of a multiple key single input. and that it is different
     from the last entry and so we need a new entry
     */
-    if (currentTimeMS - dashZoneTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS
-        and dashZoneHist[1].zone != dashZone.unsaved) {
+    if (currentTimeMS - oldestUnsavedDashZoneTimestamp >= TIMELIMIT_SIMULTANEOUS
+        and dashZoneHist[1].zone != dashZone.unsaved.zone) {
 
         newDashZoneHistoryEntry := new dashZoneHistoryEntry
-        newDashZoneHistoryEntry.timestamp := dashZoneTimestamp.unsaved
+        newDashZoneHistoryEntry.timestamp := dashZone.unsaved.timestamp
         newDashZoneHistoryEntry.stale := false
-        newDashZoneHistoryEntry.zone := dashZone.unsaved
+        newDashZoneHistoryEntry.zone := dashZone.unsaved.zone
 
         dashZoneHist.Pop(), dashZoneHist.InsertAt(1, newDashZoneHistoryEntry)
     }
@@ -223,11 +223,11 @@ savePivotHistory() {
     makeDashZoneStale()
 
     ; if there's an unsaved direction and the window for simultaneous inputs expired...
-    if (pivotDirection.unsaved != P_NONE and currentTimeMS - dashZoneTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
-        pivotDirection.saved := pivotDirection.unsaved
-        pivotTimestamp.saved := pivotTimestamp.unsaved
+    if (pivot.unsaved.did != P_NONE and currentTimeMS - oldestUnsavedDashZoneTimestamp >= TIMELIMIT_SIMULTANEOUS) {
+        pivot.saved.did := pivot.unsaved.did
+        pivot.saved.timestamp := pivot.unsaved.timestamp
         ; .saved will deal with the nerf from now on - .unsaved set to P_NONE means that an unsaved pivot was already taken care of
-        pivotDirection.unsaved := P_NONE
+        pivot.unsaved.did := P_NONE
     }
 
     return
@@ -236,13 +236,13 @@ savePivotHistory() {
 rememberDashZonesNotSaved(aX) {
     global
     ; if the dashzone that will sent to the game is different from the previous, then we record
-    if (dashZoneOf(aX) != dashZone.unsaved) {
-        dashZone.unsaved := dashZoneOf(aX)
-        dashZoneTimestamp.unsaved := currentTimeMS
+    if (dashZoneOf(aX) != dashZone.unsaved.zone) {
+        dashZone.unsaved.zone := dashZoneOf(aX)
+        dashZone.unsaved.timestamp := currentTimeMS
         ; we need to see if the current input actually represents a fresh new dash zone (either from a lone input or
         ; as the FIRST keystroke of a group of simultaneous keystrokes) in order to assign a timestamp to it
-        if (currentTimeMS - dashZoneTimestamp.simultaneous >= TIMELIMIT_SIMULTANEOUS) {
-            dashZoneTimestamp.simultaneous := currentTimeMS
+        if (currentTimeMS - oldestUnsavedDashZoneTimestamp >= TIMELIMIT_SIMULTANEOUS) {
+            oldestUnsavedDashZoneTimestamp := currentTimeMS
             analogHistory[currentIndexA].simultaneousFinish |= FINAL_DASHZONE
         }
     }

@@ -344,8 +344,8 @@ limitOutputs(rawCoords) {
   limitedOutput := {}
 
   ; a jump that lasts for JUMP_TIME ms (2 frames) that is a way to nerf u-tilt attempts
-  if ((currentTimeMS - pivotForce2FJumpTimestamp < JUMP_TIME and pivotForced2FJump and pivotDirection.unsaved == P_NONE)
-    or (currentTimeMS - uncrouchForce2FJumpTimestamp < JUMP_TIME and uncrouchForced2FJump and !uncrouched.unsaved)) {
+  if ((currentTimeMS - pivot2FJump.timestamp < JUMP_TIME and pivot2FJump.force and pivot.unsaved.did == P_NONE)
+    or (currentTimeMS - uncrouch2FJump.timestamp < JUMP_TIME and uncrouch2FJump.force and !uncrouch.unsaved.did)) {
     limitedOutput.leftStickX := analogHistory[currentIndexA].x ; force output to keep the last coordinate (a jump)
     limitedOutput.leftStickY := analogHistory[currentIndexA].y
 
@@ -361,64 +361,64 @@ limitOutputs(rawCoords) {
     yDeadzoneTrackAndFlag(limitedOutput.leftStickX, limitedOutput.leftStickY)
 
     ; if the dash zone of the player input changes, we need to see if this marks a successful input of a pivot
-    pivotDirection.fromDetector := DIDNT_SCAN
-    pivotWasNerfed := false
-    if (dashZoneOf(limitedOutput.leftStickX) != dashZone.unsaved) {
-      pivotDirection.fromDetector := detectPivot(limitedOutput.leftStickX)
-      if (pivotDirection.fromDetector != P_NONE) {
-        pivotForced2FJump := false
-        pivotTimestamp.fromDetector := currentTimeMS
+    pivot.fromDetector.did := DIDNT_SCAN
+    nerfedPivotWasCalc := false
+    if (dashZoneOf(limitedOutput.leftStickX) != dashZone.unsaved.zone) {
+      pivot.fromDetector.did := detectPivot(limitedOutput.leftStickX)
+      if (pivot.fromDetector.did != P_NONE) {
+        pivot2FJump.force := false
+        pivot.fromDetector.timestamp := currentTimeMS
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
-          , pivotDirection.fromDetector, pivotTimestamp.fromDetector)
+          , pivot.fromDetector.did, pivot.fromDetector.timestamp)
         ; if the player spoiled the successful pivot instantaneously after inputting it...
-      } else if (currentTimeMS - dashZoneTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
-        and dashZoneTimestamp.simultaneous <= pivotTimestamp.fromDetector) {
-        pivotForced2FJump := false
+      } else if (currentTimeMS - oldestUnsavedDashZoneTimestamp < TIMELIMIT_SIMULTANEOUS
+        and oldestUnsavedDashZoneTimestamp <= pivot.fromDetector.timestamp) {
+        pivot2FJump.force := false
       }
     }
     ; if the instantaneous pivot detector didn't alert of a newfound pivot, we check to see if we need to nerf based on previous pivots
-    if (!pivotWasNerfed) {
+    if (!nerfedPivotWasCalc) {
       ; if there's a pivot outputted previously and the player hasn't spoiled it with simultaneous inputs yet
-      if (pivotDirection.unsaved != P_NONE and dashZoneOf(limitedOutput.leftStickX) == dashZone.unsaved) {
+      if (pivot.unsaved.did != P_NONE and dashZoneOf(limitedOutput.leftStickX) == dashZone.unsaved.zone) {
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
-          , pivotDirection.unsaved, pivotTimestamp.unsaved)
+          , pivot.unsaved.did, pivot.unsaved.timestamp)
         ; nerfing the output is considered until TIMELIMIT_PIVOTTILT milliseconds pass
-      } else if (currentTimeMS - pivotTimestamp.saved < TIMELIMIT_PIVOTTILT) {
+      } else if (currentTimeMS - pivot.saved.timestamp < TIMELIMIT_PIVOTTILT) {
         nerfedPivotCoords := pivotNerf(limitedOutput.leftStickX, limitedOutput.leftStickY
-          , pivotDirection.saved, pivotTimestamp.saved)
+          , pivot.saved.did, pivot.saved.timestamp)
       } else {
-        pivotForced2FJump := false
+        pivot2FJump.force := false
       }
     }
-    if pivotWasNerfed {
+    if nerfedPivotWasCalc {
       limitedOutput.leftStickX := nerfedPivotCoords[xComp]
       limitedOutput.leftStickY := nerfedPivotCoords[yComp]
     }
 
     ; roundabout way to determine if we should nerf uncrouching...
-    uncrouched.fromDetector := DIDNT_SCAN
-    uncrouchWasNerfed := false
+    uncrouch.fromDetector.did := DIDNT_SCAN
+    nerfedUncrouchWasCalc := false
     if (crouchRangeOf(limitedOutput.leftStickY) != crouchRange.unsaved) {
-      uncrouched.fromDetector := detectUncrouch(limitedOutput.leftStickY)
-      if (uncrouched.fromDetector == U_YES) {
-        uncrouchForced2FJump := false
-        uncrouchTimestamp.fromDetector := currentTimeMS
+      uncrouch.fromDetector.did := detectUncrouch(limitedOutput.leftStickY)
+      if (uncrouch.fromDetector.did == U_YES) {
+        uncrouch2FJump.force := false
+        uncrouch.fromDetector.timestamp := currentTimeMS
         nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
-      } else if (currentTimeMS - crouchRangeTimestamp.simultaneous < TIMELIMIT_SIMULTANEOUS
-        and crouchRangeTimestamp.simultaneous <= uncrouchTimestamp.fromDetector) { ; and uncrouched.fromDetector == U_NOT
-        uncrouchForced2FJump := false
+      } else if (currentTimeMS - oldestUnsavedCrouchZoneTimestamp < TIMELIMIT_SIMULTANEOUS
+        and oldestUnsavedCrouchZoneTimestamp <= uncrouch.fromDetector.timestamp) { ; and uncrouch.fromDetector.did == U_NOT
+        uncrouch2FJump.force := false
       }
     }
-    if (!uncrouchWasNerfed) {
-      if (uncrouched.unsaved and crouchRangeOf(limitedOutput.leftStickY) == crouchRange.unsaved) {
+    if (!nerfedUncrouchWasCalc) {
+      if (uncrouch.unsaved.did and crouchRangeOf(limitedOutput.leftStickY) == crouchRange.unsaved) {
         nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
-      } else if (currentTimeMS - uncrouchTimestamp.saved < TIMELIMIT_DOWNUP) {
+      } else if (currentTimeMS - uncrouch.saved.timestamp < TIMELIMIT_DOWNUP) {
         nerfedUncrouchCoords := uncrouchNerf(limitedOutput.leftStickX, limitedOutput.leftStickY)
-      } else { ; if !uncrouchWasNerfed
-        uncrouchForced2FJump := false
+      } else { ; if !nerfedUncrouchWasCalc
+        uncrouch2FJump.force := false
       }
     }
-    if uncrouchWasNerfed {
+    if nerfedUncrouchWasCalc {
       limitedOutput.leftStickX := nerfedUncrouchCoords[xComp]
       limitedOutput.leftStickY := nerfedUncrouchCoords[yComp]
     }
@@ -432,28 +432,28 @@ limitOutputs(rawCoords) {
 
     ; if the detected pivot will be passed to the game, record it as "unsaved"
     ; handles the case of nerfing the "neutral" of a pivot into a dash, so it damages the successful pivot input
-    if (pivotDirection.fromDetector == P_RIGHTLEFT or pivotDirection.fromDetector == P_LEFTRIGHT) {
+    if (pivot.fromDetector.did == P_RIGHTLEFT or pivot.fromDetector.did == P_LEFTRIGHT) {
       if (dashZoneOf(limitedOutput.leftStickX) == NOT_DASH) {
-        pivotTimestamp.unsaved := pivotTimestamp.fromDetector
-        pivotDirection.unsaved := pivotDirection.fromDetector
+        pivot.unsaved.timestamp := pivot.fromDetector.timestamp
+        pivot.unsaved.did := pivot.fromDetector.did
       } else if (dashZoneOf(limitedOutput.leftStickX) != NOT_DASH) {
-        pivotDirection.unsaved := P_NONE
+        pivot.unsaved.did := P_NONE
       }
-    } else if (pivotDirection.fromDetector == P_NONE){
-      pivotDirection.unsaved := P_NONE
+    } else if (pivot.fromDetector.did == P_NONE){
+      pivot.unsaved.did := P_NONE
     }
 
     ; if the detected uncrouch will be passed to the game, record it as "unsaved"
     ; handles the case of nerfing the uncrouch input into a crouch, so it damages the successful uncrouch input
-    if (uncrouched.fromDetector == U_YES) {
+    if (uncrouch.fromDetector.did == U_YES) {
       if (not crouchRangeOf(limitedOutput.leftStickY)) {
-        uncrouchTimestamp.unsaved := uncrouchTimestamp.fromDetector
-        uncrouched.unsaved := true
+        uncrouch.unsaved.timestamp := uncrouch.fromDetector.timestamp
+        uncrouch.unsaved.did := true
       } else { ; if crouchRangeOf(limitedOutput.leftStickY)
-        uncrouched.unsaved := false
+        uncrouch.unsaved.did := false
       }
-    } else if (uncrouched.fromDetector == U_NOT) {
-      uncrouched.unsaved := false
+    } else if (uncrouch.fromDetector.did == U_NOT) {
+      uncrouch.unsaved.did := false
     }
 
   } ; end of processing the player input and converting it into legal output
