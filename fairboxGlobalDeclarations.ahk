@@ -2,17 +2,17 @@
 
 ; can i migrate everything that is in here?
 
-ANALOG_HISTORY_LENGTH := 5 ; MINIMUM 1
-SDI_HISTORY_LENGTH := 5 ; MINIMUM 5
-DASH_HISTORY_LENGTH := 3 ; MINIMUM 3
+ANALOG_HISTORY_LENGTH := 3 ; MINIMUM 1
+SDI_HISTORY_LENGTH := 6 ; MINIMUM 5
+DASH_HISTORY_LENGTH := 4 ; MINIMUM 3
 
 ; named values------------------------------------------------------------------------------
 
-DIDNT_SCAN := -1
-P_NO := 0, P_RIGHTLEFT := 1, P_LEFTRIGHT := 2 ; id: no pivot, right to left pivot, or left to right pivot 
-U_NO := 0 , U_YES := 1 ; id: no uncrouch or did uncrouch. (uncrouch detector function return)
+P_RIGHTLEFT := 1
+P_LEFTRIGHT := 2 ; id: no pivot, right to left pivot, or left to right pivot 
+U_YES := 1 ; id: no uncrouch or did uncrouch. (uncrouch detector function return)
 NOT_DASH := 0 ; id: when the x coordinate is in neither of the zones that trigger dash
-TALL := 0 ; opposite of crouch or ZONE_D
+STOOD_UP := 0 ; opposite of crouch or ZONE_D
 ZONE_CENTER := 0 ; id: when the x and y coordinate is in no zone that can trigger SDI
 ; for bitwise calculations:
 ZONE_DIR := ((1<<4) - 1)  ; 0b0000'1111
@@ -35,6 +35,8 @@ xComp := 1, yComp := 2
 
 
 ; to store input info ----------------------------------------------------------------------
+limitOutputsInitialized := false
+
 currentTimeMS := 0
 nerfLiftFire := false ; if a nerf lift timer fires this will be set true
 upY := false ; if current Y is above deadzone 
@@ -42,8 +44,6 @@ upYTimestamp := -1000
 downY := false
 downYTimestamp := -1000
 
-pivot2FJump := {force: false, timestamp: -1000} ; CarVac HayBox timed nerf. Inactive by default. Working on it
-uncrouch2FJump := {force: false, timestamp: -1000}
 
 finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to vjoy
 
@@ -59,59 +59,13 @@ Loop, % ANALOG_HISTORY_LENGTH {
 }
 currentIndexA := 1 ; the index for accessing analog history
 
-; for a system that's to be universally applied for this script's technique detections and nerf applications
-class rewriteInputsSupport {
-	fromDetector := ""
-	unsaved := ""
-	saved := ""
-}
 
 ; // for pivot nerfs, we want to record only movement between dash zones, ignoring movement within zones
-class dashZoneHistoryEntry {
-  timestamp := 0, stale := true, zone := NOT_DASH
-}
 
-dashZoneHist := []
-Loop, % DASH_HISTORY_LENGTH {
-  dashZoneHist.Push(new dashZoneHistoryEntry)
-}
-dashZone := {unsaved : new dashZoneHistoryEntry, saved : ""} ; saved := dashZoneHist[1]
-oldestUnsavedDashZoneTimestamp := -1000
+; CarVac HayBox timed nerf. Inactive by default. Working on it
+; pivot2FJump := {force: false, timestamp: -1000} ; ...static
 
-class pivotInfo {
-	did := false, timestamp := 0
-}
-
-pivot := new rewriteInputsSupport
-for stage in pivot {
-	pivot[stage] := new pivotInfo
-}
-
-nerfedPivotWasCalc := false ; ...static
-nerfedPivotCoords := [0,0] ; ... temp
-lookedForPivot := false ; ...temp
-pivot2FJump := {force: false, timestamp: -1000} ; ...static
-
-class crouchZoneHistoryEntry {
-  timestamp := 0, zone := TALL ; alternative, ZONE_D
-}
-
-crouchZone := {unsaved: new crouchZoneHistoryEntry, saved: new crouchZoneHistoryEntry}
-oldestUnsavedCrouchZoneTimestamp := -1000
-
-class uncrouchInfo {
-  did := false, timestamp := 0
-}
-
-uncrouch := new rewriteInputsSupport
-for stage in uncrouch {
-  uncrouch[stage] := new uncrouchInfo
-}
-
-nerfedUncrouchWasCalc := False
-nerfedUncrouchCoords := [0,0]
-lookedForUncrouch := false
-uncrouch2FJump := {did: false, timestamp: -1000}
+; uncrouch2FJump := {did: false, timestamp: -1000}
 
 ; // for sdi nerfs, we want to record only movement between sdi zones, ignoring movement within zones
 class sdiZoneHistoryEntry {
