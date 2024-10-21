@@ -7,20 +7,20 @@ class crouchZoneHistoryEntry {
     }
 }
 
-class crouchZoneObjectTemplate {
+class baseCrouchZone {
     string := "crouchZone"
-    lastDelivered := new crouchZoneHistoryEntry(0, false)
-    saved := new crouchZoneHistoryEntry(0, false)
-    oldestQueueTimestamp := -1000
+    lastDelivered := new crouchZoneHistoryEntry(false, -1000)
+
+    saved := new crouchZoneHistoryEntry(false, -1000)
 
     zoneOf(aX, aY) {
         global ANALOG_CROUCH
         global ZONE_D
-        global STOOD_UP
+        global ZONE_CENTER
         if (aY <= ANALOG_CROUCH) {
             return ZONE_D
         } else {
-            return STOOD_UP
+            return ZONE_CENTER
         }
     }
 }
@@ -32,71 +32,89 @@ class uncrouchInfo {
     }
 }
 
-class uncrouchObjectTemplate {
+class baseUncrouch {
     string:="uncrouch"
 
-    fromDetector := new uncrouchInfo(false, -1000)
+    unsaved := new uncrouchInfo(false, -1000)
     queued := new uncrouchInfo(false, -1000)
     saved := new uncrouchInfo(false, -1000)
 
-    wasLookedFor := false
-    nerfWasCalc := false
-    nerfedCoords := [0, 0]
+    wasNerfed := false
+    nerfedCoords := ""
 
     jump2F := {force: false, timestamp: -1000}
 
     detect(aX, aY, crouchZone) {
-        global U_YES
-        if (not crouchZone.zoneOf(aX, aY) and crouchZone.saved.zone) {
-            return U_YES
-        } else {
-            return false
-        }
+        return detectUncrouch(aX, aY, crouchZone)
     }
 
-    nerf(aX, aY, bufferStage) {
-        global
-        this.nerfWasCalc := true
-        if (upY and Abs(aX) <= ANALOG_DEAD_MAX) {
-            this.jump2F.force := false ; change to true to activate CarVac HayBox style timed nerf
-            this.jump2F.timestamp := currentTimeMS
-            return [0, ANALOG_STICK_MAX]
-        } else {
-            return [aX, aY]
-        }
-    }
+    generateNerfedCoords(aX, aY, techniqueInfoIn) {
+        global ANALOG_DEAD_MAX
+        global ANALOG_STICK_MAX
+        global TIMELIMIT_DOWNUP
+        global currentTimeMS
+        global upY
 
+        this.nerfedCoords := []
+
+        if (currentTimeMS - techniqueInfoIn.timestamp < TIMELIMIT_DOWNUP and upY and Abs(aX) <= ANALOG_DEAD_MAX) {
+            this.wasNerfed := true
+            this.nerfedCoords := [0, ANALOG_STICK_MAX]
+        }
+        return
+    }
 }
 
+detectUncrouch(aX, aY, crouchZone) {
+    global U_YES
+    if (not crouchZone.zoneOf(aX, aY) and crouchZone.saved.zone) {
+        return U_YES
+    } else {
+        return false
+    }
+}
 
-saveUncrouchHistory(ByRef crouchZone, ByRef uncrouch) {
-    global
+saveUncrouchHistory(ByRef crouchZone, ByRef uncrouch, latestMultipressBeginningTimestamp) {
+    global TIMELIMIT_SIMULTANEOUS
+    global currentTimeMS
 
-    /* we need to see if enough time has passed for the input to not be part of a multiple key single input. and that it is different
+    ; set lingering uncrouch as false
+    if uncrouch.saved.did {
+        uncrouch.saved.did := currentTimeMS - uncrouch.saved.timestamp < 1000 ? uncrouch.saved.did : false 
+    }
+    /*
+    we need to see if enough time has passed for the input to not be part of a multiple keys
+    single input, and that it is different
     from the last entry and so we need a new entry
     */
-    if (currentTimeMS - crouchZone.oldestQueueTimestamp >= TIMELIMIT_SIMULTANEOUS) {
+    if (currentTimeMS - latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS) {
         if (crouchZone.lastDelivered.zone != crouchZone.saved.zone) {
             crouchZone.saved := crouchZone.lastDelivered
         }
-        if uncrouch.queued.did {
-            uncrouch.saved := uncrouch.queued
-            uncrouch.queued := new uncrouchInfo(false, 0)
+        if uncrouch.unsaved.did {
+            uncrouch.saved := new uncrouchInfo(uncrouch.unsaved.did, uncrouch.unsaved.timestamp) 
+            uncrouch.unsaved.did := false, uncrouch.queued.did := false
         }
     }
+
     return
 }
 
-rememberCrouchZonesNotSaved(aY, ByRef crouchZone) {
-    global
+storeUncrouchesBeforeMultipressEnds(output, ByRef crouchZone, ByRef uncrouch) {
+    global currentTimeMS
     
-    if (crouchZone.zoneOf("", aY) != crouchZone.lastDelivered.zone) {
-        crouchZone.lastDelivered := new crouchZoneHistoryEntry(crouchZone.zoneOf("", aY), currentTimeMS)
-        ; i can move this to teh beginning of limitOutputs to save lines and if it makes sense in there
-        if (currentTimeMS - crouchZone.oldestQueueTimestamp >= TIMELIMIT_SIMULTANEOUS) {
-            crouchZone.oldestQueueTimestamp := currentTimeMS
-            analogHistory[1].simultaneousFinish |= FINAL_CROUCHRANGE
-        }
+    ; handles the case of nerfing the uncrouch input into a crouch, so it damages the successful uncrouch input
+    uncrouch.unsaved.did := uncrouch.detect(output.limited.x, output.limited.y, crouchZone)
+    ; stores the first uncrouch detected within the multipress window
+    if (uncrouch.unsaved.did and !uncrouch.queued.did) {
+        ; new object so that modifying unsaved.did doesn't modify queued.did
+        uncrouch.queued.did := new uncrouchInfo(uncrouch.unsaved.did, uncrouch.unsaved.timestamp)
     }
+
+    crouchZoneOfOutput := crouchZone.zoneOf(output.limited.x, output.limited.y)
+    if (crouchZone.lastDelivered.zone != crouchZoneOfOutput) {
+        crouchZone.lastDelivered := new crouchZoneHistoryEntry(crouchZoneOfOutput, currentTimeMS)
+    }
+
     return
 }

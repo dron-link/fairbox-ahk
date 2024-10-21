@@ -8,7 +8,7 @@ for index, roleKey in keysModCAngleRole {
     modCAngleRole["modYC" roleKey] := ""
 }
 
-class baseTarget {
+class targetCoordinateTree {
     format := {unitCircle : false, centerOffsetBy128 : false}
 
     ; to store coordinates. 

@@ -1,5 +1,16 @@
 #Requires AutoHotkey v1.1
 
+; // for sdi nerfs, we want to record only movement between sdi zones, ignoring movement within zones
+class sdiZoneHistoryEntry {
+    timestamp := -1000, stale := true, zone := ZONE_CENTER, popcount := 0
+}
+sdiZoneHist := []
+Loop, % SDI_HISTORY_LENGTH {
+    sdiZoneHist.Push(new sdiZoneHistoryEntry)
+}
+sdiSimultZone := ZONE_CENTER
+sdiSimultTimestamp := -1000
+
 countPopulation(bitsIn) { ; //not a general purpose popcount, this is specifically for sdi zones
     result := 0
     Loop,4 {
@@ -180,7 +191,6 @@ detectBurstSDI(aX, aY) {
 
     return output
 }
-
 
 updateSDIZoneHistory() {
     global
