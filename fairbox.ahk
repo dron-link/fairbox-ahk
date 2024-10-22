@@ -17,6 +17,7 @@ target := new targetCoordinateTree
 #include, nerfUncrouch.ahk
 #include, nerfSDI.ahk
 #include, nerfBasedOnHistory.ahk
+#include, trackDeadzoneExits.ahk
 
 testNerfsByHand(False)
 
@@ -63,10 +64,8 @@ rough change list and to-do
  - implemented 1.0 cardinal fuzzing (y fuzzing). UCF and v1.03 fixes are compatible with this nerf
  - made a function that deals the task of getting the nerfed coordinates for timing based nerfs. "nerfBasedOnHistory"
 
-    yActive.lastDelivered.timestamp
-    yActive.lastDelivered := new yActiveHistoryEntry(yActive.zoneOf(output.limited.y), currentTimeMS)
-    yActive.saved.zone
-    yActive.saved.timestamp
+ - TODO remake queue timestamps into a sparsely populated array of timestamps of first encounters of .did within
+    multipress
  - TODO make certain global variables into static locals
  - TODO add cx and cy entries to the output history
  - TODO explore writing a function nerfConflictManager() to deal with pivot vs. sdi, and uncrouch vs. sdi. prioritize player input
@@ -269,30 +268,6 @@ reverseNeutralBNerf(aX, aY) {
     return result
 }
 
-yDeadzoneTrackAndFlag(aX, aY, outputHistory) {
-    global
-
-    if (aY > ANALOG_DEAD_MAX) {
-        if (outputHistory[1].y <= ANALOG_DEAD_MAX) { ; if the entry before current does not go above y deadzone
-            upY := true
-            upYTimestamp := currentTimeMS
-        }
-    } else {
-        upY := false
-    }
-
-    if (aY < ANALOG_DEAD_MIN) {
-        if (outputHistory[1].y >= ANALOG_DEAD_MIN) {
-            downY := true
-            downYTimestamp := currentTimeMS
-        }
-    } else {
-        downY := false
-    }
-
-    return
-}
-
 getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {
     /*
         if you input [+/- 80, 0], that value may be passed to the game
@@ -320,16 +295,11 @@ getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {
 }
 
 limitOutputs(rawCoords) {
-    global TIMELIMIT_SIMULTANEOUS
-    global TIMELIMIT_PIVOTTILT
-    global TIMELIMIT_DOWNUP
-    global JUMP_TIME
-    global ZONE_CENTER
-    global xComp
-    global yComp
-    global currentTimeMS
-    global sdiZoneHist
+    global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
+    global xComp, global yComp, global currentTimeMS, global sdiZoneHist
+    
     static output := new outputBase
+    static deadzoneExit := new analogDeadzoneExitBase
     static dashZone := new baseDashZone
     static pivot := new basePivot
     static crouchZone := new baseCrouchZone
@@ -337,28 +307,27 @@ limitOutputs(rawCoords) {
 
     currentTimeMS := A_TickCount
 
-    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS, false, false, 0, 0, false, false)
+    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS, false, false
+        , 0, 0, false, false)
     
-    ; true if this and following inputs can't be considered as part of the previous multipress
-    ;                                                                                       and prevent repeated coderuns
-    if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS and !output.hist[1].multipress.ended) {
+    ; true if current input and those that follow can't be considered as part of the previous multipress, doesnt repeat.
+    if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
+        and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
     }
 
     saveUncrouchHistory(crouchZone, uncrouch, output.latestMultipressBeginningTimestamp)
     savePivotHistory(dashZone, pivot, output.latestMultipressBeginningTimestamp)
-    
+    saveDeadzoneExitHistory(deadzoneExit, output.latestMultipressBeginningTimestamp)
+
     ; process the player input and converts it into legal output
     output.limited.x := rawCoords[xComp], output.limited.y := rawCoords[yComp]
     nerfedCoords := reverseNeutralBNerf(output.limited.x, output.limited.y)
     output.limited.x := nerfedCoords[xComp], output.limited.y := nerfedCoords[yComp]
 
-    ; updates upY, downY, upYTimestamp, downYTimestamp
-    yDeadzoneTrackAndFlag(output.limited.x, output.limited.y, output.hist)
-
     ; gets the nerfed coordinates
-    nerfBasedOnHistory(output.limited.x, output.limited.y, pivot, dashZone, pivotInfo)
-    nerfBasedOnHistory(output.limited.x, output.limited.y, uncrouch, crouchZone, uncrouchInfo)
+    nerfBasedOnHistory(output.limited.x, output.limited.y, pivot, dashZone, deadzoneExit, pivotInfo)
+    nerfBasedOnHistory(output.limited.x, output.limited.y, uncrouch, crouchZone, deadzoneExit, uncrouchInfo)
     if pivot.wasNerfed { ;
         output.limited.x := pivot.nerfedCoords[xComp]
         output.limited.y := pivot.nerfedCoords[yComp]
@@ -373,6 +342,17 @@ limitOutputs(rawCoords) {
 
     storeUncrouchesBeforeMultipressEnds(output, crouchZone, uncrouch)
     storePivotsBeforeMultipressEnds(output, dashZone, pivot)
+
+    deadzoneExit.up.unsaved := getCurrentDeadzoneExitInfo(output.limited.y, deadzoneExit.up)
+    ; queue can only be entered once per multipress and can't be entered if there's already a .saved True
+    if (deadzoneExit.up.unsaved.did and !deadzoneExit.up.queued.did and !deadzoneExit.up.saved.did) {
+        deadzoneExit.up.queued := deadzoneExit.up.unsaved
+    }
+    deadzoneExit.down.unsaved := getCurrentDeadzoneExitInfo(output.limited.y, deadzoneExit.down)
+    ; queue can only be entered once per multipress and can't be entered if there's already a .saved True
+    if (deadzoneExit.down.unsaved.did and !deadzoneExit.down.queued.did and !deadzoneExit.down.saved.did) {
+        deadzoneExit.down.queued := deadzoneExit.down.unsaved
+    }
 
     ; memorizes realtime leftstick coordinates passed to the game
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {

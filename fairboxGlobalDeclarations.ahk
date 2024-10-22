@@ -39,10 +39,6 @@ limitOutputsInitialized := false
 
 currentTimeMS := 0
 nerfLiftFire := false ; if a nerf lift timer fires this will be set true
-upY := false ; if current Y is above deadzone
-upYTimestamp := -1000
-downY := false
-downYTimestamp := -1000
 
 finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to vjoy
 
@@ -71,4 +67,33 @@ class outputBase {
             , false, true, 0, 0, false, false))
         }
     }
+}
+
+class deadzoneExitInfo {
+    __New(did, timestamp) {
+        this.did := did
+        this.timestamp := timestamp
+    }
+}
+class analogDeadzoneExitBase {
+
+    class up {
+        unsaved := new deadzoneExitInfo(false, -1000)
+        queued := new deadzoneExitInfo(false, -1000)
+        saved := new deadzoneExitInfo(false, -1000)
+        is(aY) {
+            global ANALOG_DEAD_MAX
+            return (aY > ANALOG_DEAD_MAX)
+        }
+    }
+    
+    class down {
+        unsaved := new deadzoneExitInfo(false, -1000)
+        queued := new deadzoneExitInfo(false, -1000)
+        saved := new deadzoneExitInfo(false, -1000)
+        is(aY) {
+            global ANALOG_DEAD_MIN
+            return (aY < ANALOG_DEAD_MIN)
+        }
+    }    
 }

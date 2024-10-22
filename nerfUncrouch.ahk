@@ -48,16 +48,17 @@ class baseUncrouch {
         return detectUncrouch(aX, aY, crouchZone)
     }
 
-    generateNerfedCoords(aX, aY, techniqueInfoIn) {
+    generateNerfedCoords(aX, aY, techniqueInfoIn, deadzoneInfo) {
         global ANALOG_DEAD_MAX
         global ANALOG_STICK_MAX
         global TIMELIMIT_DOWNUP
         global currentTimeMS
-        global upY
+        
+        upY := getCurrentDeadzoneExitInfo(aY, deadzoneInfo.up)
 
         this.nerfedCoords := []
 
-        if (currentTimeMS - techniqueInfoIn.timestamp < TIMELIMIT_DOWNUP and upY and Abs(aX) <= ANALOG_DEAD_MAX) {
+        if (currentTimeMS - techniqueInfoIn.timestamp < TIMELIMIT_DOWNUP and upY.did and Abs(aX) <= ANALOG_DEAD_MAX) {
             this.wasNerfed := true
             this.nerfedCoords := [0, ANALOG_STICK_MAX]
         }
