@@ -1,7 +1,5 @@
 #Requires AutoHotkey v1.1
 
-; can i migrate everything that is in here?
-
 SDI_HISTORY_LENGTH := 6 ; MINIMUM 5
 
 ; named values------------------------------------------------------------------------------
@@ -44,13 +42,11 @@ finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to v
 
 ; analog history
 class outputHistoryEntry {
-    __New(x, y, timestamp, multipressBegan, multipressEnded, cx, cy, a, b) {
+    __New(x, y, timestamp, multipressBegan, multipressEnded, cx, cy) {
         ;         1            2                    3
         this.x := x, this.y := y, this.timestamp := timestamp
-        ;                           4                        5
-        this.multipress := {began : multipressBegan, ended : multipressEnded}
-        ;          6              7             8            9
-        this.cx := cx, this.cy := cy, this.a := a, this.b := b
+        ;                           4                        5                            6              7
+        this.multipress := {began : multipressBegan, ended : multipressEnded}, this.cx := cx, this.cy := cy
     }
 }
 
@@ -64,36 +60,14 @@ class outputBase {
         this.hist := []
         Loop, % this.historyLength {
             this.hist.Push(new outputHistoryEntry(0, 0, -1000
-            , false, true, 0, 0, false, false))
+            , false, true, 0, 0))
         }
     }
 }
 
-class deadzoneExitInfo {
+class techniqueClassThatHasTimingLockouts {
     __New(did, timestamp) {
         this.did := did
         this.timestamp := timestamp
     }
-}
-class analogDeadzoneExitBase {
-
-    class up {
-        unsaved := new deadzoneExitInfo(false, -1000)
-        queued := new deadzoneExitInfo(false, -1000)
-        saved := new deadzoneExitInfo(false, -1000)
-        is(aY) {
-            global ANALOG_DEAD_MAX
-            return (aY > ANALOG_DEAD_MAX)
-        }
-    }
-    
-    class down {
-        unsaved := new deadzoneExitInfo(false, -1000)
-        queued := new deadzoneExitInfo(false, -1000)
-        saved := new deadzoneExitInfo(false, -1000)
-        is(aY) {
-            global ANALOG_DEAD_MIN
-            return (aY < ANALOG_DEAD_MIN)
-        }
-    }    
 }

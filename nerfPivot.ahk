@@ -44,11 +44,8 @@ class baseDashZone {
     }
 }
 
-class pivotInfo {
-    __New(did, timestamp) {
-        this.did := did
-        this.timestamp := timestamp
-    }
+class pivotInfo extends techniqueClassThatHasTimingLockouts 
+{
 }
 
 class basePivot {
@@ -67,7 +64,7 @@ class basePivot {
         return detectPivot(aX, aY, dashZone)   
     }
 
-    generateNerfedCoords(aX, aY, techniqueInfoIn, deadzoneInfo) {
+    generateNerfedCoords(aX, aY, pivotInstance, outOfDeadzoneObj) {
         global ANALOG_STICK_MAX
         global FORCE_FTILT
         global ZONE_CENTER
@@ -80,18 +77,18 @@ class basePivot {
         global yComp
         global currentTimeMS
 
-        upY := getCurrentDeadzoneExitInfo(aY, deadzoneInfo.up)
-        downY := getCurrentDeadzoneExitInfo(aY, deadzoneInfo.down)
+        upY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.up)
+        downY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.down)
         this.nerfedCoords := ""
         doTrimCoordinate := false
 
-        if ((aX != 0 or aY != 0) and currentTimeMS - techniqueInfoIn.timestamp < TIMELIMIT_PIVOTTILT) {
+        if ((aX != 0 or aY != 0) and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
             maxDistanceFactor := 1.1 * ANALOG_STICK_MAX / sqrt(aX**2 + aY**2) ; 1.1 ensures shoot beyond circle
 
-            /*  if upY.did and the player has not shut off tap jump WITH actions done before completing 
+            /*  if upY.is and the player has not shut off tap jump WITH actions done before completing 
                 the pivot (such as upY dashes and downY dashes)
             */
-            if (upY.did and (currentTimeMS - upY.timestamp < TIMELIMIT_TAPSHUTOFF or upY.timestamp >= techniqueInfoIn.timestamp)) {
+            if (upY.is and (currentTimeMS - upY.timestamp < TIMELIMIT_TAPSHUTOFF or upY.timestamp >= pivotInstance.timestamp)) {
                 this.wasNerfed := true
                 if (Abs(aX) > aY) {
                     /*  //Force all upward angles to a minimum of 45deg away from the horizontal
@@ -103,13 +100,13 @@ class basePivot {
                 }                
             } 
             ; if the player hasn't shut off tap downsmash
-            else if (downY.did and currentTimeMS - downY.timestamp < TIMELIMIT_TAPSHUTOFF) {
+            else if (downY.is and currentTimeMS - downY.timestamp < TIMELIMIT_TAPSHUTOFF) {
                 this.wasNerfed := true
                 this.nerfedCoords := trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
             }
             ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
-            else if (upY.did and upY.timestamp < techniqueInfoIn.timestamp
-                and currentTimeMS - techniqueInfoIn.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
+            else if (upY.is and upY.timestamp < pivotInstance.timestamp
+                and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
                 this.wasNerfed := true
                 /*  if P_RIGHTLEFT then negative X
                     if P_LEFTRIGHT then positive X
@@ -119,8 +116,8 @@ class basePivot {
                 this.nerfedCoords := [P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , FORCE_FTILT]
             } 
             ; if the player shut off tap downsmash, by pivoting with downY dashes
-            else if (downY.did and downY.timestamp < techniqueInfoIn.timestamp
-                and currentTimeMS - techniqueInfoIn.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
+            else if (downY.is and downY.timestamp < pivotInstance.timestamp
+                and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
                 this.wasNerfed := true
                 this.nerfedCoords := [P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , -FORCE_FTILT]
             }

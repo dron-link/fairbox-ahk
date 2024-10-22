@@ -25,11 +25,8 @@ class baseCrouchZone {
     }
 }
 
-class uncrouchInfo {
-    __New(did, timestamp) {
-        this.did := did
-        this.timestamp := timestamp
-    }
+class uncrouchInfo extends techniqueClassThatHasTimingLockouts
+{
 }
 
 class baseUncrouch {
@@ -48,17 +45,17 @@ class baseUncrouch {
         return detectUncrouch(aX, aY, crouchZone)
     }
 
-    generateNerfedCoords(aX, aY, techniqueInfoIn, deadzoneInfo) {
+    generateNerfedCoords(aX, aY, uncrouchInstance, outOfDeadzoneObj) {
         global ANALOG_DEAD_MAX
         global ANALOG_STICK_MAX
         global TIMELIMIT_DOWNUP
         global currentTimeMS
         
-        upY := getCurrentDeadzoneExitInfo(aY, deadzoneInfo.up)
+        upY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.up)
 
         this.nerfedCoords := []
 
-        if (currentTimeMS - techniqueInfoIn.timestamp < TIMELIMIT_DOWNUP and upY.did and Abs(aX) <= ANALOG_DEAD_MAX) {
+        if (currentTimeMS - uncrouchInstance.timestamp < TIMELIMIT_DOWNUP and upY.is and Abs(aX) <= ANALOG_DEAD_MAX) {
             this.wasNerfed := true
             this.nerfedCoords := [0, ANALOG_STICK_MAX]
         }

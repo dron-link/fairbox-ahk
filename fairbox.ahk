@@ -13,8 +13,8 @@ target := new targetCoordinateTree
 #include, targetCoordinateValues.ahk ; you can customize the coordinates here
 #include, targetFormatting.ahk
 #include, fairboxGlobalDeclarations.ahk
-#include, nerfPivot.ahk
 #include, nerfUncrouch.ahk
+#include, nerfPivot.ahk
 #include, nerfSDI.ahk
 #include, nerfBasedOnHistory.ahk
 #include, trackDeadzoneExits.ahk
@@ -299,26 +299,27 @@ limitOutputs(rawCoords) {
     global xComp, global yComp, global currentTimeMS, global sdiZoneHist
     
     static output := new outputBase
-    static deadzoneExit := new analogDeadzoneExitBase
+    ; objects that store the relevant info of previous areas the control stick was inside of
+    static outOfDeadzone := new leftstickOutOfDeadzoneBase
     static dashZone := new baseDashZone
-    static pivot := new basePivot
     static crouchZone := new baseCrouchZone
+    ; objects that store the previous techniques with timing lockouts
+    static pivot := new basePivot
     static uncrouch := new baseUncrouch
 
     currentTimeMS := A_TickCount
 
-    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS, false, false
-        , 0, 0, false, false)
+    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS, false, false, 0, 0)
     
-    ; true if current input and those that follow can't be considered as part of the previous multipress, doesnt repeat.
+    ; true if current input and those that follow can't be considered as part of the previous multipress; doesn't repeat.
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
         and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
     }
 
+    saveOutOfDeadzoneHistory(outOfDeadzone, output.latestMultipressBeginningTimestamp)
     saveUncrouchHistory(crouchZone, uncrouch, output.latestMultipressBeginningTimestamp)
     savePivotHistory(dashZone, pivot, output.latestMultipressBeginningTimestamp)
-    saveDeadzoneExitHistory(deadzoneExit, output.latestMultipressBeginningTimestamp)
 
     ; process the player input and converts it into legal output
     output.limited.x := rawCoords[xComp], output.limited.y := rawCoords[yComp]
@@ -326,8 +327,8 @@ limitOutputs(rawCoords) {
     output.limited.x := nerfedCoords[xComp], output.limited.y := nerfedCoords[yComp]
 
     ; gets the nerfed coordinates
-    nerfBasedOnHistory(output.limited.x, output.limited.y, pivot, dashZone, deadzoneExit, pivotInfo)
-    nerfBasedOnHistory(output.limited.x, output.limited.y, uncrouch, crouchZone, deadzoneExit, uncrouchInfo)
+    nerfBasedOnHistory(output.limited.x, output.limited.y, pivot, dashZone, outOfDeadzone, pivotInfo)
+    nerfBasedOnHistory(output.limited.x, output.limited.y, uncrouch, crouchZone, outOfDeadzone, uncrouchInfo)
     if pivot.wasNerfed { ;
         output.limited.x := pivot.nerfedCoords[xComp]
         output.limited.y := pivot.nerfedCoords[yComp]
@@ -343,15 +344,15 @@ limitOutputs(rawCoords) {
     storeUncrouchesBeforeMultipressEnds(output, crouchZone, uncrouch)
     storePivotsBeforeMultipressEnds(output, dashZone, pivot)
 
-    deadzoneExit.up.unsaved := getCurrentDeadzoneExitInfo(output.limited.y, deadzoneExit.up)
+    outOfDeadzone.up.unsaved := getCurrentOutOfDeadzoneInfo(output.limited.y, outOfDeadzone.up)
     ; queue can only be entered once per multipress and can't be entered if there's already a .saved True
-    if (deadzoneExit.up.unsaved.did and !deadzoneExit.up.queued.did and !deadzoneExit.up.saved.did) {
-        deadzoneExit.up.queued := deadzoneExit.up.unsaved
+    if (outOfDeadzone.up.unsaved.is and !outOfDeadzone.up.queued.is and !outOfDeadzone.up.saved.is) {
+        outOfDeadzone.up.queued := outOfDeadzone.up.unsaved
     }
-    deadzoneExit.down.unsaved := getCurrentDeadzoneExitInfo(output.limited.y, deadzoneExit.down)
+    outOfDeadzone.down.unsaved := getCurrentOutOfDeadzoneInfo(output.limited.y, outOfDeadzone.down)
     ; queue can only be entered once per multipress and can't be entered if there's already a .saved True
-    if (deadzoneExit.down.unsaved.did and !deadzoneExit.down.queued.did and !deadzoneExit.down.saved.did) {
-        deadzoneExit.down.queued := deadzoneExit.down.unsaved
+    if (outOfDeadzone.down.unsaved.is and !outOfDeadzone.down.queued.is and !outOfDeadzone.down.saved.is) {
+        outOfDeadzone.down.queued := outOfDeadzone.down.unsaved
     }
 
     ; memorizes realtime leftstick coordinates passed to the game
