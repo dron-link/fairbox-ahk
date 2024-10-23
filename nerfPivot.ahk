@@ -13,7 +13,8 @@ class baseDashZone {
     static historyLength := 5 ; MINIMUM 3
     string := "dashZone"
     lastDelivered := new dashZoneHistoryEntry(false, -1000, true)
-    
+    addedToQueue := {}
+    queueTimestamp := {}
     saved[]
     {
         get {
@@ -29,11 +30,7 @@ class baseDashZone {
     }
 
     zoneOf(aX, aY) {
-        global ANALOG_DASH_LEFT
-        global ANALOG_DASH_RIGHT
-        global ZONE_CENTER
-        global ZONE_L
-        global ZONE_R
+        global ANALOG_DASH_LEFT, global ANALOG_DASH_RIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
         if (aX <= ANALOG_DASH_LEFT) {
             return ZONE_L
         } else if (aX >= ANALOG_DASH_RIGHT) {
@@ -44,8 +41,7 @@ class baseDashZone {
     }
 }
 
-class pivotInfo extends techniqueClassThatHasTimingLockouts 
-{
+class pivotInfo extends techniqueClassThatHasTimingLockouts {
 }
 
 class basePivot {
@@ -65,17 +61,10 @@ class basePivot {
     }
 
     generateNerfedCoords(aX, aY, pivotInstance, outOfDeadzoneObj) {
-        global ANALOG_STICK_MAX
-        global FORCE_FTILT
-        global ZONE_CENTER
-        global ZONE_L
-        global ZONE_R
-        global TIMELIMIT_TAPSHUTOFF
-        global TIMELIMIT_PIVOTTILT
-        global TIMELIMIT_PIVOTTILT_YDASH
-        global xComp
-        global yComp
-        global currentTimeMS
+        global ANALOG_STICK_MAX, global FORCE_FTILT, global ZONE_CENTER, global ZONE_L, global ZONE_R
+        global TIMELIMIT_TAPSHUTOFF, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
+        global P_RIGHTLEFT, global P_LEFTRIGHT
+        global xComp, global yComp, global currentTimeMS
 
         upY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.up)
         downY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.down)
@@ -94,7 +83,7 @@ class basePivot {
                     /*  //Force all upward angles to a minimum of 45deg away from the horizontal
                         //to prevent pivot uftilt and ensure tap jump
                     */
-                    this.nerfedCoords := trimToCircle(aX > 0 ? 90 : -90, 90) ; either 90, 90 or -90, 90. 90 = 127 cos 45deg
+                    this.nerfedCoords := trimToCircle(aX > 0 ? 90 : -90, 90) ; params [90, 90] or [-90, 90]. is radius=127
                 } else {
                     this.nerfedCoords := trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
                 }                
@@ -113,13 +102,13 @@ class basePivot {
                     apparently CarVac uses the opposite x directions for the ftilt.
                     what does the proposal team mean when saying pressing A too early as a failure state?
                 */
-                this.nerfedCoords := [P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , FORCE_FTILT]
+                this.nerfedCoords := [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, FORCE_FTILT]
             } 
             ; if the player shut off tap downsmash, by pivoting with downY dashes
             else if (downY.is and downY.timestamp < pivotInstance.timestamp
                 and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
                 this.wasNerfed := true
-                this.nerfedCoords := [P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , -FORCE_FTILT]
+                this.nerfedCoords := [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , -FORCE_FTILT]
             }
         }
         return
@@ -127,17 +116,11 @@ class basePivot {
 }
 
 detectPivot(aX, aY, dashZone) {
-    global P_RIGHTLEFT
-    global P_LEFTRIGHT
-    global ZONE_CENTER
-    global ZONE_L
-    global ZONE_R
-    global TIMELIMIT_HALFFRAME
-    global TIMELIMIT_FRAME
-    global currentTimeMS
+    global P_RIGHTLEFT, global P_LEFTRIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
+    global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME, global currentTimeMS
 
     result := False
-    pivotDebug := false ; if you want to enable detectPivot() testing, set this true
+    pivotDebug := false ; if you want to test detectPivot() live, set this true
     pivotDiscarded := -1 ; for testing. -1 to avoid all switch-cases
     /*  ignoring timing, has the player inputted the correct sequence?
         empty pivot inputs:
@@ -195,6 +178,7 @@ detectPivot(aX, aY, dashZone) {
 }
 
 pivotLiveDebugMessages(result, pivotDiscarded) {
+    global P_RIGHTLEFT, global P_LEFTRIGHT
     Switch pivotDiscarded 
     {
     Case false:
@@ -212,9 +196,7 @@ pivotLiveDebugMessages(result, pivotDiscarded) {
 }
 
 savePivotHistory(ByRef dashZone, ByRef pivot, latestMultipressBeginningTimestamp) {
-    global TIMELIMIT_SIMULTANEOUS
-    global TIMESTALE_PIVOT_INPUTSEQUENCE
-    global currentTimeMS
+    global TIMELIMIT_SIMULTANEOUS, global TIMESTALE_PIVOT_INPUTSEQUENCE, global currentTimeMS
 
     ; set lingering pivot as false
     if pivot.saved.did {

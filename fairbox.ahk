@@ -303,7 +303,7 @@ limitOutputs(rawCoords) {
     static outOfDeadzone := new leftstickOutOfDeadzoneBase
     static dashZone := new baseDashZone
     static crouchZone := new baseCrouchZone
-    ; objects that store the previous techniques with timing lockouts
+    ; objects that store the previously executed techniques that activate timing lockouts
     static pivot := new basePivot
     static uncrouch := new baseUncrouch
 
@@ -315,9 +315,9 @@ limitOutputs(rawCoords) {
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
         and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
+        saveOutOfDeadzoneHistory(outOfDeadzone)
     }
 
-    saveOutOfDeadzoneHistory(outOfDeadzone, output.latestMultipressBeginningTimestamp)
     saveUncrouchHistory(crouchZone, uncrouch, output.latestMultipressBeginningTimestamp)
     savePivotHistory(dashZone, pivot, output.latestMultipressBeginningTimestamp)
 
@@ -345,22 +345,14 @@ limitOutputs(rawCoords) {
     storePivotsBeforeMultipressEnds(output, dashZone, pivot)
 
     outOfDeadzone.up.unsaved := getCurrentOutOfDeadzoneInfo(output.limited.y, outOfDeadzone.up)
-    ; queue can only be entered once per multipress and can't be entered if there's already a .saved True
-    if (outOfDeadzone.up.unsaved.is and !outOfDeadzone.up.queued.is and !outOfDeadzone.up.saved.is) {
-        outOfDeadzone.up.queued := outOfDeadzone.up.unsaved
-    }
     outOfDeadzone.down.unsaved := getCurrentOutOfDeadzoneInfo(output.limited.y, outOfDeadzone.down)
-    ; queue can only be entered once per multipress and can't be entered if there's already a .saved True
-    if (outOfDeadzone.down.unsaved.is and !outOfDeadzone.down.queued.is and !outOfDeadzone.down.saved.is) {
-        outOfDeadzone.down.queued := outOfDeadzone.down.unsaved
-    }
 
     ; memorizes realtime leftstick coordinates passed to the game
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
         if output.hist[1].multipress.ended {
             output.limited.multipress.began := true
-            output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obvious currentTimeMS
+            output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obviously, currentTimeMS
         }
         output.hist.Pop(), output.hist.InsertAt(1, output.limited)
     }

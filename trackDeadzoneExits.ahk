@@ -9,9 +9,10 @@ class outOfDeadzoneInfo {
 
 class leftstickOutOfDeadzoneBase {
 
-    class up {
+    class upBase {
         unsaved := new outOfDeadzoneInfo(false, -1000)
-        queued := new outOfDeadzoneInfo(false, -1000)
+        addedToQueue := {}
+        queueTimestamp := {}
         saved := new outOfDeadzoneInfo(false, -1000)
         is(aY) {
             global ANALOG_DEAD_MAX
@@ -19,44 +20,50 @@ class leftstickOutOfDeadzoneBase {
         }
     }
     
-    class down {
+    class downBase {
         unsaved := new outOfDeadzoneInfo(false, -1000)
-        queued := new outOfDeadzoneInfo(false, -1000)
+        addedToQueue := {}
+        queueTimestamp := {}
         saved := new outOfDeadzoneInfo(false, -1000)
         is(aY) {
             global ANALOG_DEAD_MIN
             return (aY < ANALOG_DEAD_MIN)
         }
     }    
+
+    __New() {
+        this.up := new this.upBase
+        this.down := new this.downBase
+    }
 }
 
-saveOutOfDeadzoneHistory(ByRef outOfDeadzone, latestMultipressBeginningTimestamp) {
-    global TIMELIMIT_SIMULTANEOUS
-    global currentTimeMS
+saveOutOfDeadzoneHistory(ByRef outOfDeadzone) {
 
-    if (currentTimeMS - latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS) {
-        ; new object so we can't modify it accidentally by manipulating up.unsaved and up.queued
-        outOfDeadzone.up.saved := new outOfDeadzoneInfo(outOfDeadzone.up.unsaved.is, outOfDeadzone.up.unsaved.timestamp)
-        ; clean queue
-        outOfDeadzone.up.queued.is := false
+    outOfDeadzone.up.saved := outOfDeadzone.up.unsaved
+    ; empty memory of queued deadzone changes
+    outOfDeadzone.up.addedToQueue := {}
+    outOfDeadzone.up.queueTimestamp := {}
 
-        ; new object so we can't modify it accidentally by manipulating down.unsaved and down.queued
-        outOfDeadzone.down.saved := new outOfDeadzoneInfo(outOfDeadzone.down.unsaved.is, outOfDeadzone.down.unsaved.timestamp)
-        ; clean queue
-        outOfDeadzone.down.queued.is := false
-    }
+    outOfDeadzone.down.saved := outOfDeadzone.down.unsaved
+    outOfDeadzone.down.addedToQueue := {}
+    outOfDeadzone.down.queueTimestamp := {}
 
     return
 }
 
-getCurrentOutOfDeadzoneInfo(analogAxisValue, deadzoneExitDirection) {
+getCurrentOutOfDeadzoneInfo(analogAxisValue, outOfDeadzoneDirection) {
     global currentTimeMS
 
-    if deadzoneExitDirection.saved.is {
-        return new outOfDeadzoneInfo(deadzoneExitDirection.is(analogAxisValue), deadzoneExitDirection.saved.timestamp)
-    } else if deadzoneExitDirection.queued.is {
-        return new outOfDeadzoneInfo(deadzoneExitDirection.is(analogAxisValue), deadzoneExitDirection.queued.timestamp)
-    } else {
-        return new outOfDeadzoneInfo(deadzoneExitDirection.is(analogAxisValue), currentTimeMS)
+    deadzoneStatus := outOfDeadzoneDirection.is(analogAxisValue)
+    if !outOfDeadzoneDirection.addedToQueue[deadzoneStatus] {
+        if (deadzoneStatus == outOfDeadzoneDirection.saved.is) {
+            outOfDeadzoneDirection.queueTimestamp[deadzoneStatus] := outOfDeadzoneDirection.saved.timestamp
+        } else {
+            outOfDeadzoneDirection.queueTimestamp[deadzoneStatus] := currentTimeMS
+        }
+        outOfDeadzoneDirection.addedToQueue[deadzoneStatus] := true
     }
+    
+    return new outOfDeadzoneInfo(deadzoneStatus
+    , outOfDeadzoneDirection.queueTimestamp[deadzoneStatus])   
 }

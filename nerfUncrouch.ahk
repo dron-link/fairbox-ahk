@@ -10,13 +10,12 @@ class crouchZoneHistoryEntry {
 class baseCrouchZone {
     string := "crouchZone"
     lastDelivered := new crouchZoneHistoryEntry(false, -1000)
-
+    addedToQueue := {}
+    queueTimestamp := {}
     saved := new crouchZoneHistoryEntry(false, -1000)
 
     zoneOf(aX, aY) {
-        global ANALOG_CROUCH
-        global ZONE_D
-        global ZONE_CENTER
+        global ANALOG_CROUCH, global ZONE_D, global ZONE_CENTER
         if (aY <= ANALOG_CROUCH) {
             return ZONE_D
         } else {
@@ -25,8 +24,7 @@ class baseCrouchZone {
     }
 }
 
-class uncrouchInfo extends techniqueClassThatHasTimingLockouts
-{
+class uncrouchInfo extends techniqueClassThatHasTimingLockouts {
 }
 
 class baseUncrouch {
@@ -46,10 +44,7 @@ class baseUncrouch {
     }
 
     generateNerfedCoords(aX, aY, uncrouchInstance, outOfDeadzoneObj) {
-        global ANALOG_DEAD_MAX
-        global ANALOG_STICK_MAX
-        global TIMELIMIT_DOWNUP
-        global currentTimeMS
+        global ANALOG_DEAD_MAX, global ANALOG_STICK_MAX, global TIMELIMIT_DOWNUP, global currentTimeMS
         
         upY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.up)
 
@@ -73,8 +68,7 @@ detectUncrouch(aX, aY, crouchZone) {
 }
 
 saveUncrouchHistory(ByRef crouchZone, ByRef uncrouch, latestMultipressBeginningTimestamp) {
-    global TIMELIMIT_SIMULTANEOUS
-    global currentTimeMS
+    global TIMELIMIT_SIMULTANEOUS, global currentTimeMS
 
     ; set lingering uncrouch as false
     if uncrouch.saved.did {
