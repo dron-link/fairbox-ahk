@@ -12,7 +12,7 @@ class dashZoneHistoryEntry {
 class baseDashZone {
     static historyLength := 5 ; MINIMUM 3
     string := "dashZone"
-    lastDelivered := new dashZoneHistoryEntry(false, -1000, true)
+    unsaved := new dashZoneHistoryEntry(false, -1000, true)
     addedToQueue := {}
     queueTimestamp := {}
     saved[]
@@ -63,21 +63,20 @@ class basePivot {
     generateNerfedCoords(aX, aY, pivotInstance, outOfDeadzoneObj) {
         global ANALOG_STICK_MAX, global FORCE_FTILT, global ZONE_CENTER, global ZONE_L, global ZONE_R
         global TIMELIMIT_TAPSHUTOFF, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
-        global P_RIGHTLEFT, global P_LEFTRIGHT
-        global xComp, global yComp, global currentTimeMS
+        global P_RIGHTLEFT, global P_LEFTRIGHT, global xComp, global yComp, global currentTimeMS
 
-        upY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.up)
-        downY := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.down)
+        upYDeadzone := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.up)
+        downYDeadzone := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.down)
         this.nerfedCoords := ""
         doTrimCoordinate := false
 
         if ((aX != 0 or aY != 0) and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
             maxDistanceFactor := 1.1 * ANALOG_STICK_MAX / sqrt(aX**2 + aY**2) ; 1.1 ensures shoot beyond circle
 
-            /*  if upY.is and the player has not shut off tap jump WITH actions done before completing 
+            /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing 
                 the pivot (such as upY dashes and downY dashes)
             */
-            if (upY.is and (currentTimeMS - upY.timestamp < TIMELIMIT_TAPSHUTOFF or upY.timestamp >= pivotInstance.timestamp)) {
+            if (upYDeadzone.out and (currentTimeMS - upYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF or upYDeadzone.timestamp >= pivotInstance.timestamp)) {
                 this.wasNerfed := true
                 if (Abs(aX) > aY) {
                     /*  //Force all upward angles to a minimum of 45deg away from the horizontal
@@ -89,12 +88,12 @@ class basePivot {
                 }                
             } 
             ; if the player hasn't shut off tap downsmash
-            else if (downY.is and currentTimeMS - downY.timestamp < TIMELIMIT_TAPSHUTOFF) {
+            else if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
                 this.wasNerfed := true
                 this.nerfedCoords := trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
             }
             ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
-            else if (upY.is and upY.timestamp < pivotInstance.timestamp
+            else if (upYDeadzone.out and upYDeadzone.timestamp < pivotInstance.timestamp
                 and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
                 this.wasNerfed := true
                 /*  if P_RIGHTLEFT then negative X
@@ -105,7 +104,7 @@ class basePivot {
                 this.nerfedCoords := [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, FORCE_FTILT]
             } 
             ; if the player shut off tap downsmash, by pivoting with downY dashes
-            else if (downY.is and downY.timestamp < pivotInstance.timestamp
+            else if (downYDeadzone.out and downYDeadzone.timestamp < pivotInstance.timestamp
                 and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
                 this.wasNerfed := true
                 this.nerfedCoords := [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , -FORCE_FTILT]
@@ -208,8 +207,8 @@ savePivotHistory(ByRef dashZone, ByRef pivot, latestMultipressBeginningTimestamp
         from the last entry and because of that we need a new entry
     */
     if (currentTimeMS - latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS) {
-        if (dashZone.lastDelivered.zone != dashZone.saved.zone) {
-            dashZone.hist.Pop(), dashZone.hist.InsertAt(1, dashZone.lastDelivered)
+        if (dashZone.unsaved.zone != dashZone.saved.zone) {
+            dashZone.hist.Pop(), dashZone.hist.InsertAt(1, dashZone.unsaved)
         } 
         if pivot.unsaved.did {
             pivot.saved := new pivotInfo(pivot.unsaved.did, pivot.unsaved.timestamp)
@@ -243,8 +242,8 @@ storePivotsBeforeMultipressEnds(output, ByRef dashZone, ByRef pivot) {
     }   
     
     dashZoneOfOutput := dashZone.zoneOf(output.limited.x, output.limited.y, dashZone)
-    if (dashZone.lastDelivered.zone != dashZoneOfOutput) {
-        dashZone.lastDelivered := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS, false)
+    if (dashZone.unsaved.zone != dashZoneOfOutput) {
+        dashZone.unsaved := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS, false)
     }
     return
 }

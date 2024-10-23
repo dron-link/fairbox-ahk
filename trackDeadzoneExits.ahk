@@ -1,20 +1,20 @@
 #Requires AutoHotkey v1.1
 
 class outOfDeadzoneInfo {
-    __New(boolIs, timestamp) {
-        this.is := boolIs
+    __New(boolOut, timestamp) {
+        this.out := boolOut
         this.timestamp := timestamp
     }
 }
 
 class leftstickOutOfDeadzoneBase {
-
     class upBase {
         unsaved := new outOfDeadzoneInfo(false, -1000)
-        addedToQueue := {}
+        queue := {}
+        addedToQueue := {} ; TODO eliminate
         queueTimestamp := {}
         saved := new outOfDeadzoneInfo(false, -1000)
-        is(aY) {
+        isOut(aY) {
             global ANALOG_DEAD_MAX
             return (aY > ANALOG_DEAD_MAX)
         }
@@ -22,10 +22,11 @@ class leftstickOutOfDeadzoneBase {
     
     class downBase {
         unsaved := new outOfDeadzoneInfo(false, -1000)
+        queue := {}
         addedToQueue := {}
         queueTimestamp := {}
         saved := new outOfDeadzoneInfo(false, -1000)
-        is(aY) {
+        isOut(aY) {
             global ANALOG_DEAD_MIN
             return (aY < ANALOG_DEAD_MIN)
         }
@@ -35,35 +36,53 @@ class leftstickOutOfDeadzoneBase {
         this.up := new this.upBase
         this.down := new this.downBase
     }
-}
 
-saveOutOfDeadzoneHistory(ByRef outOfDeadzone) {
+    saveHistory() {
+        this.up.saved := this.up.unsaved, this.up.queue := {}
+        this.down.saved := this.down.unsaved, this.down.queue := {}
+        return
+    }
 
-    outOfDeadzone.up.saved := outOfDeadzone.up.unsaved
-    ; empty memory of queued deadzone changes
-    outOfDeadzone.up.addedToQueue := {}
-    outOfDeadzone.up.queueTimestamp := {}
-
-    outOfDeadzone.down.saved := outOfDeadzone.down.unsaved
-    outOfDeadzone.down.addedToQueue := {}
-    outOfDeadzone.down.queueTimestamp := {}
-
-    return
+    storeInfoBeforeMultipressEnds(aY) {
+        return storeOutOfDeadzoneInfoBeforeMultipressEnds(aY, this)
+    }
 }
 
 getCurrentOutOfDeadzoneInfo(analogAxisValue, outOfDeadzoneDirection) {
     global currentTimeMS
 
-    deadzoneStatus := outOfDeadzoneDirection.is(analogAxisValue)
-    if !outOfDeadzoneDirection.addedToQueue[deadzoneStatus] {
-        if (deadzoneStatus == outOfDeadzoneDirection.saved.is) {
-            outOfDeadzoneDirection.queueTimestamp[deadzoneStatus] := outOfDeadzoneDirection.saved.timestamp
-        } else {
-            outOfDeadzoneDirection.queueTimestamp[deadzoneStatus] := currentTimeMS
-        }
-        outOfDeadzoneDirection.addedToQueue[deadzoneStatus] := true
+    deadzoneStatus := outOfDeadzoneDirection.isOut(analogAxisValue)
+    if (deadzoneStatus == outOfDeadzoneDirection.saved.out) {
+        return outOfDeadzoneDirection.saved
+    } else if IsObject(outOfDeadzoneDirection.queue[deadZoneStatus]) {
+        return outOfDeadzoneDirection.queue[deadZoneStatus]
+    } else {
+        return new outOfDeadzoneInfo(deadzoneStatus, currentTimeMS)
     }
-    
-    return new outOfDeadzoneInfo(deadzoneStatus
-    , outOfDeadzoneDirection.queueTimestamp[deadzoneStatus])   
+}
+
+storeOutOfDeadzoneInfoBeforeMultipressEnds(aY, ByRef outOfDeadzone) {
+    global currentTimeMS
+
+    deadzoneUpStatus := outOfDeadzone.up.isOut(aY)
+    if (deadzoneUpStatus == outOfDeadzone.up.saved.out) {
+        outOfDeadzone.up.unsaved := outOfDeadzone.up.saved
+    } else {
+        if !IsObject(outOfDeadzone.up.queue[deadzoneUpStatus]) {
+            outOfDeadzone.up.queue[deadzoneUpStatus] := new outOfDeadzoneInfo(deadzoneUpStatus, currentTimeMS)
+        }
+        outOfDeadzone.up.unsaved := outOfDeadzone.up.queue[deadzoneUpStatus]
+    }
+
+    deadzoneDownStatus := outOfDeadzone.down.isOut(aY)
+    if (deadzoneDownStatus == outOfDeadzone.down.saved.out) {
+        outOfDeadzone.down.unsaved := outOfDeadzone.down.saved
+    } else {
+        if !IsObject(outOfDeadzone.down.queue[deadzoneDownStatus]) {
+            outOfDeadzone.down.queue[deadzoneDownStatus] := new outOfDeadzoneInfo(deadzoneDownStatus, currentTimeMS)
+        }
+        outOfDeadzone.down.unsaved := outOfDeadzone.down.queue[deadzoneDownStatus]
+    }
+
+    return
 }

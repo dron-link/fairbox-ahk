@@ -299,7 +299,7 @@ limitOutputs(rawCoords) {
     global xComp, global yComp, global currentTimeMS, global sdiZoneHist
     
     static output := new outputBase
-    ; objects that store the relevant info of previous areas the control stick was inside of
+    ; objects that store the info of previous relevant areas the control stick was inside of
     static outOfDeadzone := new leftstickOutOfDeadzoneBase
     static dashZone := new baseDashZone
     static crouchZone := new baseCrouchZone
@@ -315,13 +315,14 @@ limitOutputs(rawCoords) {
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
         and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
-        saveOutOfDeadzoneHistory(outOfDeadzone)
+        outOfDeadzone.saveHistory()
+        crouchZone.saveHistory()
     }
-
     saveUncrouchHistory(crouchZone, uncrouch, output.latestMultipressBeginningTimestamp)
     savePivotHistory(dashZone, pivot, output.latestMultipressBeginningTimestamp)
 
-    ; process the player input and converts it into legal output
+    ; //////////////// processes the player input and converts it into legal output
+
     output.limited.x := rawCoords[xComp], output.limited.y := rawCoords[yComp]
     nerfedCoords := reverseNeutralBNerf(output.limited.x, output.limited.y)
     output.limited.x := nerfedCoords[xComp], output.limited.y := nerfedCoords[yComp]
@@ -340,15 +341,16 @@ limitOutputs(rawCoords) {
     ; fuzz the y when x is +1.00 or -1.00
     output.limited.y := getFuzzyHorizontal100(output.limited.x, output.limited.y
         , output.hist[1].x, output.hist[1].y)
-
+    
+    ; ////////////////// record anything necessary in preparation to the next call of this function
     storeUncrouchesBeforeMultipressEnds(output, crouchZone, uncrouch)
     storePivotsBeforeMultipressEnds(output, dashZone, pivot)
 
-    outOfDeadzone.up.unsaved := getCurrentOutOfDeadzoneInfo(output.limited.y, outOfDeadzone.up)
-    outOfDeadzone.down.unsaved := getCurrentOutOfDeadzoneInfo(output.limited.y, outOfDeadzone.down)
-
     ; memorizes realtime leftstick coordinates passed to the game
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
+        outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
+        crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
+
         ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
         if output.hist[1].multipress.ended {
             output.limited.multipress.began := true
