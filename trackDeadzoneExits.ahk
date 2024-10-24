@@ -11,8 +11,6 @@ class leftstickOutOfDeadzoneBase {
     class upBase {
         unsaved := new outOfDeadzoneInfo(false, -1000)
         queue := {}
-        addedToQueue := {} ; TODO eliminate
-        queueTimestamp := {}
         saved := new outOfDeadzoneInfo(false, -1000)
         isOut(aY) {
             global ANALOG_DEAD_MAX
@@ -23,8 +21,6 @@ class leftstickOutOfDeadzoneBase {
     class downBase {
         unsaved := new outOfDeadzoneInfo(false, -1000)
         queue := {}
-        addedToQueue := {}
-        queueTimestamp := {}
         saved := new outOfDeadzoneInfo(false, -1000)
         isOut(aY) {
             global ANALOG_DEAD_MIN

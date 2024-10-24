@@ -11,10 +11,11 @@ class dashZoneHistoryEntry {
 
 class baseDashZone {
     static historyLength := 5 ; MINIMUM 3
+
     string := "dashZone"
+
     unsaved := new dashZoneHistoryEntry(false, -1000, true)
-    addedToQueue := {}
-    queueTimestamp := {}
+    queue := {}
     saved[]
     {
         get {
@@ -29,6 +30,33 @@ class baseDashZone {
         }
     }
 
+    saveHistory() {
+        if (this.unsaved != this.saved) { ; we avoid inserting the same object consecutively
+            this.hist.Pop(), this.hist.InsertAt(1, this.unsaved)
+        }
+        this.queue := {}
+        return
+    }
+
+    checkHistoryEntryStaleness() {
+        global TIMESTALE_PIVOT_INPUTSEQUENCE, global currentTimeMS
+        ; check if a dash entry (and subsequent ones) are stale, and flag them
+        Loop, % this.historyLength {
+            if (currentTimeMS - this.hist[A_Index].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
+                staleIndex := A_Index ; found entry that has to be stale
+                while (staleIndex <= this.historyLength) {
+                    this.hist[staleIndex].stale := true
+                    staleIndex += 1
+                }
+                break
+            }
+        }
+    }
+
+    storeInfoBeforeMultipressEnds(aX, aY) {
+        return storeDashZoneInfoBeforeMultipressEnds(aX, aY, this)
+    }
+
     zoneOf(aX, aY) {
         global ANALOG_DASH_LEFT, global ANALOG_DASH_RIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
         if (aX <= ANALOG_DASH_LEFT) {
@@ -39,6 +67,20 @@ class baseDashZone {
             return ZONE_CENTER
         }
     }
+}
+
+storeDashZoneInfoBeforeMultipressEnds(aX, aY, ByRef dashZone) {
+    global currentTimeMS
+    dashZoneOfOutput := dashZone.zoneOf(aX, aY)
+    if (dashZoneOfOutput == dashZone.saved.zone) {
+        dashZone.unsaved := dashZone.saved
+    } else {
+        if !IsObject(dashZone.queue[dashZoneOfOutput]) {
+            dashZone.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS, false)
+        }
+        dashZone.unsaved := dashZone.queue[dashZoneOfOutput]
+    }
+    return
 }
 
 class pivotInfo extends techniqueClassThatHasTimingLockouts {
@@ -57,7 +99,7 @@ class basePivot {
     jump2F := {force: false, timestamp: -1000}
 
     detect(aX, aY, dashZone) {
-        return detectPivot(aX, aY, dashZone)   
+        return detectPivot(aX, aY, dashZone)
     }
 
     generateNerfedCoords(aX, aY, pivotInstance, outOfDeadzoneObj) {
@@ -73,7 +115,7 @@ class basePivot {
         if ((aX != 0 or aY != 0) and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
             maxDistanceFactor := 1.1 * ANALOG_STICK_MAX / sqrt(aX**2 + aY**2) ; 1.1 ensures shoot beyond circle
 
-            /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing 
+            /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing
                 the pivot (such as upY dashes and downY dashes)
             */
             if (upYDeadzone.out and (currentTimeMS - upYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF or upYDeadzone.timestamp >= pivotInstance.timestamp)) {
@@ -85,8 +127,8 @@ class basePivot {
                     this.nerfedCoords := trimToCircle(aX > 0 ? 90 : -90, 90) ; params [90, 90] or [-90, 90]. is radius=127
                 } else {
                     this.nerfedCoords := trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
-                }                
-            } 
+                }
+            }
             ; if the player hasn't shut off tap downsmash
             else if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
                 this.wasNerfed := true
@@ -102,7 +144,7 @@ class basePivot {
                     what does the proposal team mean when saying pressing A too early as a failure state?
                 */
                 this.nerfedCoords := [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, FORCE_FTILT]
-            } 
+            }
             ; if the player shut off tap downsmash, by pivoting with downY dashes
             else if (downYDeadzone.out and downYDeadzone.timestamp < pivotInstance.timestamp
                 and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
@@ -150,16 +192,16 @@ detectPivot(aX, aY, dashZone) {
             if !pivotDiscarded {
                 pivotDiscarded := 1
             }
-        ; true if the following sequence is stale:  aX center  1 oppositeCardinal  2 center  3 cardinal
-        } else if (dashZone.hist[2].zone == ZONE_CENTER and dashZone.hist[3].stale) { 
+            ; true if the following sequence is stale:  aX center  1 oppositeCardinal  2 center  3 cardinal
+        } else if (dashZone.hist[2].zone == ZONE_CENTER and dashZone.hist[3].stale) {
             result := false
             if !pivotDiscarded {
                 pivotDiscarded := 1
             }
         }
-            /*  has the player only held the latest dash for around 1
-                frame in duration? that's necessary for pivoting
-            */
+        /*  has the player only held the latest dash for around 1
+            frame in duration? that's necessary for pivoting
+        */
         else if (pivotLength < TIMELIMIT_HALFFRAME or pivotLength > TIMELIMIT_FRAME + TIMELIMIT_HALFFRAME) {
             ; //less than 50% chance it was a successful pivot
             result := false
@@ -178,7 +220,7 @@ detectPivot(aX, aY, dashZone) {
 
 pivotLiveDebugMessages(result, pivotDiscarded) {
     global P_RIGHTLEFT, global P_LEFTRIGHT
-    Switch pivotDiscarded 
+    Switch pivotDiscarded
     {
     Case false:
         if (result == P_LEFTRIGHT) {
@@ -199,7 +241,7 @@ savePivotHistory(ByRef dashZone, ByRef pivot, latestMultipressBeginningTimestamp
 
     ; set lingering pivot as false
     if pivot.saved.did {
-        pivot.saved.did := currentTimeMS - pivot.saved.timestamp < 1000 ? pivot.saved.did : false 
+        pivot.saved.did := currentTimeMS - pivot.saved.timestamp < 1000 ? pivot.saved.did : false
     }
 
     /*  we need to see if enough time has passed for the input to not be
@@ -207,24 +249,9 @@ savePivotHistory(ByRef dashZone, ByRef pivot, latestMultipressBeginningTimestamp
         from the last entry and because of that we need a new entry
     */
     if (currentTimeMS - latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS) {
-        if (dashZone.unsaved.zone != dashZone.saved.zone) {
-            dashZone.hist.Pop(), dashZone.hist.InsertAt(1, dashZone.unsaved)
-        } 
         if pivot.unsaved.did {
             pivot.saved := new pivotInfo(pivot.unsaved.did, pivot.unsaved.timestamp)
             pivot.unsaved.did := false, pivot.queued.did := false
-        }
-    }
-
-    ; check if a dash entry (and subsequent ones) are stale, and flag them
-    Loop, % dashZone.historyLength {
-        if (currentTimeMS - dashZone.hist[A_Index].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
-            staleIndex := A_Index ; found entry that has to be stale
-            while (staleIndex <= dashZone.historyLength) {
-                dashZone.hist[staleIndex].stale := true
-                staleIndex += 1
-            }
-            break
         }
     }
 
@@ -239,11 +266,7 @@ storePivotsBeforeMultipressEnds(output, ByRef dashZone, ByRef pivot) {
     if (pivot.unsaved.did and !pivot.queued.did) {
         ; new object so that modifying unsaved.did doesn't modify queued.did
         pivot.queued.did := new pivotInfo(pivot.unsaved.did, pivot.unsaved.timestamp)
-    }   
-    
-    dashZoneOfOutput := dashZone.zoneOf(output.limited.x, output.limited.y, dashZone)
-    if (dashZone.unsaved.zone != dashZoneOfOutput) {
-        dashZone.unsaved := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS, false)
     }
+
     return
 }

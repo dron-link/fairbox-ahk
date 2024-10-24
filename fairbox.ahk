@@ -317,7 +317,9 @@ limitOutputs(rawCoords) {
         output.hist[1].multipress.ended := true
         outOfDeadzone.saveHistory()
         crouchZone.saveHistory()
+        dashZone.saveHistory()
     }
+    dashZone.checkHistoryEntryStaleness()
     saveUncrouchHistory(crouchZone, uncrouch, output.latestMultipressBeginningTimestamp)
     savePivotHistory(dashZone, pivot, output.latestMultipressBeginningTimestamp)
 
@@ -350,6 +352,7 @@ limitOutputs(rawCoords) {
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
         crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
+        dashZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
 
         ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
         if output.hist[1].multipress.ended {
