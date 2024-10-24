@@ -5,8 +5,8 @@ SDI_HISTORY_LENGTH := 6 ; MINIMUM 5
 ; named values------------------------------------------------------------------------------
 
 /*
-    P_X, U_X and BITS_SDI_X values are affirmations and must be different to 0,
-    as false will serve to indicate the negation of technique
+    P_X, U_X and BITS_SDI_X technique values are affirmations and must be different to 0,
+    as 0 (false) will serve as the negation of technique
 */
 
 P_RIGHTLEFT := 1 ; id: right to left empty pivot
@@ -42,11 +42,10 @@ finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to v
 
 ; analog history
 class outputHistoryEntry {
-    __New(x, y, timestamp, multipressBegan, multipressEnded, cx, cy) {
+    __New(x, y, timestamp) {
         ;         1            2                    3
         this.x := x, this.y := y, this.timestamp := timestamp
-        ;                           4                        5                            6              7
-        this.multipress := {began : multipressBegan, ended : multipressEnded}, this.cx := cx, this.cy := cy
+        this.multipress := {began : false, ended : false}
     }
 }
 
@@ -59,8 +58,7 @@ class outputBase {
     __New() {
         this.hist := []
         Loop, % this.historyLength {
-            this.hist.Push(new outputHistoryEntry(0, 0, -1000
-            , false, true, 0, 0))
+            this.hist.Push(new outputHistoryEntry(0, 0, -1000))
         }
     }
 }

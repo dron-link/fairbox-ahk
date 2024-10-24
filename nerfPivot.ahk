@@ -1,6 +1,6 @@
 #Requires AutoHotkey v1.1
 
-; https://stackoverflow.com/questions/45869823/how-do-i-create-a-class-in-autohotkey
+; https://stackoverflow.com/questions/45869823/how-do-i-create-a-class-in-autohotkey ; taught me how to __New()
 class dashZoneHistoryEntry {
     __New(zone, timestamp, stale) {
         this.zone := zone
@@ -45,8 +45,7 @@ class baseDashZone {
             if (currentTimeMS - this.hist[A_Index].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
                 staleIndex := A_Index ; found entry that has to be stale
                 while (staleIndex <= this.historyLength) {
-                    this.hist[staleIndex].stale := true
-                    staleIndex += 1
+                    this.hist[staleIndex].stale := true,    staleIndex += 1
                 }
                 break
             }
@@ -57,6 +56,11 @@ class baseDashZone {
         return getDashZoneOf(aX, aY)
 
     }
+
+    getCurrentInfo(aX, aY) { ; this method goes uncalled as far as i know. i added it for completeness
+        return getCurrentDashZoneInfo(aX, aY, this)
+    }
+
     storeInfoBeforeMultipressEnds(aX, aY) {
         return storeDashZoneInfoBeforeMultipressEnds(aX, aY, this)
     }
@@ -70,6 +74,20 @@ getDashZoneOf(aX, aY) {
         return ZONE_R
     } else {
         return ZONE_CENTER
+    }
+}
+
+getCurrentDashZoneInfo(aX, aY, dashZone) {
+    global currentTimeMS
+
+    currentZone := getDashZoneOf(aX, aY)
+
+    if (currentZone == dashZone.saved.zone) {
+        return dashZone.saved
+    } else if IsObject(dashZone.queue[currentZone]) {
+        return dashZone.queue[currentZone]
+    } else {
+        return new dashZoneHistoryEntry(currentZone, currentTimeMS, false)
     }
 }
 
@@ -95,35 +113,54 @@ class basePivot {
 
     unsaved := new pivotInfo(false, -1000)
     queue := {}
-    queued := new pivotInfo(false, -1000)
     saved := new pivotInfo(false, -1000)
     lockout := new pivotInfo(false, -1000)
 
     wasNerfed := false
     nerfedCoords := ""
 
-    jump2F := {force: false, timestamp: -1000}
+    saveHistory() {
+        if (this.unsaved.did and this.unsaved.did != this.saved.did) {
+            this.lockout := this.unsaved
+        }
+        this.saved := this.unsaved
+        this.queue := {}
+    }
+
+    lockoutExpiryCheck() {
+        global TIMELIMIT_PIVOTTILT, global currentTimeMS
+        if (this.lockout.did and currentTimeMS - this.lockout.timestamp >= TIMELIMIT_PIVOTTILT) {
+            this.lockout := new pivotInfo(false, currentTimeMS)
+        }
+        return
+    }
 
     detect(aX, aY, dashZone) {
         return detectPivot(aX, aY, dashZone)
     }
-
     generateNerfedCoords(aX, aY, pivotInstance) {
         this.nerfedCoords := getPivotLockoutNerfedCoords(aX, aY, pivotInstance, this)
         return
+    }
+    getCurrentInfo(aX, aY, dashZone) {
+        return getCurrentPivotInfo(aX, aY, detectPivot(aX, aY, dashZone), this)
+    }
+    storeInfoBeforeMultipressEnds(aX, aY, dashZone) {
+        return storePivotsBeforeMultipressEnds(aX, aY, detectPivot(aX, aY, dashZone), this)
     }
 }
 
 detectPivot(aX, aY, dashZone) {
     global P_RIGHTLEFT, global P_LEFTRIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
-    global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME, global currentTimeMS
+    global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME
 
     result := False
     pivotDebug := false ; if you want to test detectPivot() live, set this true
     pivotDiscarded := -1 ; for testing. -1 to avoid all switch-cases
+    currentDashZone := getCurrentDashZoneInfo(aX, aY, dashZone)
     /*  ignoring timing, has the player inputted the correct sequence?
         empty pivot inputs:
-        --- past --> currentDashZone
+        --- past --> current
         3---2---1---aX        means:      notes:
             R   L   N       p rightleft
         R   -   L   N       p rightleft   (it's R N L N because there can't be R R or L L in history)
@@ -131,7 +168,7 @@ detectPivot(aX, aY, dashZone) {
         L   -   R   N       p leftright   (L N R N)
         (in this comment, N means center)
     */
-    if (getDashZoneOf(aX, aY) == ZONE_CENTER) {
+    if (currentDashZone.zone == ZONE_CENTER) {
         if (dashZone.hist[1].zone == ZONE_L and (dashZone.hist[2].zone == ZONE_R or dashZone.hist[3].zone == ZONE_R)) {
             result := P_RIGHTLEFT
             pivotDiscarded := false
@@ -143,7 +180,7 @@ detectPivot(aX, aY, dashZone) {
     }
 
     if result { ; this is the code block for discarding pivot attempts
-        pivotLength := currentTimeMS - dashZone.hist[1].timestamp ; ms, computes latest dash duration
+        pivotLength := currentDashZone.timestamp - dashZone.hist[1].timestamp ; ms, computes latest dash duration
         ; //check for staleness (meaning that some inputs are too old for this to be a successful pivot)
         if dashZone.hist[2].stale {
             result := false
@@ -171,28 +208,10 @@ detectPivot(aX, aY, dashZone) {
     } ; end of block for discarding pivot attempts
     
     if pivotDebug {
-        pivotLiveDebugMessages(result, pivotDiscarded)
+        pivotLiveDebugMessages(result, pivotDiscarded) ; over at testingTools.ahk
     }
 
     return result ; returns whether there was no pivot, or the direction of the pivot if there was
-}
-
-pivotLiveDebugMessages(result, pivotDiscarded) {
-    global P_RIGHTLEFT, global P_LEFTRIGHT
-    Switch pivotDiscarded
-    {
-    Case false:
-        if (result == P_LEFTRIGHT) {
-            OutputDebug, % "P_LEFTRIGHT`n"
-        } else if (result == P_RIGHTLEFT) {
-            OutputDebug, % "P_RIGHTLEFT`n"
-        }
-    Case 1:
-        OutputDebug, % "check #1 stale, no pivot`n"
-    Case 2:
-        OutputDebug, % "check #2 length, no pivot`n"
-    }
-    return
 }
 
 getPivotLockoutNerfedCoords(aX, aY, pivotInstance, ByRef pivot) {
@@ -247,36 +266,29 @@ getPivotLockoutNerfedCoords(aX, aY, pivotInstance, ByRef pivot) {
     return
 }
 
-savePivotHistory(ByRef dashZone, ByRef pivot, latestMultipressBeginningTimestamp) {
-    global TIMELIMIT_SIMULTANEOUS, global TIMESTALE_PIVOT_INPUTSEQUENCE, global currentTimeMS
+getCurrentPivotInfo(aX, aY, didPivotNow, pivot) {
+    global currentTimeMS
 
-    ; set lingering pivot as false
-    if pivot.saved.did {
-        pivot.saved.did := currentTimeMS - pivot.saved.timestamp < 1000 ? pivot.saved.did : false
+    if (didPivotNow == pivot.saved.did) {
+        return pivot.saved
+    } else if IsObject(pivot.queue[didPivotNow]) {
+        return pivot.queue[didPivotNow] 
+    } else {
+        return new pivotInfo(didPivotNow, currentTimeMS)
     }
 
-    /*  we need to see if enough time has passed for the input to not be
-        part of a multiple key single input, and that it is different
-        from the last entry and because of that we need a new entry
-    */
-    if (currentTimeMS - latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS) {
-        if pivot.unsaved.did {
-            pivot.saved := new pivotInfo(pivot.unsaved.did, pivot.unsaved.timestamp)
-            pivot.unsaved.did := false, pivot.queued.did := false
-        }
-    }
-
-    return
 }
 
-storePivotsBeforeMultipressEnds(output, ByRef dashZone, ByRef pivot) {
+storePivotsBeforeMultipressEnds(aX, aY, outputDidPivot, ByRef pivot) {
     global currentTimeMS
-    ; handles the case of nerfing the "neutral" of a pivot into a dash, so it damages the successful pivot input
-    pivot.unsaved.did := pivot.detect(output.limited.x, output.limited.y, dashZone)
-    ; stores the first pivot detected within the multipress window
-    if (pivot.unsaved.did and !pivot.queued.did) {
-        ; new object so that modifying unsaved.did doesn't modify queued.did
-        pivot.queued.did := new pivotInfo(pivot.unsaved.did, pivot.unsaved.timestamp)
+
+    if (outputDidPivot == pivot.saved.did) {
+        pivot.unsaved.did := pivot.saved.did
+    } else {
+        if !IsObject(pivot.queue[outputDidPivot]) {
+            pivot.queue[outputDidPivot] := new pivotInfo(outputDidPivot, currentTimeMS)
+        }
+        pivot.unsaved := pivot.queue[outputDidPivot]
     }
 
     return

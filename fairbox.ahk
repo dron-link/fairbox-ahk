@@ -19,7 +19,7 @@ target := new targetCoordinateTree
 #include, nerfBasedOnHistory.ahk
 #include, trackDeadzoneExits.ahk
 
-testNerfsByHand(False)
+testNerfsByHand(false) ; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
 
 /*
     this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
@@ -192,10 +192,7 @@ mostRecentHorizontalC := ""
 
 simultaneousHorizontalModifierLockout := false ; this variable went unused because of neutral SOCD
 
-; b0xx constants. ; coordinates get mirrored and rotated appropiately thanks to reflectCoords()
-; RELOCATED TO targetCoordinateAssignations
-/*
-    Debug info
+/*  Debug info
     this is how you read its values:
     L-Q-X means
     airdodge quadrant modX input
@@ -208,34 +205,29 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
                  F fireFox/ext          R c-right
                  O [0, 0]
 */
+; Debug info
 lastCoordTrace := ""
 
 reverseNeutralBNerf(aX, aY) {
-    global
-
-    result := [aX, aY]
+    global ANALOG_DEAD_MAX, global ANALOG_STICK_MIN, global ANALOG_STICK_MAX, 
+    global ANALOG_SPECIAL_LEFT, global ANALOG_SPECIAL_RIGHT, global buttonB
 
     if (buttonB and Abs(aX) > ANALOG_DEAD_MAX and Abs(aY) <= ANALOG_DEAD_MAX) { ; out of x deadzone and in y deadzone
         if (aX < 0 and aX > ANALOG_SPECIAL_LEFT) { ; inside leftward neutral-B range
-            result[xComp] := ANALOG_STICK_MIN
-            result[yComp] := 0
-        } else if (aX > 0 and aX < ANALOG_SPECIAL_RIGHT) {
-            result[xComp] := ANALOG_STICK_MAX
-            result[yComp] := 0
+            return [ANALOG_STICK_MIN, 0]
+        } else if (aX > 0 and aX < ANALOG_SPECIAL_RIGHT) { ; inside rightward neutral-B range
+            return [ANALOG_STICK_MAX, 0]
         }
     }
 
-    return result
+    return [aX, aY]
 }
 
 getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {
-    /*
-        if you input [+/- 80, 0], that value may be passed to the game
+    /*  if you input [+/- 80, 0], that value may be passed to the game
         as [+/- 80, +/- 1] for as long as you hold the stick in the same place
     */
-    global ANALOG_STICK_MAX
-    global ANALOG_STEP
-    global FUZZ_1_00_PROBABILITY
+    global ANALOG_STICK_MAX, global ANALOG_STEP, global FUZZ_1_00_PROBABILITY
 
     if(Abs(outputY) <= ANALOG_STEP and Abs(outputX) == ANALOG_STICK_MAX) {
         if (Abs(historyY) <= ANALOG_STEP and outputX == historyX) {
@@ -258,6 +250,8 @@ limitOutputs(rawCoords) {
     global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
     global xComp, global yComp, global currentTimeMS, global sdiZoneHist
     
+    ; ////////////////// first call setup
+
     static output := new outputBase
     ; objects that store the info of previous relevant areas the control stick was inside of
     static outOfDeadzone := new leftstickOutOfDeadzoneBase
@@ -269,15 +263,19 @@ limitOutputs(rawCoords) {
 
     static limitOutputsInitialized := False
     if !limitOutputsInitialized {
-        ; way to bundle outOfDeadzone info when sending pivot and uncrouch to functions
+        /*  this is a way to bundle outOfDeadzone info with the pivot and uncrouch objects 
+            to make the info visible to pivot.getNerfedCoords() and uncrouch.getNerfedCoords()
+        */
+        ; 
         pivot.outOfDeadzone := outOfDeadzone 
         uncrouch.outOfDeadzone := outOfDeadzone
         limitOutputsInitialized := True
     }
 
+    ; ////////////////// update the variables
+    
     currentTimeMS := A_TickCount
-
-    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS, false, false, 0, 0)
+    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS)
     
     ; true if current input and those that follow can't be considered as part of the previous multipress; doesn't repeat.
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
@@ -285,15 +283,16 @@ limitOutputs(rawCoords) {
         output.hist[1].multipress.ended := true
         outOfDeadzone.saveHistory()
         crouchZone.saveHistory()
+        uncrouch.saveHistory()
         dashZone.saveHistory()
+        pivot.saveHistory()
     }
+    uncrouch.lockoutExpiryCheck()
     dashZone.checkHistoryEntryStaleness()
-    saveUncrouchHistory(crouchZone, uncrouch, output.latestMultipressBeginningTimestamp)
-    savePivotHistory(dashZone, pivot, output.latestMultipressBeginningTimestamp)
+    pivot.lockoutExpiryCheck()
 
-    ; //////////////// processes the player input and converts it into legal output
+    ; ////////////////// processes the player input and converts it into legal output
 
-    output.limited.x := rawCoords[xComp], output.limited.y := rawCoords[yComp]
     nerfedCoords := reverseNeutralBNerf(output.limited.x, output.limited.y)
     output.limited.x := nerfedCoords[xComp], output.limited.y := nerfedCoords[yComp]
 
@@ -312,11 +311,11 @@ limitOutputs(rawCoords) {
     output.limited.y := getFuzzyHorizontal100(output.limited.x, output.limited.y
         , output.hist[1].x, output.hist[1].y)
     
-    ; ////////////////// record anything necessary in preparation to the next call of this function
-    storeUncrouchesBeforeMultipressEnds(output, crouchZone, uncrouch)
-    storePivotsBeforeMultipressEnds(output, dashZone, pivot)
+    ; ////////////////// record output to read it in next calls of this function
 
-    ; memorizes realtime leftstick coordinates passed to the game
+    uncrouch.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, crouchZone)
+    pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
+    
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
         crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
@@ -327,6 +326,7 @@ limitOutputs(rawCoords) {
             output.limited.multipress.began := true
             output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obviously, currentTimeMS
         }
+        ; registers even the most short-lasting leftstick coordinates passed to vjoy
         output.hist.Pop(), output.hist.InsertAt(1, output.limited)
     }
 

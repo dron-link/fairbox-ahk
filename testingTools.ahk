@@ -16,11 +16,6 @@ testNerfsByHand(activation) {
           follow execution instructions shown on debug message screen or below
         */
         
-        /*
-            says: testNerfsByHand  
-            mode N (cont.)
-        */ 
-
         OutputDebug, % "testNerfsByHand`nmode: " nerfManualTestMode ". "
 
         Switch nerfManualTestMode
@@ -48,7 +43,7 @@ testNerfsByHand(activation) {
         OutputDebug, % "dashing above or below deadzone (to time out the tap-jump or d-smash execution window by placing`n"
             . "the stick in the same active y zone) then pivoting and inputting an up-tilt or d-tilt under 5 frames`n"
             . "INSTRUCTIONS: pivot by left/right NSOCD while holding one of the vertical keys (optional: then press A)"
-        case 5: ; crouch by holding down and tapping modY and then attempt to uptilt using up with no modX
+        case 5: ; press up -> no tap jump. press down, then quickly press up -> nerf (tap jump)
             target.normal.vertical := [0, -ANALOG_CROUCH]
             OutputDebug, % "Crouching to u-tilt range in less than 3 frames`n"
             . "INSTRUCTIONS: press up -> no tap jump. press down, then quickly press up -> nerf (tap jump)"
@@ -58,6 +53,23 @@ testNerfsByHand(activation) {
     return
 }
 
+pivotLiveDebugMessages(result, pivotDiscarded) { ; called by detectPivot() when pivotDebug == true
+    global P_RIGHTLEFT, global P_LEFTRIGHT
+    Switch pivotDiscarded
+    {
+    Case false:
+        if (result == P_LEFTRIGHT) {
+            OutputDebug, % "P_LEFTRIGHT`n"
+        } else if (result == P_RIGHTLEFT) {
+            OutputDebug, % "P_RIGHTLEFT`n"
+        }
+    Case 1:
+        OutputDebug, % "check #1 stale, no pivot`n"
+    Case 2:
+        OutputDebug, % "check #2 length, no pivot`n"
+    }
+    return
+}
 
 testTrimToCircle() {
     global

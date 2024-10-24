@@ -42,7 +42,8 @@ ANALOG_STICK_OFFSETCANCEL := -128
 
 ; nerf constants
 
-TIMELIMIT_DOWNUP := 3 * MS_PER_FRAME ; // ms, how long after a crouch to upward input should it begin a jump?
+TIMELIMIT_DOWNUP := 3 * MS_PER_FRAME    ; // ms, how long after a crouch to upward input should it begin a jump?
+                                        ; also uncrouch timing lockout expiration time
 JUMP_TIME := 2 * MS_PER_FRAME ; // after a recent crouch to upward input, always hold full up only for 2 frames
 
 TIMELIMIT_FRAME := MS_PER_FRAME   ; for use in pivot feasibility check
@@ -57,7 +58,7 @@ TIMELIMIT_TAP_PLUS := 8.5 * MS_PER_FRAME ; // 3 additional frames
 
 TIMELIMIT_CARDIAG := 8 * MS_PER_FRAME ; ms, fyi cardiag means cardinal diagonal
 
-TIMELIMIT_PIVOTTILT := 8 * MS_PER_FRAME
+TIMELIMIT_PIVOTTILT := 8 * MS_PER_FRAME ; pivot timing lockout expiration time
 TIMELIMIT_PIVOTTILT_YDASH := 5 * MS_PER_FRAME
 TIMESTALE_PIVOT_INPUTSEQUENCE := 15 * MS_PER_FRAME
 FORCE_FTILT := 30 ; value taken from CarVac haybox
