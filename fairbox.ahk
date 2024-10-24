@@ -307,6 +307,14 @@ limitOutputs(rawCoords) {
     static pivot := new basePivot
     static uncrouch := new baseUncrouch
 
+    static limitOutputsInitialized := False
+    if !limitOutputsInitialized {
+        ; way to bundle outOfDeadzone info when sending pivot and uncrouch to functions
+        pivot.outOfDeadzone := outOfDeadzone 
+        uncrouch.outOfDeadzone := outOfDeadzone
+        limitOutputsInitialized := True
+    }
+
     currentTimeMS := A_TickCount
 
     output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS, false, false, 0, 0)
@@ -330,8 +338,8 @@ limitOutputs(rawCoords) {
     output.limited.x := nerfedCoords[xComp], output.limited.y := nerfedCoords[yComp]
 
     ; gets the nerfed coordinates
-    nerfBasedOnHistory(output.limited.x, output.limited.y, pivot, dashZone, outOfDeadzone, pivotInfo)
-    nerfBasedOnHistory(output.limited.x, output.limited.y, uncrouch, crouchZone, outOfDeadzone, uncrouchInfo)
+    nerfBasedOnHistory(output.limited.x, output.limited.y, pivot, dashZone, pivotInfo)
+    nerfBasedOnHistory(output.limited.x, output.limited.y, uncrouch, crouchZone, uncrouchInfo)
     if pivot.wasNerfed { ;
         output.limited.x := pivot.nerfedCoords[xComp]
         output.limited.y := pivot.nerfedCoords[yComp]

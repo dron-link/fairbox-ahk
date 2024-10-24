@@ -1,6 +1,6 @@
 #Requires AutoHotkey v1.1
 
-nerfBasedOnHistory(aX, aY, ByRef techniqueObj, zoneObj, outOfDeadzoneObj, techniqueClass) {
+nerfBasedOnHistory(aX, aY, ByRef techniqueObj, zoneObj, techniqueClass) {
     global TIMELIMIT_SIMULTANEOUS
     global xComp
     global yComp
@@ -10,7 +10,7 @@ nerfBasedOnHistory(aX, aY, ByRef techniqueObj, zoneObj, outOfDeadzoneObj, techni
 
     ; we nerf if the technique was completed in the near past
     if techniqueObj.saved.did {
-        techniqueObj.generateNerfedCoords(aX, aY, techniqueObj.saved, outOfDeadzoneObj)
+        techniqueObj.generateNerfedCoords(aX, aY, techniqueObj.saved)
     }
     ; we are able to overwrite aX and aY with nerfed values for the next steps
     if techniqueObj.wasNerfed {
@@ -29,7 +29,7 @@ nerfBasedOnHistory(aX, aY, ByRef techniqueObj, zoneObj, outOfDeadzoneObj, techni
 
     ; take care to not nerf the same coordinates twice
     if (techniqueObj.unsaved.did and !techniqueObj.wasNerfed) {
-        techniqueObj.generateNerfedCoords(aX, aY, techniqueObj.unsaved, outOfDeadzoneObj)
+        techniqueObj.generateNerfedCoords(aX, aY, techniqueObj.unsaved)
     }  
     return
 }

@@ -53,25 +53,29 @@ class baseDashZone {
         }
     }
 
+    zoneOf(aX, aY) {
+        return getDashZoneOf(aX, aY)
+
+    }
     storeInfoBeforeMultipressEnds(aX, aY) {
         return storeDashZoneInfoBeforeMultipressEnds(aX, aY, this)
     }
+}
 
-    zoneOf(aX, aY) {
-        global ANALOG_DASH_LEFT, global ANALOG_DASH_RIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
-        if (aX <= ANALOG_DASH_LEFT) {
-            return ZONE_L
-        } else if (aX >= ANALOG_DASH_RIGHT) {
-            return ZONE_R
-        } else {
-            return ZONE_CENTER
-        }
+getDashZoneOf(aX, aY) {
+    global ANALOG_DASH_LEFT, global ANALOG_DASH_RIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
+    if (aX <= ANALOG_DASH_LEFT) {
+        return ZONE_L
+    } else if (aX >= ANALOG_DASH_RIGHT) {
+        return ZONE_R
+    } else {
+        return ZONE_CENTER
     }
 }
 
 storeDashZoneInfoBeforeMultipressEnds(aX, aY, ByRef dashZone) {
     global currentTimeMS
-    dashZoneOfOutput := dashZone.zoneOf(aX, aY)
+    dashZoneOfOutput := getDashZoneOf(aX, aY)
     if (dashZoneOfOutput == dashZone.saved.zone) {
         dashZone.unsaved := dashZone.saved
     } else {
@@ -90,8 +94,10 @@ class basePivot {
     string := "pivot"
 
     unsaved := new pivotInfo(false, -1000)
+    queue := {}
     queued := new pivotInfo(false, -1000)
     saved := new pivotInfo(false, -1000)
+    lockout := new pivotInfo(false, -1000)
 
     wasNerfed := false
     nerfedCoords := ""
@@ -102,58 +108,10 @@ class basePivot {
         return detectPivot(aX, aY, dashZone)
     }
 
-    generateNerfedCoords(aX, aY, pivotInstance, outOfDeadzoneObj) {
-        global ANALOG_STICK_MAX, global FORCE_FTILT, global ZONE_CENTER, global ZONE_L, global ZONE_R
-        global TIMELIMIT_TAPSHUTOFF, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
-        global P_RIGHTLEFT, global P_LEFTRIGHT, global xComp, global yComp, global currentTimeMS
-
-        upYDeadzone := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.up)
-        downYDeadzone := getCurrentOutOfDeadzoneInfo(aY, outOfDeadzoneObj.down)
-        this.nerfedCoords := ""
-        doTrimCoordinate := false
-
-        if ((aX != 0 or aY != 0) and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
-            maxDistanceFactor := 1.1 * ANALOG_STICK_MAX / sqrt(aX**2 + aY**2) ; 1.1 ensures shoot beyond circle
-
-            /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing
-                the pivot (such as upY dashes and downY dashes)
-            */
-            if (upYDeadzone.out and (currentTimeMS - upYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF or upYDeadzone.timestamp >= pivotInstance.timestamp)) {
-                this.wasNerfed := true
-                if (Abs(aX) > aY) {
-                    /*  //Force all upward angles to a minimum of 45deg away from the horizontal
-                        //to prevent pivot uftilt and ensure tap jump
-                    */
-                    this.nerfedCoords := trimToCircle(aX > 0 ? 90 : -90, 90) ; params [90, 90] or [-90, 90]. is radius=127
-                } else {
-                    this.nerfedCoords := trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
-                }
-            }
-            ; if the player hasn't shut off tap downsmash
-            else if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
-                this.wasNerfed := true
-                this.nerfedCoords := trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
-            }
-            ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
-            else if (upYDeadzone.out and upYDeadzone.timestamp < pivotInstance.timestamp
-                and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
-                this.wasNerfed := true
-                /*  if P_RIGHTLEFT then negative X
-                    if P_LEFTRIGHT then positive X
-                    apparently CarVac uses the opposite x directions for the ftilt.
-                    what does the proposal team mean when saying pressing A too early as a failure state?
-                */
-                this.nerfedCoords := [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, FORCE_FTILT]
-            }
-            ; if the player shut off tap downsmash, by pivoting with downY dashes
-            else if (downYDeadzone.out and downYDeadzone.timestamp < pivotInstance.timestamp
-                and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
-                this.wasNerfed := true
-                this.nerfedCoords := [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , -FORCE_FTILT]
-            }
-        }
+    generateNerfedCoords(aX, aY, pivotInstance) {
+        this.nerfedCoords := getPivotLockoutNerfedCoords(aX, aY, pivotInstance, this)
         return
-    } ; end of pivot.generateNerfedCoords()
+    }
 }
 
 detectPivot(aX, aY, dashZone) {
@@ -173,7 +131,7 @@ detectPivot(aX, aY, dashZone) {
         L   -   R   N       p leftright   (L N R N)
         (in this comment, N means center)
     */
-    if (dashZone.zoneOf(aX, aY) == ZONE_CENTER) {
+    if (getDashZoneOf(aX, aY) == ZONE_CENTER) {
         if (dashZone.hist[1].zone == ZONE_L and (dashZone.hist[2].zone == ZONE_R or dashZone.hist[3].zone == ZONE_R)) {
             result := P_RIGHTLEFT
             pivotDiscarded := false
@@ -192,8 +150,9 @@ detectPivot(aX, aY, dashZone) {
             if !pivotDiscarded {
                 pivotDiscarded := 1
             }
-            ; true if the following sequence is stale:  aX center  1 oppositeCardinal  2 center  3 cardinal
-        } else if (dashZone.hist[2].zone == ZONE_CENTER and dashZone.hist[3].stale) {
+        }
+        ; true if the following sequence is stale:  aX center  1 oppositeCardinal  2 center  3 cardinal
+        else if (dashZone.hist[2].zone == ZONE_CENTER and dashZone.hist[3].stale) {
             result := false
             if !pivotDiscarded {
                 pivotDiscarded := 1
@@ -210,7 +169,7 @@ detectPivot(aX, aY, dashZone) {
             }
         }
     } ; end of block for discarding pivot attempts
-
+    
     if pivotDebug {
         pivotLiveDebugMessages(result, pivotDiscarded)
     }
@@ -232,6 +191,58 @@ pivotLiveDebugMessages(result, pivotDiscarded) {
         OutputDebug, % "check #1 stale, no pivot`n"
     Case 2:
         OutputDebug, % "check #2 length, no pivot`n"
+    }
+    return
+}
+
+getPivotLockoutNerfedCoords(aX, aY, pivotInstance, ByRef pivot) {
+    global ANALOG_STICK_MAX, global FORCE_FTILT, global ZONE_CENTER, global ZONE_L, global ZONE_R
+    global TIMELIMIT_TAPSHUTOFF, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
+    global P_RIGHTLEFT, global P_LEFTRIGHT, global xComp, global yComp, global currentTimeMS
+
+    upYDeadzone := getCurrentOutOfDeadzoneInfo(aY, pivot.outOfDeadzone.up)
+    downYDeadzone := getCurrentOutOfDeadzoneInfo(aY, pivot.outOfDeadzone.down)
+    doTrimCoordinate := false
+
+    if ((aX != 0 or aY != 0) and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
+        maxDistanceFactor := 1.1 * ANALOG_STICK_MAX / sqrt(aX**2 + aY**2) ; 1.1 ensures shoot beyond circle
+
+        /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing
+            the pivot (such as upY dashes and downY dashes)
+        */
+        if (upYDeadzone.out and (currentTimeMS - upYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF or upYDeadzone.timestamp >= pivotInstance.timestamp)) {
+            pivot.wasNerfed := true
+            if (Abs(aX) > aY) {
+                /*  //Force all upward angles to a minimum of 45deg away from the horizontal
+                    //to prevent pivot uftilt and ensure tap jump
+                */
+                return trimToCircle(aX > 0 ? 90 : -90, 90) ; params [90, 90] or [-90, 90]. is radius=127
+            } else {
+                return trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
+            }
+        }
+        ; if the player hasn't shut off tap downsmash
+        else if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
+            pivot.wasNerfed := true
+            return trimToCircle(aX * maxDistanceFactor, aY * maxDistanceFactor)
+        }
+        ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
+        else if (upYDeadzone.out and upYDeadzone.timestamp < pivotInstance.timestamp
+            and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
+            pivot.wasNerfed := true
+            /*  if P_RIGHTLEFT then negative X
+                if P_LEFTRIGHT then positive X
+                apparently CarVac uses the opposite x directions for the ftilt.
+                what does the proposal team mean when saying pressing A too early as a failure state?
+            */
+            return [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, FORCE_FTILT]
+        }
+        ; if the player shut off tap downsmash, by pivoting with downY dashes
+        else if (downYDeadzone.out and downYDeadzone.timestamp < pivotInstance.timestamp
+            and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
+            pivot.wasNerfed := true
+            return [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , -FORCE_FTILT]
+        }
     }
     return
 }

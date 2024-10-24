@@ -51,7 +51,7 @@ testNerfsByHand(activation) {
         case 5: ; crouch by holding down and tapping modY and then attempt to uptilt using up with no modX
             target.normal.vertical := [0, -ANALOG_CROUCH]
             OutputDebug, % "Crouching to u-tilt range in less than 3 frames`n"
-            . "INSTRUCTIONS: crouch by holding down and tapping modY and then attempt to uptilt using up with no modX"
+            . "INSTRUCTIONS: press up -> no tap jump. press down, then quickly press up -> nerf (tap jump)"
         }
         OutputDebug, % "`n"
     }
