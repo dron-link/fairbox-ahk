@@ -28,8 +28,8 @@ testNerfsByHand(False)
 DISCLAIMER
 I AM NOT A PROGRAMMER BY TRADE. i believe that the community would appreciate if you, a programmer,
 took matters in your hands and made a more powerful, stable, and readable version of this program.
-Other than to use it after the lack of alternatives, I made this with the
-hope that this script contains any useful ideas for you.
+Other than to use it after the lack of alternatives, I made this with the hope that this script 
+contains any useful ideas for you.
 
 contact info:
 Discord
@@ -44,7 +44,7 @@ and the Melee Controller Ruleset Proposal 2024 (outdated?)
 https://docs.google.com/document/d/1abMqoatAGh_ZhQD1qJaQx6YqFAppCjU5KyF3mgvDQVw/
 and Altimor's Stickmap https://marp-e3fcf.web.app/
 
-When I messaged CarVac and Practical_TAS, they were kind enough to answer a couple of my questions.
+When I messaged CarVac and Practical_TAS, they were kind enough to give me suggestions for this project.
 
   ---------------------
 
@@ -82,46 +82,6 @@ rough change list and to-do
 setTimer firing rate is apparently 15.6ms, don't expect much precision from it
 (at least it's shorter than a game cube input polling interval), but I expect that most nerf lifts will be one frame late sometimes.
 Maybe we can improve the script by increasing the polling frequency? solution using WinMM
-
- /-------------------------------------------------------------------/
-
-APPROACH
-
-We add an intermediate step in the updateAnalogStick() function.
-We take the coordinates (x, y) that are solely determined by the current keypresses
-  and we limit what they could do ingame by sending to the game the output of limitOutputs(x, y) instead.
-
--History approach: (adapted from CarVac).
-We store the information of outputs passed to the game so we can refer to them in later limitOutputs() calls.
-
-- Handling simultaneous leftstick button presses:
-  We grant a grace period of 3.9 milliseconds intervals before assuming the input settled.
-  People virtually never press two buttons at the exact same time even when they intend to,
-and either Autohotkey, the OS or the keyboard can be arbitrary with how they process "simultaneous" inputs
-and the time gap between them.
-  With our input processing method, any input/output undone before this timelimit expires,
-won't count when reading the history to detect techniques. (we always count current input though)
-  With this, we mainly want to factor out inconsistencies between different keyboards.
-  We deduced that this makes the detection of techniques more accurate and consistent accross gaming setups.
-
-- Pivot detection. (empty pivots) ( Adapted from CarVac 's work )
-  The detector trips if you input a dash,
-and if, before entering run state, you terminate your dash by inputting another dash in the opposite direction 
-for about 1 frame.
-  Once we detect an empty pivot, we make certain actions unavailable for a number of frames.
-  (What we do is change a prohibited action into another action)
-
-- Uncrouch detection ( Adapted from CarVac 's work)
-  This detector trips when you exit the leftstick vertical range that allows the player to hold crouch
-(independently of if the character was actually in the crouch state, knees bending and everything)
-  We rule out inputting an unbuffered up-tilt until a certain number of frames pass.
-
-- Horizontal 1.0 fuzzing
-  The Game cube controller can be inconsistent in, or uncapable of, 
-reaching horizontal 1.0 or -1.0, getting stuck at +/-0.9875 .
-  We emulate some of that inconsistency by sometimes outputting +/- 0,9875 instead of +/- 1.0.
-  Still, Universal Controller Fix v0.84 and newer, and alternatively SSBM1.03
-get rid of these problems for Game cube controllers "and" for this script.
 
 */
 
