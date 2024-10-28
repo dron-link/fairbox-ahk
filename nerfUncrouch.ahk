@@ -83,6 +83,9 @@ class baseUncrouch {
     detect(aX, aY, crouchZone) {
         return detectUncrouch(aX, aY, crouchZone)
     }
+    nerfSearch(aX, aY, crouchZone) {
+        return nerfBasedOnHistory(aX, aY, crouchZone, uncrouchInfo, this)
+    }
     generateNerfedCoords(aX, aY, uncrouchInstance) {
         this.nerfedCoords := getUncrouchLockoutNerfedCoords(aX, aY, uncrouchInstance, this)
         return

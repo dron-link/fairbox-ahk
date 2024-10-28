@@ -13,6 +13,7 @@ target := new targetCoordinateTree
 #include, targetCoordinateValues.ahk ; you can customize the coordinates here
 #include, targetFormatting.ahk
 #include, fairboxGlobalDeclarations.ahk
+#include, outputMiscMethods.ahk
 #include, nerfUncrouch.ahk
 #include, nerfPivot.ahk
 #include, nerfSDI.ahk
@@ -21,8 +22,7 @@ target := new targetCoordinateTree
 
 testNerfsByHand(false) ; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
 
-/*
-    this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
+/*  this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
     i, dron-link, am weaving new features into it, creating 'fairbox'
 
 DISCLAIMER
@@ -208,44 +208,6 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 ; Debug info
 lastCoordTrace := ""
 
-reverseNeutralBNerf(aX, aY) {
-    global ANALOG_DEAD_MAX, global ANALOG_STICK_MIN, global ANALOG_STICK_MAX, 
-    global ANALOG_SPECIAL_LEFT, global ANALOG_SPECIAL_RIGHT, global buttonB
-
-    if (buttonB and Abs(aX) > ANALOG_DEAD_MAX and Abs(aY) <= ANALOG_DEAD_MAX) { ; out of x deadzone and in y deadzone
-        if (aX < 0 and aX > ANALOG_SPECIAL_LEFT) { ; inside leftward neutral-B range
-            return [ANALOG_STICK_MIN, 0]
-        } else if (aX > 0 and aX < ANALOG_SPECIAL_RIGHT) { ; inside rightward neutral-B range
-            return [ANALOG_STICK_MAX, 0]
-        }
-    }
-
-    return [aX, aY]
-}
-
-getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {
-    /*  if you input [+/- 80, 0], that value may be passed to the game
-        as [+/- 80, +/- 1] for as long as you hold the stick in the same place
-    */
-    global ANALOG_STICK_MAX, global ANALOG_STEP, global FUZZ_1_00_PROBABILITY
-
-    if(Abs(outputY) <= ANALOG_STEP and Abs(outputX) == ANALOG_STICK_MAX) {
-        if (Abs(historyY) <= ANALOG_STEP and outputX == historyX) {
-            return historyY
-        } else {
-            Random, ran100, 0, 99 ; spans 100%
-            if (ran100 < FUZZ_1_00_PROBABILITY) {
-                result := Mod(ran100, 2) ? ANALOG_STEP : (-ANALOG_STEP)
-                return result
-            } else {
-                return 0
-            }
-        }
-    } else {
-        return outputY
-    }
-}
-
 limitOutputs(rawCoords) {
     global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
     global xComp, global yComp, global currentTimeMS, global sdiZoneHist
@@ -293,12 +255,11 @@ limitOutputs(rawCoords) {
 
     ; ////////////////// processes the player input and converts it into legal output
 
-    nerfedCoords := reverseNeutralBNerf(output.limited.x, output.limited.y)
-    output.limited.x := nerfedCoords[xComp], output.limited.y := nerfedCoords[yComp]
+    output.reverseNeutralBNerf()
 
-    ; gets the nerfed coordinates
-    nerfBasedOnHistory(output.limited.x, output.limited.y, pivot, dashZone, pivotInfo)
-    nerfBasedOnHistory(output.limited.x, output.limited.y, uncrouch, crouchZone, uncrouchInfo)
+    ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
+    pivot.nerfSearch(output.limited.x, output.limited.y, dashZone)
+    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
     if pivot.wasNerfed { ;
         output.limited.x := pivot.nerfedCoords[xComp]
         output.limited.y := pivot.nerfedCoords[yComp]
@@ -308,8 +269,7 @@ limitOutputs(rawCoords) {
     }
 
     ; fuzz the y when x is +1.00 or -1.00
-    output.limited.y := getFuzzyHorizontal100(output.limited.x, output.limited.y
-        , output.hist[1].x, output.hist[1].y)
+    output.horizontalRimFuzz()
     
     ; ////////////////// record output to read it in next calls of this function
 
@@ -326,7 +286,7 @@ limitOutputs(rawCoords) {
             output.limited.multipress.began := true
             output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obviously, currentTimeMS
         }
-        ; registers even the most short-lasting leftstick coordinates passed to vjoy
+        ; registers even the shortest-lasting leftstick coordinates passed to vjoy
         output.hist.Pop(), output.hist.InsertAt(1, output.limited)
     }
 

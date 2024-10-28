@@ -1,5 +1,12 @@
 #Requires AutoHotkey v1.1
 
+class techniqueClassThatHasTimingLockouts {
+    __New(did, timestamp) {
+        this.did := did
+        this.timestamp := timestamp
+    }
+}
+
 SDI_HISTORY_LENGTH := 6 ; MINIMUM 5
 
 ; named values------------------------------------------------------------------------------
@@ -39,33 +46,3 @@ currentTimeMS := 0
 nerfLiftFire := false ; if a nerf lift timer fires this will be set true
 
 finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to vjoy
-
-; analog history
-class outputHistoryEntry {
-    __New(x, y, timestamp) {
-        ;         1            2                    3
-        this.x := x, this.y := y, this.timestamp := timestamp
-        this.multipress := {began : false, ended : false}
-    }
-}
-
-class outputBase {
-
-    static historyLength := 15
-    limited := ""
-    latestMultipressBeginningTimestamp := -1000
-
-    __New() {
-        this.hist := []
-        Loop, % this.historyLength {
-            this.hist.Push(new outputHistoryEntry(0, 0, -1000))
-        }
-    }
-}
-
-class techniqueClassThatHasTimingLockouts {
-    __New(did, timestamp) {
-        this.did := did
-        this.timestamp := timestamp
-    }
-}

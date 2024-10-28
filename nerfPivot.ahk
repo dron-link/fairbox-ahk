@@ -138,6 +138,9 @@ class basePivot {
     detect(aX, aY, dashZone) {
         return detectPivot(aX, aY, dashZone)
     }
+    nerfSearch(aX, aY, dashZone) {
+        return nerfBasedOnHistory(aX, aY, dashZone, pivotInfo, this)
+    }
     generateNerfedCoords(aX, aY, pivotInstance) {
         this.nerfedCoords := getPivotLockoutNerfedCoords(aX, aY, pivotInstance, this)
         return

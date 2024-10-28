@@ -1,6 +1,6 @@
 #Requires AutoHotkey v1.1
 
-nerfBasedOnHistory(aX, aY, ByRef techniqueObj, zoneObj, techniqueInfo) {
+nerfBasedOnHistory(aX, aY, zoneObj, techniqueInfo, ByRef techniqueObj) {
     global TIMELIMIT_SIMULTANEOUS, global xComp, global yComp, global currentTimeMS
 
     techniqueObj.wasNerfed := false    
