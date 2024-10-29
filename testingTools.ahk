@@ -113,7 +113,7 @@ calibrationTest() {
     ; helps checking that the coordinates show up correctly in the game
     global
 
-    stickResetCoords := convertIntegerCoords([0, 0])
+    stickResetCoords := convertIntegerToVJoy([0, 0])
     myStick.SetAxisByIndex(stickResetCoords[1], 1)
     myStick.SetAxisByIndex(stickResetCoords[2], 2)
     OutputDebug, % "calibrationTest begin`n"
@@ -136,15 +136,15 @@ calibrationTest() {
     sleepTime := 20
     rangeCrawler(YComp, startVJoy, endVJoy, sleepTime)
     */
-    ; /* ; config test current convertIntegerCoords
+    ; /* ; config test current convertIntegerToVJoy
     startIntended := 0
     endIntended := 10
     sleepTime := 1000
-    ; test current convertIntegerCoords
+    ; test current convertIntegerToVJoy
     currentIntended := startIntended
-    OutputDebug, % "testing current convertIntegerCoords. Please focus the game window by clicking on it"
+    OutputDebug, % "testing current convertIntegerToVJoy. Please focus the game window by clicking on it"
     Loop, % Abs(endIntended - startIntended) + 1 {
-        convertIntegerCoords([currentIntended, 0])
+        convertIntegerToVJoy([currentIntended, 0])
         OutputDebug, % currentIntended "`n"
         Sleep, sleepTime
         if (startIntended < endIntended) {
@@ -204,7 +204,7 @@ calibrationTest() {
                 axisMax = -128y - 65
             if y >= 80
                 axis <= -128*(80) - 65
-    the convertIntegerCoords() return have to be kept fitted in these boundaries for
+    the convertIntegerToVJoy() return have to be kept fitted in these boundaries for
     fairbox-ahk to be precise in slippi
     */
 

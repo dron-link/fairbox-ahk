@@ -44,5 +44,3 @@ limitOutputsInitialized := false
 
 currentTimeMS := 0
 nerfLiftFire := false ; if a nerf lift timer fires this will be set true
-
-finalCoords := [0, 0] ; left stick coordinates that are intended to be sent to vjoy

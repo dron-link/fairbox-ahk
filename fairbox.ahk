@@ -111,39 +111,39 @@ hotkeys := [ "Analog Up" ; 1
     , "D-pad Right" ; 24
     , "Debug"] ; 25
 
-; method reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
+; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-
 Menu, Tray, Click, 1 ; default option appears when tray is clicked once
-Menu, Tray, Add, % "Edit Controls", ShowGui ; adds Edit Controls as a submenu. action: goto ShowGui
+Menu, Tray, Add, % "Edit Controls", ShowGui ; adds Edit Controls as a submenu and goto ShowGui
 Menu, Tray, Default, % "Edit Controls"
 
-
-; initialize hotkeys and Edit Controls gui
+; adopt saved hotkeys and silently initialize Edit Controls menu
 for index, element in hotkeys{
     ; vLB1 associates this to variable LB1 and so on
     Gui, Add, Text, xm vLB%index%, % element " Hotkey:"
-    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, %index%, %A_Space% ; stores strings in savedHK1, savedHK2...
-    If savedHK%index% { ;Check for saved hotkeys in INI file.
-        Hotkey, % savedHK%index%, Label%index% ;Activate saved hotkeys if found.
-        Hotkey, % savedHK%index% . " UP", Label%index%_UP ;Activate saved hotkeys if found.
+    ; Attempt to retrieve a hotkey saved as a string in INI file.
+    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, %index%, %A_Space%  
+    If savedHK%index% { ; If something was retrieved,
+        ;Activate saved hotkey
+        Hotkey, % savedHK%index%, Label%index% 
+        Hotkey, % savedHK%index% . " UP", Label%index%_UP
     }
 
     if InStr(savedHK%index%, "~", false) {
-        checked := false
+        preventDefaultBehavior := false ; When the hotkey fires, its key's native function will not be blocked 
     } else {
-        checked := true
+        preventDefaultBehavior := true
     }
     /*  Remove tilde (~) and Win (#) modifiers...
-        They are incompatible with hotkey controls (cannot be shown).
+        They are incompatible with hotkey controls (cannot be shown in gui).
     */
     noMods := StrReplace(savedHK%index%, "~")
     noMods := StrReplace(noMods, "#")
 
-    ; syntax: Gui, Add, ControlType, xPos wWidth vVar gGoto, Text
-    Gui, Add, Hotkey, x+5 w150 vHK%index% gGuiLabel, % noMods ;Add hotkey controls and show saved hotkeys.
-    if(!checked)
+    ; syntax: Gui, Add, ControlType, xPos wWidth vVar gGoto, TextBody
+    Gui, Add, Hotkey, x+5 w150 vHK%index% gGuiLabel, % noMods ;Add hotkey controls and show the saved hotkeys in them
+    if(!preventDefaultBehavior)
         ;Add checkboxes to allow the Windows key (#) as a modifier..
         Gui, Add, CheckBox, x+5 vCB%index% gGuiLabel, % "Prevent Default Behavior" 
     else
@@ -168,7 +168,7 @@ myStick := vJoyInterface.Devices[1]
 TrayTip, % "fairbox", % "Script Started", 3, 0
 
 ; state variables
-; if true, keyboard key pressed
+; if true, keyboard key is pressed 
 buttonUp := false
 buttonDown := false
 buttonLeft := false
@@ -218,90 +218,10 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 ; Debug info
 lastCoordTrace := ""
 
-limitOutputs(rawCoords) {
-    global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
-    global xComp, global yComp, global currentTimeMS, global sdiZoneHist
-    
-    ; ////////////////// first call setup
-
-    static output := new outputBase
-    ; objects that store the info of previous relevant areas the control stick was inside of
-    static outOfDeadzone := new leftstickOutOfDeadzoneBase
-    static dashZone := new baseDashZone
-    static crouchZone := new baseCrouchZone
-    ; objects that store the previously executed techniques that activate timing lockouts
-    static pivot := new basePivot
-    static uncrouch := new baseUncrouch
-
-    static limitOutputsInitialized := False
-    if !limitOutputsInitialized {
-        /*  this is a way to bundle outOfDeadzone info with the pivot and uncrouch objects 
-            to make the info visible to pivot.getNerfedCoords() and uncrouch.getNerfedCoords()
-        */
-        ; 
-        pivot.outOfDeadzone := outOfDeadzone 
-        uncrouch.outOfDeadzone := outOfDeadzone
-        limitOutputsInitialized := True
-    }
-
-    ; ////////////////// update the variables
-    
-    currentTimeMS := A_TickCount
-    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS)
-    /*  true if current input and those that follow can't be considered as part of the previous multipress;
-        only runs once, after a multipress ends.
-    */
-    ;  doesn't repeat.
-    if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
-        and !output.hist[1].multipress.ended) {
-        output.hist[1].multipress.ended := true
-        outOfDeadzone.saveHistory()
-        crouchZone.saveHistory()
-        uncrouch.saveHistory()
-        dashZone.saveHistory()
-        pivot.saveHistory()
-    }
-    uncrouch.lockoutExpiryCheck()
-    dashZone.checkHistoryEntryStaleness()
-    pivot.lockoutExpiryCheck()
-
-    ; ////////////////// processes the player input and converts it into legal output
-
-    output.reverseNeutralBNerf()
-
-    ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
-    pivot.nerfSearch(output.limited.x, output.limited.y, dashZone)
-    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
-
-    output.chooseLockout(pivot, uncrouch)
-
-    ; fuzz the y when x is +1.00 or -1.00
-    output.horizontalRimFuzz()
-    
-    ; ////////////////// record output to read it in next calls of this function
-
-    uncrouch.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, crouchZone)
-    pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
-    
-    if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
-        outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
-        crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
-        dashZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
-
-        ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
-        if output.hist[1].multipress.ended {
-            output.limited.multipress.began := true
-            output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obviously, currentTimeMS
-        }
-        ; registers even the shortest-lasting leftstick coordinates passed to vjoy
-        output.hist.Pop(), output.hist.InsertAt(1, output.limited)
-    }
-
-    return output.limited
-}
-
-; Utility functions
-
+/*  ////////////////////////////////
+    check what directions, modifiers and buttons we should listen to, 
+    based on things like opposite cardinal direction modes, D-Pad mode etc
+*/           
 up() {
     global
     return buttonUp and not buttonDown ; here is the neutral SOCD implementation
@@ -309,22 +229,22 @@ up() {
 
 down() {
     global
-    return buttonDown and not buttonUp
+    return buttonDown and not buttonUp ; here
 }
 
 left() {
     global
-    return buttonLeft and not buttonRight
+    return buttonLeft and not buttonRight ; here
 }
 
 right() {
     global
-    return buttonRight and not buttonLeft
+    return buttonRight and not buttonLeft ; here
 }
 
 cUp() {
     global
-    return buttonCUp and not buttonCDown and not bothMods()
+    return buttonCUp and not buttonCDown and not bothMods() ; here...
 }
 
 cDown() {
@@ -339,15 +259,16 @@ cLeft() {
 
 cRight() {
     global
-    return buttonCRight and not buttonCLeft and not bothMods()
+    return buttonCRight and not buttonCLeft and not bothMods() ; ... up to here
 }
 
 modX() {
     global
-    ; deactivate if either:
-    ;   - modY is also held
-    ;   - both left and right are held (and were pressed after modX) while neither up or down is active (
-    ; this last bullet point won't carry into the new code because of NSOCD
+    /*  deactivate if either:
+        - modY is also held
+        - both left and right are held (and were pressed after modX) while neither up or down is active
+        this last bullet point won't carry into the new code because of NSOCD
+    */
     return buttonModX and not buttonModY
 }
 
@@ -401,84 +322,18 @@ anyC() {
     return cUp() or cDown() or cLeft() or cRight()
 }
 
-; Updates the position on the analog stick based on the current held buttons
-updateAnalogStick() {
-    global finalCoords
-
-    coords := getAnalogCoords()
-    finalOutput := limitOutputs(coords)
-    finalCoords := [finalOutput.x, finalOutput.y]
-    setAnalogStick(finalCoords)
-}
-
-updateCStick() {
-    setCStick(getCStickCoords())
-}
-
+; ///////////// Search for the analog stick coordinates that our controller asked for
 getAnalogCoords() {
-    global
+    global buttonB
     if (anyShield()) {
-        coords := getAnalogCoordsAirdodge()
+        quadrantICoords := getAnalogCoordsAirdodge()
     } else if (anyMod() and anyQuadrant() and (anyC() or buttonB)) {
-        coords := getAnalogCoordsFirefox()
+        quadrantICoords := getAnalogCoordsFirefox()
     } else {
-        coords := getAnalogCoordsWithNoShield()
+        quadrantICoords := getAnalogCoordsWithNoShield()
     }
 
-    return reflectCoords(coords)
-}
-
-reflectCoords(coords) {
-    x := coords[1]
-    y := coords[2]
-    if (down()) {
-        y := -y
-    }
-    if (left()) {
-        x := -x
-    }
-    return [x, y]
-}
-
-getAnalogCoordsAirdodge() {
-    global
-    if (!anyVert() and !anyHoriz()) {
-        lastCoordTrace := "L-O"
-        return new target.normal.origin
-    } else if (anyQuadrant()) {
-        if (modX()) {
-            lastCoordTrace := "L-Q-X"
-            return new target.airdodge.quadrantModX
-        } else if (modY()) {
-            lastCoordTrace := "L-Q-Y"
-            return up() ? new target.airdodge.quadrant12ModY : new target.airdodge.quadrant34ModY
-        } else {
-            lastCoordTrace := "L-Q"
-            return up() ? new target.airdodge.quadrant12 : new target.airdodge.quadrant34
-        }
-    } else if (anyVert()) {
-        if (modX()) {
-            lastCoordTrace := "L-V-X"
-            return new target.airdodge.verticalModX
-        } else if (modY()) {
-            lastCoordTrace := "L-V-Y"
-            return new target.airdodge.verticalModY
-        } else {
-            lastCoordTrace := "L-V"
-            return new target.airdodge.vertical
-        }
-    } else { ; if (anyHoriz())
-        if (modX()) {
-            lastCoordTrace := "L-H-X"
-            return new target.airdodge.horizontalModX
-        } else if (modY()) {
-            lastCoordTrace := "L-H-Y"
-            return new target.airdodge.horizontalModY
-        } else {
-            lastCoordTrace := "L-H"
-            return new target.airdodge.horizontal
-        }
-    }
+    return reflectCoords(quadrantICoords)
 }
 
 getAnalogCoordsWithNoShield() {
@@ -518,6 +373,47 @@ getAnalogCoordsWithNoShield() {
         } else {
             lastCoordTrace := "N-H"
             return new target.normal.horizontal
+        }
+    }
+}
+
+getAnalogCoordsAirdodge() {
+    global
+    if (!anyVert() and !anyHoriz()) {
+        lastCoordTrace := "L-O"
+        return new target.normal.origin
+    } else if (anyQuadrant()) {
+        if (modX()) {
+            lastCoordTrace := "L-Q-X"
+            return new target.airdodge.quadrantModX
+        } else if (modY()) {
+            lastCoordTrace := "L-Q-Y"
+            return up() ? new target.airdodge.quadrant12ModY : new target.airdodge.quadrant34ModY
+        } else {
+            lastCoordTrace := "L-Q"
+            return up() ? new target.airdodge.quadrant12 : new target.airdodge.quadrant34
+        }
+    } else if (anyVert()) {
+        if (modX()) {
+            lastCoordTrace := "L-V-X"
+            return new target.airdodge.verticalModX
+        } else if (modY()) {
+            lastCoordTrace := "L-V-Y"
+            return new target.airdodge.verticalModY
+        } else {
+            lastCoordTrace := "L-V"
+            return new target.airdodge.vertical
+        }
+    } else { ; if (anyHoriz())
+        if (modX()) {
+            lastCoordTrace := "L-H-X"
+            return new target.airdodge.horizontalModX
+        } else if (modY()) {
+            lastCoordTrace := "L-H-Y"
+            return new target.airdodge.horizontalModY
+        } else {
+            lastCoordTrace := "L-H"
+            return new target.airdodge.horizontal
         }
     }
 }
@@ -563,91 +459,213 @@ getAnalogCoordsFirefox() {
     }
 }
 
-setAnalogStick(finalCoords) {
-    global myStick
-
-    convertedCoords := convertIntegerCoords(finalCoords)
-    myStick.SetAxisByIndex(convertedCoords[1], 1)
-    myStick.SetAxisByIndex(convertedCoords[2], 2)
-}
-
-getCStickCoords() {
-    global
-    if (!anyVertC() and !anyHorizC()) {
-        cCoords := [0, 0]
-    } else if (anyVertC() and anyHorizC()) {
-        cCoords := [0.525, 0.85]
-    } else if (anyVertC()) {
-        cCoords := [0, 1]
-    } else {
-        if (modX() and up()) {
-            cCoords := [0.9, 0.5]
-        } else if (modX() and down()) {
-            cCoords := [0.9, -0.5]
-        } else {
-            cCoords := [1, 0]
-        }
+reflectCoords(quadrantICoords) {
+    global xComp, global yComp
+    x := quadrantICoords[xComp], y := quadrantICoords[yComp]
+    if (down()) {
+        y *= -1
     }
-
-    return reflectCStickCoords(cCoords)
-}
-
-reflectCStickCoords(xAndY) {
-    x := xAndY[1]
-    y := xAndY[2]
-    if (cDown()) {
-        y := -y
-    }
-    if (cLeft()) {
-        x := -x
+    if (left()) {
+        x *= -1
     }
     return [x, y]
 }
 
-setCStick(cCoords) {
-    global myStick
-    convertedCoords := convertCoords(cCoords)
-    myStick.SetAxisByIndex(convertedCoords[1], 4)
-    myStick.SetAxisByIndex(convertedCoords[2], 5)
+; ///////////// Get the same coordinates but now with nerfs
+
+limitOutputs(rawCoords) {
+    global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
+    global xComp, global yComp, global currentTimeMS, global sdiZoneHist
+    
+    ; ### first call setup
+
+    static output := new outputBase
+    ; objects that store the info of previous relevant areas the control stick was inside of
+    static outOfDeadzone := new leftstickOutOfDeadzoneBase
+    static dashZone := new baseDashZone
+    static crouchZone := new baseCrouchZone
+    ; objects that store the previously executed techniques that activate timing lockouts
+    static pivot := new basePivot
+    static uncrouch := new baseUncrouch
+
+    static limitOutputsInitialized := False
+    if !limitOutputsInitialized {
+        /*  this is a way to bundle outOfDeadzone info with the pivot and uncrouch objects 
+            to make the info visible to pivot.getNerfedCoords() and uncrouch.getNerfedCoords()
+        */
+        ; 
+        pivot.outOfDeadzone := outOfDeadzone 
+        uncrouch.outOfDeadzone := outOfDeadzone
+        limitOutputsInitialized := True
+    }
+
+    ; ### update the variables
+    
+    currentTimeMS := A_TickCount
+    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS)
+    /*  true if current input and those that follow can't be considered as part of the previous multipress;
+        only runs once, after a multipress ends.
+    */
+    if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
+        and !output.hist[1].multipress.ended) {
+        output.hist[1].multipress.ended := true
+        outOfDeadzone.saveHistory()
+        crouchZone.saveHistory()
+        uncrouch.saveHistory()
+        dashZone.saveHistory()
+        pivot.saveHistory()
+    }
+    uncrouch.lockoutExpiryCheck()
+    dashZone.checkHistoryEntryStaleness()
+    pivot.lockoutExpiryCheck()
+
+    ; ### processes the player input and converts it into legal output
+
+    output.reverseNeutralBNerf()
+
+    ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
+    pivot.nerfSearch(output.limited.x, output.limited.y, dashZone)
+    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
+
+    output.chooseLockout(pivot, uncrouch)
+
+    ; fuzz the y when x is +1.00 or -1.00
+    output.horizontalRimFuzz()
+    
+    ; ### record output to read it in next calls of this function
+
+    uncrouch.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, crouchZone)
+    pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
+    
+    if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
+        outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
+        crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
+        dashZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
+
+        ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
+        if output.hist[1].multipress.ended {
+            output.limited.multipress.began := true
+            output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obviously, currentTimeMS
+        }
+        ; registers even the shortest-lasting leftstick coordinates passed to vjoy
+        output.hist.Pop(), output.hist.InsertAt(1, output.limited)
+    }
+
+    return output.limited
 }
 
-; Converts coordinates from box integers (circle diameter -80 to 80) to vJoy values (full range 0 to 32767).
-convertIntegerCoords(xAndY) {
-    result := []
-    result[1] := 16384 + Round(128.63 * xAndY[1])
-    result[2] := 16301 - Round(128.38 * xAndY[2])
-    return result
+/*  //////////////////////////////////////
+    This function is tasked to update the position on the analog stick
+    based on the currently seen cardinal directions and modifiers
+*/
+updateAnalogStick() {
+    coords := getAnalogCoords()
+    finalOutput := limitOutputs(coords)
+    finalCoords := [finalOutput.x, finalOutput.y]
+    setAnalogStick(finalCoords)
+    return
 }
 
-; Converts coordinates from melee values (-1 to 1) to vJoy values (0 to 32767).
-convertCoords(xAndY) {
+/*  Converts coordinates from gamecube controller integers (the fighting game engine limits the 
+    coordinates to a circle that's centered in 0,0 and extends 80 units into all directions) 
+    to vJoy values (whose full range is 0 to 32767 and is centered around 16384,16384).
+*/
+convertIntegerToVJoy(finalCoords) {
+    global xComp, global yComp
+    convertedCoords := []
+    convertedCoords[xComp] := 16384 + Round(128.63 * finalCoords[xComp])
+    convertedCoords[yComp] := 16301 - Round(128.38 * finalCoords[yComp])
+    return convertedCoords
+}
+
+; Send VJoy-formatted coordinates to vjoy interface
+setAnalogStick(finalCoords) {
+    global xComp, global yComp, global myStick
+    convertedCoords := convertIntegerToVJoy(finalCoords)
+    myStick.SetAxisByIndex(convertedCoords[xComp], 1) ; control stick (leftstick, analog stick) X
+    myStick.SetAxisByIndex(convertedCoords[yComp], 2) ; same, Y
+    return
+}
+
+; //////////////// Get CStick coordinates. unit circle format, code written by agirardeaudale
+getCStickCoords() {
+    global
+    if (!anyVertC() and !anyHorizC()) {
+        cStickCoords := [0, 0]
+    } else if (anyVertC() and anyHorizC()) {
+        cStickCoords := [0.525, 0.85]
+    } else if (anyVertC()) {
+        cStickCoords := [0, 1]
+    } else {
+        if (modX() and up()) {
+            cStickCoords := [0.9, 0.5]
+        } else if (modX() and down()) {
+            cStickCoords := [0.9, -0.5]
+        } else {
+            cStickCoords := [1, 0]
+        }
+    }
+    return reflectCStickCoords(cStickCoords)
+}
+
+reflectCStickCoords(cStickCoords) {
+    global xComp, global yComp
+    x := cStickCoords[xComp]
+    y := cStickCoords[yComp]
+    if (cDown()) {
+        y *= -1
+    }
+    if (cLeft()) {
+        x *= -1
+    }
+    return [x, y]
+}
+
+/*  //////////////////////////////////////
+    This function is tasked to update the position on the c-stick
+    based on the currently seen cardinal directions and modifiers
+*/
+updateCStick() {
+    setCStick(getCStickCoords())
+    return
+}
+
+setCStick(cStickCoords) {
+    global xComp, global yComp, global myStick
+    convertedCoords := convertCStickCoords(cStickCoords)
+    myStick.SetAxisByIndex(convertedCoords[xComp], 4) ; c-stick (rightstick) X
+    myStick.SetAxisByIndex(convertedCoords[yComp], 5) ; same, Y
+    return
+}
+
+convertCStickCoords(cStickCoords) { ; Converts coordinates from melee values (-1 to 1) to vJoy values (0 to 32767).
     mx = 10271 ; Why this number? idk, I would have thought it should be 16384 * (80 / 128) = 10240, but this works
     my = -10271
     bx = 16448 ; 16384 + 64
     by = 16320 ; 16384 - 64
-    return [ mx * xAndY[1] + bx
-        , my * xAndY[2] + by ]
+    return [ mx * cStickCoords[1] + bx
+        , my * cStickCoords[2] + by ]
 }
 
 setAnalogR(value) {
     global
-    /*
-    vJoy/Dolphin does something strange with rounding analog shoulder presses. In general,
-    it seems to want to round to odd values, so
-        16384 => 0.00000 (0)   <-- actual value used for 0
-        19532 => 0.35000 (49)  <-- actual value used for 49
-        22424 => 0.67875 (95)  <-- actual value used for 94
-        22384 => 0.67875 (95)
-        22383 => 0.66429 (93)
-    But, *extremely* inconsistently, I have seen the following:
-        22464 => 0.67143 (94)
-    Which no sense and I can't reproduce.
+    /*  vJoy/Dolphin does something strange with rounding analog shoulder presses. In general,
+        it seems to want to round to odd values, so
+            16384 => 0.00000 (0)   <-- actual value used for 0
+            19532 => 0.35000 (49)  <-- actual value used for 49
+            22424 => 0.67875 (95)  <-- actual value used for 94
+            22384 => 0.67875 (95)
+            22383 => 0.66429 (93)
+        But, *extremely* inconsistently, I have seen the following:
+            22464 => 0.67143 (94)
+        Which no sense and I can't reproduce.
     */
-
     convertedValue := 16384 * (1 + (value / 255))
     myStick.SetAxisByIndex(convertedValue, 3)
+    Return
 }
 
+; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
 validateHK(GuiControl) {
     global lastHK
     Gui, Submit, NoHide ; saves control contents to their respective variables
@@ -688,7 +706,7 @@ setHK(num,INI,GUI) {
         Hotkey, %GUI%, Label%num%, On ;  enable it.
         Hotkey, %GUI% UP, Label%num%_UP, On ;  enable it.
     }
-    IniWrite,% GUI ? GUI : null, hotkeys.ini, Hotkeys, %num%
+    IniWrite,% GUI ? GUI : "", hotkeys.ini, Hotkeys, %num%
     savedHK%num% := HK%num%
     ;TrayTip, Label%num%,% !INI ? GUI " ON":!GUI ? INI " OFF":GUI " ON`n" INI " OFF"
 }
@@ -733,7 +751,10 @@ HotkeyCtrlHasFocus() {
 ;Show GUI from tray Icon
 ShowGui:
     Gui, show,, Dynamic Hotkeys
-    GuiControl, Focus, LB1 ; this puts the windows "focus" on the text description, that way it isn't immediately waiting for input on the 1st input box (HK1)
+    /*  this puts the windows "focus" on the text description, 
+        that way it isn't immediately waiting for input on the 1st input box (HK1)
+    */
+    GuiControl, Focus, LB1 
 return
 
 GuiLabel:
@@ -1068,6 +1089,8 @@ Label25:
 Label25_UP:
 return
 
+; /////////////// Creates the Debug message. code written by agirardeaudale
+
 getDebug() {
     global
     activeArray := []
@@ -1106,8 +1129,8 @@ getDebug() {
 
     trace1 := lastCoordTrace
 
-    analogCoords := getAnalogCoords()
-    cStickCoords := getCStickCoords()
+    analogCoordsDbg := getAnalogCoords()
+    cStickCoordsDbg := getCStickCoords()
 
     trace2 := lastCoordTrace
 
@@ -1133,8 +1156,8 @@ getDebug() {
     )
 
     return Format(debugFormatString
-        , analogCoords[1], analogCoords[2]
-        , cStickCoords[1], cStickCoords[2]
+        , analogCoordsDbg[1], analogCoordsDbg[2]
+        , cStickCoordsDbg[1], cStickCoordsDbg[2]
         , activeButtonList, pressedButtonList, flagList
         , trace)
 }
