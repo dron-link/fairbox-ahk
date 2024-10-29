@@ -114,30 +114,40 @@ hotkeys := [ "Analog Up" ; 1
 ; method reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-Menu, Tray, Click, 1
-Menu, Tray, Add, Edit Controls, ShowGui
-Menu, Tray, Default, Edit Controls
 
+Menu, Tray, Click, 1 ; default option appears when tray is clicked once
+Menu, Tray, Add, % "Edit Controls", ShowGui ; adds Edit Controls as a submenu. action: goto ShowGui
+Menu, Tray, Default, % "Edit Controls"
+
+
+; initialize hotkeys and Edit Controls gui
 for index, element in hotkeys{
-    Gui, Add, Text, xm vLB%index%, %element% Hotkey:
-    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, %index%, %A_Space%
-    If savedHK%index% ;Check for saved hotkeys in INI file.
-        Hotkey,% savedHK%index%, Label%index% ;Activate saved hotkeys if found.
-    Hotkey,% savedHK%index% . " UP", Label%index%_UP ;Activate saved hotkeys if found.
-    ;TrayTip, B0XX, Label%index%_UP, 3, 0
-    ;TrayTip, B0XX, % savedHK%A_Index%, 3, 0
-    ;TrayTip, B0XX, % savedHK%index% . " UP", 3, 0
-    checked := false
-    if(!InStr(savedHK%index%, "~", false)){
+    ; vLB1 associates this to variable LB1 and so on
+    Gui, Add, Text, xm vLB%index%, % element " Hotkey:"
+    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, %index%, %A_Space% ; stores strings in savedHK1, savedHK2...
+    If savedHK%index% { ;Check for saved hotkeys in INI file.
+        Hotkey, % savedHK%index%, Label%index% ;Activate saved hotkeys if found.
+        Hotkey, % savedHK%index% . " UP", Label%index%_UP ;Activate saved hotkeys if found.
+    }
+
+    if InStr(savedHK%index%, "~", false) {
+        checked := false
+    } else {
         checked := true
     }
-    StringReplace, noMods, savedHK%index%, ~ ;Remove tilde (~) and Win (#) modifiers...
-    StringReplace, noMods, noMods, #,,UseErrorLevel ;They are incompatible with hotkey controls (cannot be shown).
-    Gui, Add, Hotkey, x+5 w50 vHK%index% gGuiLabel, %noMods% ;Add hotkey controls and show saved hotkeys.
+    /*  Remove tilde (~) and Win (#) modifiers...
+        They are incompatible with hotkey controls (cannot be shown).
+    */
+    noMods := StrReplace(savedHK%index%, "~")
+    noMods := StrReplace(noMods, "#")
+
+    ; syntax: Gui, Add, ControlType, xPos wWidth vVar gGoto, Text
+    Gui, Add, Hotkey, x+5 w150 vHK%index% gGuiLabel, % noMods ;Add hotkey controls and show saved hotkeys.
     if(!checked)
-        Gui, Add, CheckBox, x+5 vCB%index% gGuiLabel, Prevent Default Behavior ;Add checkboxes to allow the Windows key (#) as a modifier..
+        ;Add checkboxes to allow the Windows key (#) as a modifier..
+        Gui, Add, CheckBox, x+5 vCB%index% gGuiLabel, % "Prevent Default Behavior" 
     else
-        Gui, Add, CheckBox, x+5 vCB%index% Checked gGuiLabel, Prevent Default Behavior ;Add checkboxes to allow the Windows key (#) as a modifier..
+        Gui, Add, CheckBox, x+5 vCB%index% Checked gGuiLabel, % "Prevent Default Behavior"
 } ;Check the box if Win modifier is used.
 
 ;----------Start Hotkey Handling-----------
@@ -155,7 +165,7 @@ if (!vJoyInterface.vJoyEnabled()) {
 myStick := vJoyInterface.Devices[1]
 
 ; Alert User that script has started
-TrayTip, fairbox, Script Started, 3, 0
+TrayTip, % "fairbox", % "Script Started", 3, 0
 
 ; state variables
 ; if true, keyboard key pressed
@@ -238,8 +248,10 @@ limitOutputs(rawCoords) {
     
     currentTimeMS := A_TickCount
     output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS)
-    
-    ; true if current input and those that follow can't be considered as part of the previous multipress; doesn't repeat.
+    /*  true if current input and those that follow can't be considered as part of the previous multipress;
+        only runs once, after a multipress ends.
+    */
+    ;  doesn't repeat.
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
         and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
@@ -260,13 +272,8 @@ limitOutputs(rawCoords) {
     ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
     pivot.nerfSearch(output.limited.x, output.limited.y, dashZone)
     uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
-    if pivot.wasNerfed { ;
-        output.limited.x := pivot.nerfedCoords[xComp]
-        output.limited.y := pivot.nerfedCoords[yComp]
-    } else if uncrouch.wasNerfed {
-        output.limited.x := uncrouch.nerfedCoords[xComp]
-        output.limited.y := uncrouch.nerfedCoords[yComp]
-    }
+
+    output.chooseLockout(pivot, uncrouch)
 
     ; fuzz the y when x is +1.00 or -1.00
     output.horizontalRimFuzz()
@@ -435,7 +442,7 @@ reflectCoords(coords) {
 
 getAnalogCoordsAirdodge() {
     global
-    if (neither(anyVert(), anyHoriz())) {
+    if (!anyVert() and !anyHoriz()) {
         lastCoordTrace := "L-O"
         return new target.normal.origin
     } else if (anyQuadrant()) {
@@ -476,7 +483,7 @@ getAnalogCoordsAirdodge() {
 
 getAnalogCoordsWithNoShield() {
     global
-    if (neither(anyVert(), anyHoriz())) {
+    if (!anyVert() and !anyHoriz()) {
         lastCoordTrace := "N-O"
         return new target.normal.origin
     } else if (anyQuadrant()) {
@@ -566,7 +573,7 @@ setAnalogStick(finalCoords) {
 
 getCStickCoords() {
     global
-    if (neither(anyVertC(), anyHorizC())) {
+    if (!anyVertC() and !anyHorizC()) {
         cCoords := [0, 0]
     } else if (anyVertC() and anyHorizC()) {
         cCoords := [0.525, 0.85]
@@ -641,20 +648,14 @@ setAnalogR(value) {
     myStick.SetAxisByIndex(convertedValue, 3)
 }
 
-neither(a, b) {
-    return (not a) and (not b)
-}
-
 validateHK(GuiControl) {
     global lastHK
-    Gui, Submit, NoHide
+    Gui, Submit, NoHide ; saves control contents to their respective variables
     lastHK := %GuiControl% ;Backup the hotkey, in case it needs to be reshown.
-    num := SubStr(GuiControl,3) ;Get the index number of the hotkey control.
+    num := SubStr(GuiControl,3) ;Get the index of the hotkey control. example: "20" is Start
     If (HK%num% != "") { ;If the hotkey is not blank...
-        StringReplace, HK%num%, HK%num%, SC15D, AppsKey ;Use friendlier names,
-        StringReplace, HK%num%, HK%num%, SC154, PrintScreen ;  instead of these scan codes.
-        ;If CB%num%                                ;  If the 'Win' box is checked, then add its modifier (#).
-        ;HK%num% := "#" HK%num%
+        HK%num% := strReplace(HK%num%, "SC15D", "AppsKey")      ; Use friendlier names,
+        HK%num% := strReplace(HK%num%, "SC154", "PrintScreen")  ; instead of these scan codes.
         If (!CB%num% && !RegExMatch(HK%num%,"[#!\^\+]")) ;  If the new hotkey has no modifiers, add the (~) modifier.
             HK%num% := "~" HK%num% ;    This prevents any key from being blocked.
         checkDuplicateHK(num)
@@ -687,12 +688,12 @@ setHK(num,INI,GUI) {
         Hotkey, %GUI%, Label%num%, On ;  enable it.
         Hotkey, %GUI% UP, Label%num%_UP, On ;  enable it.
     }
-    IniWrite,% GUI ? GUI:null, hotkeys.ini, Hotkeys, %num%
+    IniWrite,% GUI ? GUI : null, hotkeys.ini, Hotkeys, %num%
     savedHK%num% := HK%num%
     ;TrayTip, Label%num%,% !INI ? GUI " ON":!GUI ? INI " OFF":GUI " ON`n" INI " OFF"
 }
 
-#MenuMaskKey vk07 ;Requires AHK_L 38+
+#MenuMaskKey vkE8
 #If ctrl := HotkeyCtrlHasFocus()
     *AppsKey:: ;Add support for these special keys,
     *BackSpace:: ;  which the hotkey control does not normally allow.
@@ -732,13 +733,13 @@ HotkeyCtrlHasFocus() {
 ;Show GUI from tray Icon
 ShowGui:
     Gui, show,, Dynamic Hotkeys
-    GuiControl, Focus, LB1 ; this puts the windows "focus" on the checkbox, that way it isn't immediately waiting for input on the 1st input box
+    GuiControl, Focus, LB1 ; this puts the windows "focus" on the text description, that way it isn't immediately waiting for input on the 1st input box (HK1)
 return
 
 GuiLabel:
     If %A_GuiControl% in +,^,!,+^,+!,^!,+^! ;If the hotkey contains only modifiers, return to wait for a key.
         return
-    If InStr(%A_GuiControl%,"vk07") ;vk07 = MenuMaskKey (see below)
+    If InStr(%A_GuiControl%, "vkE8") ;vkE8 = MenuMaskKey
         GuiControl,,%A_GuiControl%, % lastHK ;Reshow the hotkey, because MenuMaskKey clears it.
     Else
         validateHK(A_GuiControl)

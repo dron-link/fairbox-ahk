@@ -29,6 +29,18 @@ class outputBase {
         return
     }
 
+    chooseLockout(pivot, uncrouch) {
+        global xComp, global yComp
+        if pivot.wasNerfed { ;
+            this.limited.x := pivot.nerfedCoords[xComp]
+            this.limited.y := pivot.nerfedCoords[yComp]
+        } else if uncrouch.wasNerfed {
+            this.limited.x := uncrouch.nerfedCoords[xComp]
+            this.limited.y := uncrouch.nerfedCoords[yComp]
+        }
+        return
+    }
+
     horizontalRimFuzz() {
         this.limited.y := getFuzzyHorizontal100(this.limited.x, this.limited.y, this.hist[1].x, this.hist[1].y)
         return
