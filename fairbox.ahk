@@ -188,11 +188,12 @@ validateHK(controlVarName) { ; you came from activationKeyCheck() or #If Express
     }
     If (savedHK%num% or HK%num%) ;Unless both are empty,
         setHK(num, savedHK%num%, HK%num%) ;  update INI/GUI
+        savedHK%num% := HK%num%
 }
 
 checkDuplicateHK(num) {
     global
-    Loop,% hotkeys.Length()
+    Loop,% hotkeys.Length() {
         If (HK%num% = savedHK%A_Index%) {
             dup := A_Index
             TrayTip, % "Rectangle Controller Script:", % "Hotkey Already Taken", 3, 0
@@ -204,6 +205,8 @@ checkDuplicateHK(num) {
             GuiControl,,HK%num%,% HK%num% :="" ;Delete the hotkey and clear the control.
             break
         }
+    }
+    return
 }
 
 setHK(num,INI,GUI) {
@@ -216,7 +219,7 @@ setHK(num,INI,GUI) {
         Hotkey, %GUI% UP, Label%num%_UP, On ;  enable it.
     }
     IniWrite,% GUI ? GUI : "", hotkeys.ini, Hotkeys, %num%
-    savedHK%num% := HK%num%
+    return
 }
 
 ;----------Start Hotkey Handling-----------
