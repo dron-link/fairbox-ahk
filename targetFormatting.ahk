@@ -1,10 +1,9 @@
 #Requires AutoHotkey v1.1
 
 trimToCircle(aX, aY) { 
-    /*
-    the game considers coordinates outside the circle as coordinates on the rim of the circle,
-    (preserving the original angle). rest of this program isn't suited to handle coordinates out of
-    circle though
+    /*  the game considers coordinates outside the circle as coordinates on the rim of the circle,
+        (preserving the original angle). rest of this program isn't suited to handle coordinates out of
+        circle though
     */
     global target
     global ANALOG_STICK_MAX

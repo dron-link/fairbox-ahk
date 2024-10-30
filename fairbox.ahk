@@ -4,6 +4,7 @@
 #NoEnv
 #include <CvJoyInterface>
 SetBatchLines, -1
+#MenuMaskKey vkE8
 #include %A_ScriptDir%
 #include, engineConstants.ahk ; needed for most other things
 #include, hkIniAutogenerator.ahk ; create hotkeys.ini
@@ -64,11 +65,7 @@ rough change list and to-do
  - implemented 1.0 cardinal fuzzing (y fuzzing). UCF and v1.03 fixes are compatible with this nerf
  - made a function that deals the task of getting the nerfed coordinates for timing based nerfs. "nerfBasedOnHistory"
 
- - TODO remake queue timestamps into a sparsely populated array of timestamps of first encounters of .did within
-    multipress
- - TODO make certain global variables into static locals
  - TODO add cx and cy entries to the output history
- - TODO explore writing a function nerfConflictManager() to deal with pivot vs. sdi, and uncrouch vs. sdi. prioritize player input
  - TODO consider outputting 1.0 cardinals and 45° large diagonals past the analog circle?
  - TODO implement SDI nerfs
  - TODO use setTimer to lift nerfs without waiting for player input
@@ -114,41 +111,113 @@ hotkeys := [ "Analog Up" ; 1
 ; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-Menu, Tray, Click, 1 ; default option appears when tray is clicked once
-Menu, Tray, Add, % "Edit Controls", ShowGui ; adds Edit Controls as a submenu and goto ShowGui
-Menu, Tray, Default, % "Edit Controls"
+initializeTray() {
+    objShowTheGui := Func("ShowGui")
+    Menu, Tray, Click, 1
+    Menu, Tray, Add, % "Edit Controls", % objShowTheGui
+    Menu, Tray, Default, % "Edit Controls"
+    return
+}
 
+ShowGui() { ;Show GUI from tray Icon
+    Gui, show,, % "Dynamic Hotkeys"
+    GuiControl, Focus, LB1 ; prevents immediately waiting for input on the 1st input box (HK1) when showing
+    return
+}
+
+initializeTray()
 ; adopt saved hotkeys and silently initialize Edit Controls menu
 for index, element in hotkeys{
-    ; vLB1 associates this to variable LB1 and so on
+    ; adds a control and associates it to variable LB1 and so on
     Gui, Add, Text, xm vLB%index%, % element " Hotkey:"
-    ; Attempt to retrieve a hotkey saved as a string in INI file.
-    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, %index%, %A_Space%  
+    ; Attempt to retrieve a hotkey activation key from the INI file.
+    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%  
     If savedHK%index% { ; If something was retrieved,
         ;Activate saved hotkey
         Hotkey, % savedHK%index%, Label%index% 
         Hotkey, % savedHK%index% . " UP", Label%index%_UP
     }
 
-    if InStr(savedHK%index%, "~", false) {
-        preventDefaultBehavior := false ; When the hotkey fires, its key's native function will not be blocked 
+    if InStr(savedHK%index%, "~") {
+        ; When the hotkey fires, its key's native function will not be blocked
+        preventDefaultBehavior := false, CB%index% := false 
     } else {
-        preventDefaultBehavior := true
+        preventDefaultBehavior := true, CB%index% := true 
     }
-    /*  Remove tilde (~) and Win (#) modifiers...
-        They are incompatible with hotkey controls (cannot be shown in gui).
-    */
-    noMods := StrReplace(savedHK%index%, "~")
-    noMods := StrReplace(noMods, "#")
 
-    ; syntax: Gui, Add, ControlType, xPos wWidth vVar gGoto, TextBody
-    Gui, Add, Hotkey, x+5 w150 vHK%index% gGuiLabel, % noMods ;Add hotkey controls and show the saved hotkeys in them
-    if(!preventDefaultBehavior)
+    /*  Remove tilde (~) and Win (#) modifiers...
+        They are incompatible with hotkey controls (cannot be shown in text boxes).
+        The only modifiers supported are  ^ (Control), ! (Alt), and + (Shift). 
+    */
+    noMods := StrReplace(savedHK%index%, "~", "")
+    noMods := StrReplace(noMods, "#", "")
+
+    ;Add a hotkey control and show the saved key
+    Gui, Add, Hotkey, x+5 w150 vHK%index% gactivationKeyCheck, % noMods 
+    if !preventDefaultBehavior {
         ;Add checkboxes to allow the Windows key (#) as a modifier..
-        Gui, Add, CheckBox, x+5 vCB%index% gGuiLabel, % "Prevent Default Behavior" 
-    else
-        Gui, Add, CheckBox, x+5 vCB%index% Checked gGuiLabel, % "Prevent Default Behavior"
+        Gui, Add, CheckBox, x+5 vCB%index% gactivationKeyCheck, % "Prevent Default Behavior" 
+    } else {
+        Gui, Add, CheckBox, x+5 vCB%index% Checked gactivationKeyCheck, % "Prevent Default Behavior"
+    }
 } ;Check the box if Win modifier is used.
+
+activationKeyCheck() {
+    global lastHK
+    If %A_GuiControl% in +,^,!,+^,+!,^!,+^! ;If the hotkey contains only modifiers, return to wait for a key.
+        return
+    If InStr(%A_GuiControl%, "vkE8") ;vkE8 (MenuMaskKey value) means the key is masked
+        GuiControl,,%A_GuiControl%, % lastHK ;Reshow the hotkey, because MenuMaskKey clears it.
+    Else
+        validateHK(A_GuiControl)
+    return
+}
+
+validateHK(controlVarName) { ; you came from activationKeyCheck() or #If Expression hotkeys
+    global
+    Gui, Submit, NoHide ; saves control contents to their respective variables
+    lastHK := %controlVarName% ;Backup the hotkey, in case it needs to be reshown.
+    num := SubStr(controlVarName, 3) ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
+    If (HK%num% != "") { ;If the hotkey is not blank...
+        HK%num% := strReplace(HK%num%, "SC15D", "AppsKey")      ; Use friendlier names,
+        HK%num% := strReplace(HK%num%, "SC154", "PrintScreen")  ; instead of these scan codes.
+        ;  If the new hotkey has no modifiers (# ! ^ +), and the user doesn't want to prevent functionality, 
+        If (!CB%num% and !RegExMatch(HK%num%,"[#!\^\+]")) 
+            HK%num% := "~" HK%num% ;    add the (~) modifier. This prevents any key from being blocked.
+        checkDuplicateHK(num)
+    }
+    If (savedHK%num% or HK%num%) ;Unless both are empty,
+        setHK(num, savedHK%num%, HK%num%) ;  update INI/GUI
+}
+
+checkDuplicateHK(num) {
+    global
+    Loop,% hotkeys.Length()
+        If (HK%num% = savedHK%A_Index%) {
+            dup := A_Index
+            TrayTip, % "Rectangle Controller Script:", % "Hotkey Already Taken", 3, 0
+            b := 0
+            Loop,6 {
+                GuiControl,% "Disable" b:=!b, HK%dup% ;Flash the original hotkey to alert the user.
+                Sleep,200
+            }
+            GuiControl,,HK%num%,% HK%num% :="" ;Delete the hotkey and clear the control.
+            break
+        }
+}
+
+setHK(num,INI,GUI) {
+    If INI{ ;If previous hotkey exists,
+        Hotkey, %INI%, Label%num%, Off ;  disable it.
+        Hotkey, %INI% UP, Label%num%_UP, Off ;  disable it.
+    }
+    If GUI{ ;If new hotkey exists,
+        Hotkey, %GUI%, Label%num%, On ;  enable it.
+        Hotkey, %GUI% UP, Label%num%_UP, On ;  enable it.
+    }
+    IniWrite,% GUI ? GUI : "", hotkeys.ini, Hotkeys, %num%
+    savedHK%num% := HK%num%
+}
 
 ;----------Start Hotkey Handling-----------
 
@@ -666,119 +735,59 @@ setAnalogR(value) {
 }
 
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
-validateHK(GuiControl) {
-    global lastHK
-    Gui, Submit, NoHide ; saves control contents to their respective variables
-    lastHK := %GuiControl% ;Backup the hotkey, in case it needs to be reshown.
-    num := SubStr(GuiControl,3) ;Get the index of the hotkey control. example: "20" is Start
-    If (HK%num% != "") { ;If the hotkey is not blank...
-        HK%num% := strReplace(HK%num%, "SC15D", "AppsKey")      ; Use friendlier names,
-        HK%num% := strReplace(HK%num%, "SC154", "PrintScreen")  ; instead of these scan codes.
-        If (!CB%num% && !RegExMatch(HK%num%,"[#!\^\+]")) ;  If the new hotkey has no modifiers, add the (~) modifier.
-            HK%num% := "~" HK%num% ;    This prevents any key from being blocked.
-        checkDuplicateHK(num)
-    }
-    If (savedHK%num% || HK%num%) ;Unless both are empty,
-        setHK(num, savedHK%num%, HK%num%) ;  update INI/GUI
-}
 
-checkDuplicateHK(num) {
-    global
-    Loop,% hotkeys.Length()
-        If (HK%num% = savedHK%A_Index%) {
-            dup := A_Index
-            TrayTip, B0XX, Hotkey Already Taken, 3, 0
-            Loop,6 {
-                GuiControl,% "Disable" b:=!b, HK%dup% ;Flash the original hotkey to alert the user.
-                Sleep,200
-            }
-            GuiControl,,HK%num%,% HK%num% :="" ;Delete the hotkey and clear the control.
-            break
-        }
-}
-
-setHK(num,INI,GUI) {
-    If INI{ ;If previous hotkey exists,
-        Hotkey, %INI%, Label%num%, Off ;  disable it.
-        Hotkey, %INI% UP, Label%num%_UP, Off ;  disable it.
-    }
-    If GUI{ ;If new hotkey exists,
-        Hotkey, %GUI%, Label%num%, On ;  enable it.
-        Hotkey, %GUI% UP, Label%num%_UP, On ;  enable it.
-    }
-    IniWrite,% GUI ? GUI : "", hotkeys.ini, Hotkeys, %num%
-    savedHK%num% := HK%num%
-    ;TrayTip, Label%num%,% !INI ? GUI " ON":!GUI ? INI " OFF":GUI " ON`n" INI " OFF"
-}
-
-#MenuMaskKey vkE8
-#If ctrl := HotkeyCtrlHasFocus()
-    *AppsKey:: ;Add support for these special keys,
-    *BackSpace:: ;  which the hotkey control does not normally allow.
-    *Delete::
-    *Enter::
-    *Escape::
-    *Pause::
-    *PrintScreen::
-    *Space::
-    *Tab::
-        modifier := ""
-        If GetKeyState("Shift","P")
-            modifier .= "+"
-        If GetKeyState("Ctrl","P")
-            modifier .= "^"
-        If GetKeyState("Alt","P")
-            modifier .= "!"
-        Gui, Submit, NoHide ;If BackSpace is the first key press, Gui has never been submitted.
-        If (A_ThisHotkey == "*BackSpace" && %ctrl% && !modifier) ;If the control has text but no modifiers held,
-            GuiControl,,%ctrl% ;  allow BackSpace to clear that text.
-        Else ;Otherwise,
-            GuiControl,,%ctrl%, % modifier SubStr(A_ThisHotkey,2) ;  show the hotkey.
-        validateHK(ctrl)
-    return
-#If
 
 HotkeyCtrlHasFocus() {
-    GuiControlGet, ctrl, Focus ;ClassNN
-    If InStr(ctrl,"hotkey") {
-        GuiControlGet, ctrl, FocusV ;Associated variable
-        Return, ctrl
+    ;Retrieves the control ID (ClassNN) for the control that currently has focus
+    GuiControlGet, CurrentControlID, Focus 
+    
+    If InStr(CurrentControlID, "hotkey") {
+        GuiControlGet, CurrentControlAssociatedVarName, FocusV
+        Return CurrentControlAssociatedVarName
     }
+    Return
 }
 
-;----------------------------Labels
-
-;Show GUI from tray Icon
-ShowGui:
-    Gui, show,, Dynamic Hotkeys
-    /*  this puts the windows "focus" on the text description, 
-        that way it isn't immediately waiting for input on the 1st input box (HK1)
-    */
-    GuiControl, Focus, LB1 
+#If CurrentControlVarName := HotkeyCtrlHasFocus() ; mind that this is a store operator :=
+*AppsKey::      ; Add support for these special keys,
+*BackSpace::    ; which the hotkey control does not normally allow.
+*Delete::
+*Enter::
+*Escape::
+*Pause::
+*PrintScreen::
+*Space::
+*Tab::
+    modifier := ""
+    If GetKeyState("Shift","P")
+        modifier .= "+"
+    If GetKeyState("Ctrl","P")
+        modifier .= "^"
+    If GetKeyState("Alt","P")
+        modifier .= "!"
+    Gui, Submit, NoHide ;If BackSpace is the first key press, Gui has never been submitted.
+    ;If the control has text but no modifiers held,
+    If (A_ThisHotkey == "*BackSpace" && %CurrentControlVarName% && !modifier) 
+        GuiControl,,%CurrentControlVarName% ;  allow BackSpace to clear that text.
+    Else ;Otherwise,
+        GuiControl,,%CurrentControlVarName%, % modifier SubStr(A_ThisHotkey,2) ;  show the hotkey.
+    validateHK(CurrentControlVarName)
 return
-
-GuiLabel:
-    If %A_GuiControl% in +,^,!,+^,+!,^!,+^! ;If the hotkey contains only modifiers, return to wait for a key.
-        return
-    If InStr(%A_GuiControl%, "vkE8") ;vkE8 = MenuMaskKey
-        GuiControl,,%A_GuiControl%, % lastHK ;Reshow the hotkey, because MenuMaskKey clears it.
-    Else
-        validateHK(A_GuiControl)
-return
+#If ; end of conditional hotkeys
 
 ;-------macros
 
 Pause::Suspend
-^!r:: Reload
+^!r:: Reload ; Ctrl+Alt+R
 SetKeyDelay, 0
 #MaxHotkeysPerInterval 200
 
-^!s::
-    Suspend
+^!s:: ; Ctrl+Alt+S
+    Suspend, Toggle
     If A_IsSuspended
-        TrayTip, B0XX, Hotkeys Disabled, 3, 0
+        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Disabled", 3, 0
     Else
-        TrayTip, B0XX, Hotkeys Enabled, 3, 0
+        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Enabled", 3, 0
 Return
 
 ; Analog Up
