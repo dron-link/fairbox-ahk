@@ -20,7 +20,8 @@ target := new targetCoordinateTree
 #include, nerfSDI.ahk
 #include, nerfBasedOnHistory.ahk
 #include, trackDeadzoneExits.ahk
-
+#include, guiFunctions.ahk
+takeoverForTest := false ; if true, disables all buttons. use it to help your testing
 testNerfsByHand(false) ; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
 
 /*  this file is agirardeaudale B0XX-autohotkey  https://github.com/agirardeau/b0xx-ahk
@@ -29,7 +30,7 @@ testNerfsByHand(false) ; configure at testingTools.ahk, then set this parameter 
 DISCLAIMER
 I AM NOT A PROGRAMMER BY TRADE. i believe that the community would appreciate if you, a programmer,
 took matters in your hands and made a more powerful, stable, and readable version of this program.
-Other than to use it after the lack of alternatives, I made this with the hope that this script 
+Other than to use it after the lack of alternatives, I made this with the hope that this script
 contains any useful ideas for you.
 
 contact info:
@@ -111,116 +112,89 @@ hotkeys := [ "Analog Up" ; 1
 ; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-initializeTray() {
-    objShowTheGui := Func("ShowGui")
-    Menu, Tray, Click, 1
-    Menu, Tray, Add, % "Edit Controls", % objShowTheGui
-    Menu, Tray, Default, % "Edit Controls"
-    return
-}
-
-ShowGui() { ;Show GUI from tray Icon
-    Gui, show,, % "Dynamic Hotkeys"
-    GuiControl, Focus, LB1 ; prevents immediately waiting for input on the 1st input box (HK1) when showing
-    return
-}
-
 initializeTray()
+descriptionWidth := 80
 ; adopt saved hotkeys and silently initialize Edit Controls menu
-for index, element in hotkeys{
-    ; adds a control and associates it to variable LB1 and so on
-    Gui, Add, Text, xm vLB%index%, % element " Hotkey:"
+for index, element in hotkeys {
+    ; determine start position of each set of gui elements
+    if (index > 17) {
+        xOff := 450 + descriptionWidth
+        yOff := (index-1-17)*27
+    } else {
+        yOff := (index-1)*27
+        xOff := 0
+    }
+
+    hotkeyIndexNow := index ; save in case of showing error message
+    SetTimer, blameCulpritHotkey, -800 ; if this thread is interrupted by an error, a msgbox will display
+
+    ; adds borderless text N°1 and associates it to variable gameBtName1, and so on
+    Gui, Add, Text, xm+%xOff% ym+%yOff% vGameBtName%index%, % element " Hotkey:"
     ; Attempt to retrieve a hotkey activation key from the INI file.
-    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%  
-    If savedHK%index% { ; If something was retrieved,
+    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%
+    If (savedHK%index% and !takeoverForTest) { ; If something was retrieved,
         ;Activate saved hotkey
-        Hotkey, % savedHK%index%, Label%index% 
+        Hotkey, % savedHK%index%, Label%index%
         Hotkey, % savedHK%index% . " UP", Label%index%_UP
+        HK%index% := savedHK%index%
     }
 
     if InStr(savedHK%index%, "~") {
         ; When the hotkey fires, its key's native function will not be blocked
-        preventDefaultBehavior := false, CB%index% := false 
+        preventBehavior%index% := false
     } else {
-        preventDefaultBehavior := true, CB%index% := true 
+        preventBehavior%index% := true
     }
 
-    /*  Remove tilde (~) and Win (#) modifiers...
-        They are incompatible with hotkey controls (cannot be shown in text boxes).
-        The only modifiers supported are  ^ (Control), ! (Alt), and + (Shift). 
-    */
-    noMods := StrReplace(savedHK%index%, "~", "")
-    noMods := StrReplace(noMods, "#", "")
+    savedHKCont := getHotkeyControlFormat(savedHK%index%) ; fix text incompatibility with gui hotkey controls
 
-    ;Add a hotkey control and show the saved key
-    Gui, Add, Hotkey, x+5 w150 vHK%index% gactivationKeyCheck, % noMods 
-    if !preventDefaultBehavior {
-        ;Add checkboxes to allow the Windows key (#) as a modifier..
-        Gui, Add, CheckBox, x+5 vCB%index% gactivationKeyCheck, % "Prevent Default Behavior" 
+    xOffHK := xOff + 110 ; advance past the text of the button name
+
+    ;Add controls and show the saved key
+    Gui, Add, Hotkey, xm+%xOffHK% ym+%yOff% w%descriptionWidth% vHK%index% gActivationKeyCheck, % savedHKCont
+    if !preventBehavior%index% {
+        Gui, Add, CheckBox, x+5 vPreventBehavior%index% gCheckBoxChange, % "Prevent Default Behavior"
     } else {
-        Gui, Add, CheckBox, x+5 vCB%index% Checked gactivationKeyCheck, % "Prevent Default Behavior"
+        Gui, Add, CheckBox, x+5 vPreventBehavior%index% Checked gCheckBoxChange, % "Prevent Default Behavior"
     }
-} ;Check the box if Win modifier is used.
 
-activationKeyCheck() {
-    global lastHK
-    If %A_GuiControl% in +,^,!,+^,+!,^!,+^! ;If the hotkey contains only modifiers, return to wait for a key.
-        return
-    If InStr(%A_GuiControl%, "vkE8") ;vkE8 (MenuMaskKey value) means the key is masked
-        GuiControl,,%A_GuiControl%, % lastHK ;Reshow the hotkey, because MenuMaskKey clears it.
-    Else
-        validateHK(A_GuiControl)
-    return
+    SetTimer, blameCulpritHotkey, Delete ; the operation of retrieving the activation key was successful
 }
 
-validateHK(controlVarName) { ; you came from activationKeyCheck() or #If Expression hotkeys
-    global
-    Gui, Submit, NoHide ; saves control contents to their respective variables
-    lastHK := %controlVarName% ;Backup the hotkey, in case it needs to be reshown.
-    num := SubStr(controlVarName, 3) ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
-    If (HK%num% != "") { ;If the hotkey is not blank...
-        HK%num% := strReplace(HK%num%, "SC15D", "AppsKey")      ; Use friendlier names,
-        HK%num% := strReplace(HK%num%, "SC154", "PrintScreen")  ; instead of these scan codes.
-        ;  If the new hotkey has no modifiers (# ! ^ +), and the user doesn't want to prevent functionality, 
-        If (!CB%num% and !RegExMatch(HK%num%,"[#!\^\+]")) 
-            HK%num% := "~" HK%num% ;    add the (~) modifier. This prevents any key from being blocked.
-        checkDuplicateHK(num)
-    }
-    If (savedHK%num% or HK%num%) ;Unless both are empty,
-        setHK(num, savedHK%num%, HK%num%) ;  update INI/GUI
-        savedHK%num% := HK%num%
+currentControlVarName := HotkeyCtrlHasFocus()
+
+instructionsText1 := "
+(
+To clear a key, click on it and press Back.
+
+''Prevent Default Behavior'' eliminates any side effect of pressing a key
+or key combination. Use it only when you play using keys that can execute
+Windows or emulator commands and you don't want it to happen while you
+play.
+Examples: Tab, Shift, Alt, Ctrl, Windows icon, Esc, F1, F2, F3, F4, F5...
+)"
+
+turnOffHotkeysMessage() {
+    MsgBox, % "If you need to use the keys normally, right-click the tray icon "
+        . "and select ''Suspend''' - or press Ctrl+Alt+S. It turns off all game buttons "
+        . "until you toggle Suspend again.`n"
+        . "Or, if you want, just close the program."
+
 }
 
-checkDuplicateHK(num) {
-    global
-    Loop,% hotkeys.Length() {
-        If (HK%num% = savedHK%A_Index%) {
-            dup := A_Index
-            TrayTip, % "Rectangle Controller Script:", % "Hotkey Already Taken", 3, 0
-            b := 0
-            Loop,6 {
-                GuiControl,% "Disable" b:=!b, HK%dup% ;Flash the original hotkey to alert the user.
-                Sleep,200
-            }
-            GuiControl,,HK%num%,% HK%num% :="" ;Delete the hotkey and clear the control.
-            break
-        }
-    }
-    return
-}
+instructionsText2 := "
+(
+''Special Key'' can let you bind the keys Shift, Alt, Ctrl, or AltGr.
 
-setHK(num,INI,GUI) {
-    If INI{ ;If previous hotkey exists,
-        Hotkey, %INI%, Label%num%, Off ;  disable it.
-        Hotkey, %INI% UP, Label%num%_UP, Off ;  disable it.
-    }
-    If GUI{ ;If new hotkey exists,
-        Hotkey, %GUI%, Label%num%, On ;  enable it.
-        Hotkey, %GUI% UP, Label%num%_UP, On ;  enable it.
-    }
-    IniWrite,% GUI ? GUI : "", hotkeys.ini, Hotkeys, %num%
-    return
-}
+You can restart the script by right-clicking the tray and selecting 
+''Reload this Script'' or with the key combination Ctrl+Alt+R.
+)"
+
+yOff += 30
+Gui, Add, GroupBox, xm+%xOff% ym+%yOff% w390 r12, % "Instructions"
+Gui, Add, Text, xp+15 yp+25, % instructionsText1
+Gui, Add, Button, w220 gTurnOffHotkeysMessage, % "How to use the keys normally again"
+Gui, Add, Text, xp yp+35, % instructionsText2
 
 ;----------Start Hotkey Handling-----------
 
@@ -240,7 +214,7 @@ myStick := vJoyInterface.Devices[1]
 TrayTip, % "fairbox", % "Script Started", 3, 0
 
 ; state variables
-; if true, keyboard key is pressed 
+; if true, keyboard key is pressed
 buttonUp := false
 buttonDown := false
 buttonLeft := false
@@ -291,9 +265,9 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 lastCoordTrace := ""
 
 /*  ////////////////////////////////
-    check what directions, modifiers and buttons we should listen to, 
+    check what directions, modifiers and buttons we should listen to,
     based on things like opposite cardinal direction modes, D-Pad mode etc
-*/           
+*/
 up() {
     global
     return buttonUp and not buttonDown ; here is the neutral SOCD implementation
@@ -548,7 +522,7 @@ reflectCoords(quadrantICoords) {
 limitOutputs(rawCoords) {
     global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
     global xComp, global yComp, global currentTimeMS, global sdiZoneHist
-    
+
     ; ### first call setup
 
     static output := new outputBase
@@ -562,23 +536,22 @@ limitOutputs(rawCoords) {
 
     static limitOutputsInitialized := False
     if !limitOutputsInitialized {
-        /*  this is a way to bundle outOfDeadzone info with the pivot and uncrouch objects 
+        /*  this is a way to bundle outOfDeadzone info with the pivot and uncrouch objects
             to make the info visible to pivot.getNerfedCoords() and uncrouch.getNerfedCoords()
         */
-        ; 
-        pivot.outOfDeadzone := outOfDeadzone 
+        ;
+        pivot.outOfDeadzone := outOfDeadzone
         uncrouch.outOfDeadzone := outOfDeadzone
         limitOutputsInitialized := True
     }
 
     ; ### update the variables
-    
-    currentTimeMS := A_TickCount
+
     output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS)
     /*  true if current input and those that follow can't be considered as part of the previous multipress;
         only runs once, after a multipress ends.
     */
-    if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS 
+    if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS
         and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
         outOfDeadzone.saveHistory()
@@ -603,12 +576,12 @@ limitOutputs(rawCoords) {
 
     ; fuzz the y when x is +1.00 or -1.00
     output.horizontalRimFuzz()
-    
+
     ; ### record output to read it in next calls of this function
 
     uncrouch.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, crouchZone)
     pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
-    
+
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
         crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
@@ -631,15 +604,20 @@ limitOutputs(rawCoords) {
     based on the currently seen cardinal directions and modifiers
 */
 updateAnalogStick() {
+    global currentTimeMS
+    Critical, On ; thread can't be interrupted by a hotkey until the following code executes
+    currentTimeMS := A_TickCount
     coords := getAnalogCoords()
     finalOutput := limitOutputs(coords)
     finalCoords := [finalOutput.x, finalOutput.y]
     setAnalogStick(finalCoords)
+    Critical, Off
+    Sleep, -1
     return
 }
 
-/*  Converts coordinates from gamecube controller integers (the fighting game engine limits the 
-    coordinates to a circle that's centered in 0,0 and extends 80 units into all directions) 
+/*  Converts coordinates from gamecube controller integers (the fighting game engine limits the
+    coordinates to a circle that's centered in 0,0 and extends 80 units into all directions)
     to vJoy values (whose full range is 0 to 32767 and is centered around 16384,16384).
 */
 convertIntegerToVJoy(finalCoords) {
@@ -740,42 +718,31 @@ setAnalogR(value) {
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
 
 
-HotkeyCtrlHasFocus() {
-    ;Retrieves the control ID (ClassNN) for the control that currently has focus
-    GuiControlGet, CurrentControlID, Focus 
-    
-    If InStr(CurrentControlID, "hotkey") {
-        GuiControlGet, CurrentControlAssociatedVarName, FocusV
-        Return CurrentControlAssociatedVarName
-    }
-    Return
-}
-
-#If CurrentControlVarName := HotkeyCtrlHasFocus() ; mind that this is a store operator :=
-*AppsKey::      ; Add support for these special keys,
-*BackSpace::    ; which the hotkey control does not normally allow.
-*Delete::
-*Enter::
-*Escape::
-*Pause::
-*PrintScreen::
-*Space::
-*Tab::
-    modifier := ""
-    If GetKeyState("Shift","P")
-        modifier .= "+"
-    If GetKeyState("Ctrl","P")
-        modifier .= "^"
-    If GetKeyState("Alt","P")
-        modifier .= "!"
-    Gui, Submit, NoHide ;If BackSpace is the first key press, Gui has never been submitted.
-    ;If the control has text but no modifiers held,
-    If (A_ThisHotkey == "*BackSpace" && %CurrentControlVarName% && !modifier) 
-        GuiControl,,%CurrentControlVarName% ;  allow BackSpace to clear that text.
-    Else ;Otherwise,
-        GuiControl,,%CurrentControlVarName%, % modifier SubStr(A_ThisHotkey,2) ;  show the hotkey.
-    validateHK(CurrentControlVarName)
-return
+#If currentControlVarName := HotkeyCtrlHasFocus()
+    *AppsKey::      ; Add support for these special keys,
+    *BackSpace::    ; which the hotkey control does not normally allow.
+    *Delete::
+    *Enter::
+    *Escape::
+    *Pause::
+    *PrintScreen::
+    *Space::
+    *Tab::
+        modifier := ""
+        If GetKeyState("Shift","P")
+            modifier .= "+"
+        If GetKeyState("Ctrl","P")
+            modifier .= "^"
+        If GetKeyState("Alt","P")
+            modifier .= "!"
+        Gui, Submit, NoHide
+        ;If the user presses only Backspace to clear a key
+        If (A_ThisHotkey == "*BackSpace" && %currentControlVarName% && !modifier)
+            GuiControl,,%currentControlVarName% ;  allow BackSpace to clear that control.
+        Else ;Otherwise,
+            GuiControl,,%currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) ; set the hotkey.
+        validateHK(currentControlVarName)
+    return
 #If ; end of conditional hotkeys
 
 ;-------macros
@@ -788,9 +755,9 @@ SetKeyDelay, 0
 ^!s:: ; Ctrl+Alt+S
     Suspend, Toggle
     If A_IsSuspended
-        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Disabled", 3, 0
+        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Disabled", 2, 0
     Else
-        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Enabled", 3, 0
+        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Enabled", 2, 0
 Return
 
 ; Analog Up
@@ -802,6 +769,7 @@ return
 
 Label1_UP:
     buttonUp := false
+
     updateAnalogStick()
     updateCStick()
 return
@@ -1195,3 +1163,10 @@ stringJoin(sep, params) {
     return SubStr(str, 1, -StrLen(sep))
 }
 
+; arbitrary vjoy initial status bug fix: reset all buttons on startup
+
+if !takeoverForTest {
+    for index in hotkeys {
+        gosub Label%index%_UP
+    }
+}
