@@ -26,13 +26,12 @@ getHotkeyControlFormat(activationKey) {
 }
 
 activationKeyCheck() {
-    global lastHK, global currentControlVarName
-    currentControlVarName := HotkeyCtrlHasFocus()
+    global lastHK
 
     ; A_GuiControl is the name of the variable with the content of the hotkey control that is in focus
 
     ;Retrieve the index of the hotkey
-    num := SubStr(A_GuiControl, 3)
+    ; num := SubStr(A_GuiControl, 3)
 
     ;If the hotkey contains only modifiers, return to wait for a key.
     If %A_GuiControl% in +,^,!,+^,+!,^!,+^!
@@ -82,25 +81,41 @@ validateHK(controlVarName) { ; you came from activationKeyCheck() or #If Express
 
 checkDuplicateHK(num) {
     global
-    tryHK := strReplace(HK%num%, "~", "")
+    compareHK := strReplace(HK%num%, "~", "")
     Loop,% hotkeys.Length() {
-        If (tryHK = strReplace(savedHK%A_Index%, "~", "")) { ; case-insensitive compare activation keys
+        If (compareHK = strReplace(savedHK%A_Index%, "~", "")) { ; if case-insensitive equal
+            StringUpper, compareHK, compareHK, T
             duplIndex := A_Index
-            TrayTip, % "Rectangle Controller Script:", % "Hotkey Already Taken", 2, 0
-            Loop,3 {
-                Gui, Font, cRed bold
-                GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
-                Sleep,200
-                Gui, Font, cDefault norm
-                GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
-                Sleep,200
-            }
-            GuiControl,% "Disable" false, HK%duplIndex%
+            TrayTip, % "Rectangle Controller Script:", % "Hotkey Already Taken:  " compareHK, 2, 0
             GuiControl,,HK%num%,% HK%num% :="" ;Delete the hotkey and clear the control.
+            new flashHotkeyControl(duplIndex)
+            
             break
         }
     }
     return
+}
+
+class flashHotkeyControl {
+    transitionTime := 200
+    __New(hotkeyIndex) {
+        timerFunction := ObjBindMethod(this, "flashMethod")
+        this.hotkeyIndex := hotkeyIndex
+        setTimer, % timerFunction, -20
+    }
+
+    flashMethod() {
+        global
+        Loop,3 {
+            hotkeyIndex := this.hotkeyIndex
+            Gui, Font, cRed bold
+            GuiControl, Font, HK%hotkeyIndex% ;Flash the original hotkey to alert the user.
+            Sleep, % this.transitionTime
+            Gui, Font, cDefault norm
+            GuiControl, Font, HK%hotkeyIndex% ;Flash the original hotkey to alert the user.
+            Sleep, % this.transitionTime
+        }
+    }
 }
 
 setHK(num,INI,GUI) {
@@ -129,6 +144,7 @@ blameCulpritHotkey() {
 }
 
 HotkeyCtrlHasFocus() {
+    OutputDebug, % "HotkeyCtrlHasFocus ran " A_TickCount " `n"
     ;Retrieves the control ID (ClassNN) for the control that currently has focus
     GuiControlGet, vCurrentControlID, Focus
 
