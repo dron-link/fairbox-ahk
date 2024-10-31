@@ -88,34 +88,20 @@ checkDuplicateHK(num) {
             duplIndex := A_Index
             TrayTip, % "Rectangle Controller Script:", % "Hotkey Already Taken:  " compareHK, 2, 0
             GuiControl,,HK%num%,% HK%num% :="" ;Delete the hotkey and clear the control.
-            new flashHotkeyControl(duplIndex)
+
+                Loop,3 {
+                    Gui, Font, cRed bold
+                    GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
+                    Sleep,200
+                    Gui, Font, cDefault norm
+                    GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
+                    Sleep,200
+                }
             
             break
         }
     }
     return
-}
-
-class flashHotkeyControl {
-    transitionTime := 200
-    __New(hotkeyIndex) {
-        timerFunction := ObjBindMethod(this, "flashMethod")
-        this.hotkeyIndex := hotkeyIndex
-        setTimer, % timerFunction, -20
-    }
-
-    flashMethod() {
-        global
-        Loop,3 {
-            hotkeyIndex := this.hotkeyIndex
-            Gui, Font, cRed bold
-            GuiControl, Font, HK%hotkeyIndex% ;Flash the original hotkey to alert the user.
-            Sleep, % this.transitionTime
-            Gui, Font, cDefault norm
-            GuiControl, Font, HK%hotkeyIndex% ;Flash the original hotkey to alert the user.
-            Sleep, % this.transitionTime
-        }
-    }
 }
 
 setHK(num,INI,GUI) {
