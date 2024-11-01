@@ -66,6 +66,11 @@ rough change list and to-do
  - implemented 1.0 cardinal fuzzing (y fuzzing). UCF and v1.03 fixes are compatible with this nerf
  - made a function that deals the task of getting the nerfed coordinates for timing based nerfs. "nerfBasedOnHistory"
 
+ - TODO check that displayed hotkeys always reflect the real ones
+ - TODO rename gui, subcommands to gui, editControls:subcommands. as a measure set editControls as default
+ - TODO primitive input viewer, or graphic input viewer, as a separate .exe app
+ - TODO b0xx example layout picture window? maybe not necessary if i do the graphic input viewer
+ - TODO create a ReloadAndShowWindowAgain
  - TODO add cx and cy entries to the output history
  - TODO consider outputting 1.0 cardinals and 45° large diagonals past the analog circle?
  - TODO implement SDI nerfs
@@ -113,16 +118,18 @@ hotkeys := [ "Analog Up" ; 1
 target.bindAnglesToCStick()
 
 initializeTray()
-descriptionWidth := 80
-; adopt saved hotkeys and silently initialize Edit Controls menu
+descriptionWidth := 130 ; width of the hotkey control boxes
+Gui, Font, s9
+
+; adopt saved hotkeys and initialize Edit Controls menu
 for index, element in hotkeys {
     ; determine start position of each set of gui elements
-    if (index > 17) {
+    if (index > 20) {
         xOff := 450 + descriptionWidth
-        yOff := (index-1-17)*27
+        yOff := (index-1-20)*25
     } else {
-        yOff := (index-1)*27
         xOff := 0
+        yOff := (index-1)*25
     }
 
     hotkeyIndexNow := index ; save in case of showing error message
@@ -136,7 +143,6 @@ for index, element in hotkeys {
         ;Activate saved hotkey
         Hotkey, % savedHK%index%, Label%index%
         Hotkey, % savedHK%index% . " UP", Label%index%_UP
-        HK%index% := savedHK%index%
     }
 
     if InStr(savedHK%index%, "~") {
@@ -148,20 +154,23 @@ for index, element in hotkeys {
 
     savedHKCont := getHotkeyControlFormat(savedHK%index%) ; fix text incompatibility with gui hotkey controls
 
-    xOffHK := xOff + 110 ; advance past the text of the button name
+    xOffHK := xOff + 110 ; advance past the text of the button name for the hotkey control location
 
+    HK%index% := savedHK%index%
     ;Add controls and show the saved key
     Gui, Add, Hotkey, xm+%xOffHK% ym+%yOff% w%descriptionWidth% vHK%index% gActivationKeyCheck, % savedHKCont
     if !preventBehavior%index% {
-        Gui, Add, CheckBox, x+5 vPreventBehavior%index% gCheckBoxChange, % "Prevent Default Behavior"
+        Gui, Add, CheckBox, x+5 vPreventBehavior%index% gDefaultBehaviorChange, % "Prevent Default Behavior"
     } else {
-        Gui, Add, CheckBox, x+5 vPreventBehavior%index% Checked gCheckBoxChange, % "Prevent Default Behavior"
+        Gui, Add, CheckBox, x+5 vPreventBehavior%index% Checked gDefaultBehaviorChange, % "Prevent Default Behavior"
     }
+    Gui, Add, CheckBox, x+5 vIsSpecialKey%index% gSpecialKeyChange, % "Special Bind"
+    isSpecialKey%index% := false
 
     SetTimer, blameCulpritHotkey, Delete ; the operation of retrieving the activation key was successful
 }
-
-currentControlVarName := HotkeyCtrlHasFocus()
+; empty now useless variables
+hotkeyIndexNow := ""
 
 instructionsText1 := "
 (
@@ -170,8 +179,8 @@ To clear a key, click on it and press Back.
 ''Prevent Default Behavior'' eliminates any side effect of pressing a key
 or key combination. Use it only when you play using keys that can execute
 Windows or emulator commands and you don't want it to happen while you
-play.
-Examples: Tab, Shift, Alt, Ctrl, Windows icon, Esc, F1, F2, F3, F4, F5...
+play. Recommended keys to mark, if you use them: Tab, Esc, Shift, Alt,
+Ctrl, Windows icon, F1, F2, F3, F4, F5, F6...
 )"
 
 turnOffHotkeysMessage() {
@@ -184,16 +193,26 @@ turnOffHotkeysMessage() {
 
 instructionsText2 := "
 (
-''Special Key'' can let you bind the keys Shift, Alt, Ctrl, or AltGr.
+To bind the keys Back, Shift, Alt, Ctrl, Windows icon, or AltGr,
+to a button, you must mark it with ''Special Bind'' first.
 
-You can restart the script by right-clicking the tray and selecting 
+Note: if even with Special Bind active, you can't bind Tab, Back, or
+Space, and if no duplicate key flashes, you should look closer, as
+there's probably a duplicate key around but it can't flash (for reasons).
+
+Note: After you're done, check if all of your keybindings work.
+
+Note: If two different key bindings appear here with the same name, they
+may still work as two different keys, but to know for sure, check it.
+
+Tip: You can restart the script by right-clicking the tray and selecting 
 ''Reload this Script'' or with the key combination Ctrl+Alt+R.
 )"
 
 yOff += 30
-Gui, Add, GroupBox, xm+%xOff% ym+%yOff% w390 r12, % "Instructions"
+Gui, Add, GroupBox, xm+%xOff% ym+%yOff% w385 r19, % "Instructions" ; options r%n% means n rows max allocated
 Gui, Add, Text, xp+15 yp+25, % instructionsText1
-Gui, Add, Button, w220 gTurnOffHotkeysMessage, % "How to use the keys normally again"
+Gui, Add, Button, w220 gTurnOffHotkeysMessage, % "How to use checked keys normally again"
 Gui, Add, Text, xp yp+35, % instructionsText2
 
 ;----------Start Hotkey Handling-----------
@@ -717,17 +736,39 @@ setAnalogR(value) {
 
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
 
-
-#If currentControlVarName := HotkeyCtrlHasFocus()
-    *AppsKey::      ; Add support for these special keys,
-    *BackSpace::    ; which the hotkey control does not normally allow.
-    *Delete::
-    *Enter::
-    *Escape::
-    *Pause::
-    *PrintScreen::
-    *Space::
-    *Tab::
+; when a hotkey has the checkbox Special Bind, these hotkey labels take priority over the others 
+#If currentControlVarNameSp := HotkeyCtrlHasFocusIsSpecial()
+    LControl & RAlt::
+    LControl::
+    RControl::
+    LShift::
+    RShift::
+    LAlt::
+    RAlt::
+    LWin::
+    RWin::
+        Critical, On
+        Gui, Submit, NoHide
+        labelNum := SubStr(currentControlVarNameSp, 3)
+        OutputDebug, % A_ThisHotkey " " labelNum "`n"
+        If (A_ThisHotkey == "LControl & RAlt") {
+            GuiControl,,HK%labelNum%, % "^RAlt" ; make the control display altgr activation key.
+        } 
+        else If (A_ThisHotkey == "RShift") {
+            GuiControl,,HK%labelNum%, % "Shift" ; make the control display shift activation key.
+        } 
+        else if InStr(A_ThisHotkey, "*BackSpace") {
+            ; GuiControl,,HK%labelNum%, % StrReplace(A_ThisHotkey, "*BackSpace", "BackSpace")
+        }
+        else {
+            GuiControl,,HK%labelNum%, % A_ThisHotkey ;  make the control display the hotkey.
+        }
+            
+        validateHK(labelNum)
+        Critical, Off
+    return
+    *BackSpace::
+        Critical, On
         modifier := ""
         If GetKeyState("Shift","P")
             modifier .= "+"
@@ -736,14 +777,40 @@ setAnalogR(value) {
         If GetKeyState("Alt","P")
             modifier .= "!"
         Gui, Submit, NoHide
-        ;If the user presses only Backspace to clear a key
-        If (A_ThisHotkey == "*BackSpace" && %currentControlVarName% && !modifier)
-            GuiControl,,%currentControlVarName% ;  allow BackSpace to clear that control.
-        Else ;Otherwise,
-            GuiControl,,%currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) ; set the hotkey.
-        validateHK(currentControlVarName)
+        GuiControl,,%currentControlVarNameSp%, % modifier "BackSpace" ; overwrite the control content
+        labelNum := SubStr(currentControlVarNameSp, 3)
+        validateHK(labelNum)
+        Critical, Off
     return
+#If
+
+#If currentControlVarName := HotkeyCtrlHasFocus() ; expr evaluated every time we press one of these keys
+    *AppsKey::      ; Add support for these keys,
+    *Delete::       ; which the hotkey control does not normally allow.
+    *Enter::
+    *Escape::
+    *Pause::
+    *PrintScreen::
+    *Space::
+    *Tab::
+        Critical, On
+        modifier := ""
+        If GetKeyState("Shift","P")
+            modifier .= "+"
+        If GetKeyState("Ctrl","P")
+            modifier .= "^"
+        If GetKeyState("Alt","P")
+            modifier .= "!"
+        Gui, Submit, NoHide
+        GuiControl,,%currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) ; overwrite the control content
+        labelNum := SubStr(currentControlVarName, 3)
+        validateHK(labelNum)
+        Critical, Off
+    return
+    
 #If ; end of conditional hotkeys
+
+
 
 ;-------macros
 
@@ -755,7 +822,7 @@ SetKeyDelay, 0
 ^!s:: ; Ctrl+Alt+S
     Suspend, Toggle
     If A_IsSuspended
-        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Disabled", 2, 0
+        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Disabled (''Suspend'' Mode)", 2, 0
     Else
         TrayTip, % "Rectangle Controller Script:", % "Hotkeys Enabled", 2, 0
 Return
