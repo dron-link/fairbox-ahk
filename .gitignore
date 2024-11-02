@@ -12,8 +12,8 @@
 !default-layout.jpg
 !suggested-layouts.png
 !miscellaneous-notes.md
-!fairbox-dolphin-5-keyboard.ini
-!fairbox-slippi-keyboard.ini
+!fairbox-kb-recalibrated.ini
+!fairbox-keyboard.ini
 !fairboxGlobalDeclarations.ahk
 !nerfPivot.ahk
 !nerfUncrouch.ahk
@@ -21,4 +21,5 @@
 !nerfBasedOnHistory.ahk
 !trackDeadzoneExits.ahk
 !outputMiscMethods.ahk
-!guiFunctions.ahk
+!editControlsFunctions.ahk
+!CREDITS.md

@@ -31,10 +31,10 @@ hkIniAutoGen() {
 18=~-
 19=~=
 20=~7
-21=~Up
-22=~Down
-23=~Left
-24=~Right
+21=~
+22=~
+23=~
+24=~
 25=+^`
         )"
         FileAppend, % hkIniTextDefault, % hkIniPath

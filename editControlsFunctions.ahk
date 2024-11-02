@@ -1,15 +1,14 @@
 #Requires AutoHotkey v1.1
 
 initializeTray() {
-    objShowTheGui := Func("showGui")
     Menu, Tray, Click, 1
-    Menu, Tray, Add, % "Edit Controls", % objShowTheGui
+    Menu, Tray, Add, % "Edit Controls", showControlsGui
     Menu, Tray, Default, % "Edit Controls"
     return
 }
 
-showGui() { ;Show GUI from tray Icon
-    Gui, show,, % "Dynamic Hotkeys"
+showControlsGui() { ;Show GUI from tray Icon
+    Gui, show,, % "Controls Editor"
     ; prevents immediately waiting for input on the 1st input box (HK1) when showing gui
     GuiControl, Focus, gameBtName1
     return
@@ -98,15 +97,11 @@ checkDuplicateHK(num) {
             If (num == A_Index) {
                 continue
             }
-            If (HK%num% = "Space" or HK%num% = "Backspace" or HK%num% = "Tab") {
-                OutputDebug, % "checkDuplicateHK. bet flash control doesn't work`n"
-            } else {
-                OutputDebug, % "checkDuplicateHK. Flash should work`n"
-            }
+
             duplIndex := A_Index
             
             StringUpper, printDuplicateKey, HK%num%, T ; HK%num% Title Case string
-            MsgBox, % "Key " printDuplicateKey " already taken by ''" hotkeys[num]"'' button" 
+            MsgBox, % "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
 
             GuiControl,,HK%num% ; clear the control.
             Gui, Submit, NoHide ; clear HK%num%
@@ -118,9 +113,12 @@ checkDuplicateHK(num) {
             Loop,3 {
                 Gui, Font, w1000 underline
                 GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
+                Gui, Font, norm cRed
+                GuiControl, Font, gameBtName%duplIndex%
                 Sleep,130
-                Gui, Font, norm
+                Gui, Font, norm cDefault
                 GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
+                GuiControl, Font, gameBtName%duplIndex%
                 Sleep,130
             }
             break
@@ -202,20 +200,22 @@ specialKeyChange() {
 addEditControlsInstructions(xOff, yOff) {
     instructionsText1 := "
 (
-To clear a key binding, click on it and press Back. If you try to bind a 
+Click on the control you want to edit and press the key you want to bind.
+
+To clear a control, click on it and press Back. If you try to bind a 
 key that already was bound, the program won't let you do it, and it will
-alert you of the key binding you need to clear.
+alert you of the control you need to clear.
 
 ''Prevent Default Behavior'' eliminates any side effect of pressing a key
 or key combination. Use it ONLY when you play using keys that can mess
-up your gaming session. Recommended keys to mark, if you use them: Tab,
-Esc, Shift, Alt, Ctrl, Windows icon, F1, F2, F3, F4, F5, F6...
+up your gaming session. Recommended keys to mark, if you use them:
+Tab, Esc, Shift, Alt, Ctrl, Windows icon, F1, F2, F3, F4, F5, F6...
 )"
 
     instructionsText2 := "
 (
-To bind the keys Back, Shift, Alt, Ctrl, Windows icon, + (no numpad), or AltGr,
-to a button, you must mark it with ''Special Bind'' first.
+To bind one of the keys Back, Shift, Alt, Ctrl, Windows icon, + (no numpad),
+or AltGr, to a control, you must mark it with ''Special Bind'' first.
 
 Note: if even with Special Bind active, you can't bind Tab, Back, or Space, 
 and you don't receive an alert that your chosen key is already used, there's
@@ -238,16 +238,20 @@ program ''fairbox'' and delete the file named ''hotkeys.ini'' once.
 )"
 
     yOff += 30
-    Gui, Add, GroupBox, xm+%xOff% ym+%yOff% w385 r24, % "Instructions" ; options r%n% means n rows max allocated
+    Gui, Font, s11 norm, Segoe
+    Gui, Add, GroupBox, xm+%xOff% ym+%yOff% w475 r25, % "Instructions" ; options r%n% means n rows max allocated
     Gui, Add, Text, xp+15 yp+25, % instructionsText1
+    defaultFont()
     Gui, Add, Button, w220 gTurnOffHotkeysMessage, % "How to use marked keys normally again"
-    Gui, Add, Text, xp yp+35, % instructionsText2
+    Gui, Font, s11 norm, Segoe
+    Gui, Add, Text, xp yp+42, % instructionsText2
+    defaultFont()   
     return
 }
 
 turnOffHotkeysMessage() {
     MsgBox, % "If you need to use the keys normally, right-click the program's tray icon "
-        . "and click ''Suspend Hotkeys'' - or press Ctrl+Alt+S if each of those keys work. "
+        . "and click ''Suspend Hotkeys'' - or press Ctrl+Alt+S if each one of those keys work. "
         . "This turns off all game buttons "
         . "until you repeat this action.`n`n"
         . "Additionally, closing this program also makes all keys work again."
