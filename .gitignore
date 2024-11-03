@@ -8,8 +8,8 @@
 !CREDITS.md
 !analogZoneInfo
 !analogZoneInfo/*
-!constants
-!constants/*
+!system
+!system/*
 !controls
 !controls/*
 !coordinates
@@ -22,5 +22,9 @@
 !limitOutputs/*
 !technique
 !technique/*
+!technique/pivot
+!technique/pivot/*
+!technique/sdi
+!technique/sdi/*
 !test
 !test/*

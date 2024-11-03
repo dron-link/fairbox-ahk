@@ -4,25 +4,41 @@
 #NoEnv
 #include <CvJoyInterface>
 SetBatchLines, -1
-#MenuMaskKey vkE8 ; virtual key code which generally has no effect
+#MenuMaskKey vkE8 ; virtual key code that is unused by windows
 #include %A_ScriptDir%
-#include, constants\engineConstants.ahk ; needed for most other things
-#include, controls\hkIniAutogenerator.ahk ; create hotkeys.ini
-#include, test\testingTools.ahk
-#include, coordinates\targetObjStructure.ahk ; defines targetCoordinateTree class
-target := new targetCoordinateTree
-#include, coordinates\targetCoordinateValues.ahk ; you can customize the coordinates here
+#include, controls\hkIniAutogenerator.ahk 
+#include, system\gameEngineConstants.ahk
+#include, system\fairboxConstants.ahk
+#include, system\infoEntryClasses.ahk
+#include, coordinates\targetObjStructure.ahk
+#include, coordinates\targetCoordinateValues.ahk ; you can customize the coordinates in this file
 #include, coordinates\targetFormatting.ahk
-#include, constants\fairboxGlobalDeclarations.ahk
-#include, limitOutputs\outputMiscMethods.ahk
-#include, technique\nerfUncrouch.ahk
-#include, technique\nerfPivot.ahk
-#include, technique\nerfSDI.ahk
+#include, limitOutputs\outputClass.ahk
+#include, limitOutputs\limitOutputs.ahk
+#include, limitOutputs\getFuzzyHorizontal100.ahk
+#include, analogZoneInfo\outOfDeadzone.ahk
+#include, analogZoneInfo\outOfDeadzoneClass.ahk
+#include, analogZoneInfo\crouchZone.ahk
+#include, analogZoneInfo\crouchZoneClass.ahk
+#include, analogZoneInfo\dashZone.ahk 
+#include, analogZoneInfo\dashZoneClass.ahk
+#include, technique\reverseNeutralB.ahk
 #include, technique\nerfBasedOnHistory.ahk
-#include, analogZoneInfo\trackDeadzoneExits.ahk
-#include, controls\editControlsFunctions.ahk
-enabledHotkeys := true
-testNerfsByHand(false) ; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
+#include, technique\uncrouch.ahk
+#include, technique\uncrouchClass.ahk
+#include, technique\pivot\pivot.ahk
+#include, technique\pivot\pivotClass.ahk
+#include, technique\pivot\detectPivot.ahk
+#include, technique\pivot\getPivotLockoutNerfedCoords.ahk
+#include, controls\hotkeyHelpers.ahk
+#include, controls\setControlsAndInitEditControls.ahk
+#include, controls\gFunctionsUponInteraction.ahk
+#include, controls\hotkeyValidation.ahk
+#include, controls\editControlsInstructions.ahk
+#include, controls\hotkeyControlHasFocus.ahk
+#include, test\miscTestingTools.ahk
+; #include, test\calibrationTest.ahk
+#include, test\testNerfsByHand.ahk
 
 /*  
 
@@ -80,41 +96,24 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 */
 
-hotkeys := [ "Analog Up" ; 1
-    , "Analog Down" ; 2
-    , "Analog Left" ; 3
-    , "Analog Right" ; 4
-    , "ModX" ; 5
-    , "ModY" ; 6
-    , "A" ; 7
-    , "B" ; 8
-    , "L" ; 9
-    , "R" ; 10
-    , "X" ; 11
-    , "Y" ; 12
-    , "Z" ; 13
-    , "C-stick Up" ; 14
-    , "C-stick Down" ; 15
-    , "C-stick Left" ; 16
-    , "C-stick Right" ; 17
-    , "Light Shield" ; 18
-    , "Mid Shield" ; 19
-    , "Start" ; 20
-    , "D-pad Up" ; 21
-    , "D-pad Down" ; 22
-    , "D-pad Left" ; 23
-    , "D-pad Right" ; 24
-    , "Debug"] ; 25
+hkIniAutoGenerator() ; create hotkeys.ini if missing
 
+target := new targetCoordinateTree
+target.loadCoordinates()
+target.formatCoordinates()
 ; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-guiFontDefault() {
+enabledHotkeys := true
+; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
+testNerfsByHand(false) 
+
+guiFontDefault() { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
     Gui, Font, s9 cDefault norm, Segoe
     return
 }
 
-guiFontDefault() ; set the default font for all gui text
+guiFontDefault()
 initializeTray() ; creates the Edit Controls option in the tray
 
 for i in hotkeys {
@@ -125,7 +124,8 @@ for i in hotkeys {
 
 xOff := 0, yOff := 0 ; global variables associated with created gui elements' position
 descriptionWidth := 130 ; width of the hotkey control boxes
-loadHotkeyActivationsAndControls() ; adopt saved hotkeys and initialize Edit Controls menu
+setControlsAndInitWindow()  ; adopt saved hotkeys and initialize Edit Controls menu. 
+                            ; also sets xoff yoff for next step
 
 addEditControlsInstructions(xOff, yOff)
 xOff := "", yOff := ""
@@ -197,6 +197,13 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 */
 ; Debug info
 lastCoordTrace := ""
+
+; arbitrary vjoy initial status bug fix: reset all buttons on startup
+if enabledHotkeys {
+    for index in hotkeys {
+        gosub Label%index%_UP
+    }
+}
 
 /*  ////////////////////////////////
     check what directions, modifiers and buttons we should listen to,
@@ -449,88 +456,6 @@ reflectCoords(quadrantICoords) {
         x *= -1
     }
     return [x, y]
-}
-
-; ///////////// Get the same coordinates but now with nerfs
-
-limitOutputs(rawCoords) {
-    global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
-    global xComp, global yComp, global currentTimeMS, global sdiZoneHist
-
-    ; ### first call setup
-
-    static output := new outputBase
-    ; objects that store the info of previous relevant areas the control stick was inside of
-    static outOfDeadzone := new leftstickOutOfDeadzoneBase
-    static dashZone := new baseDashZone
-    static crouchZone := new baseCrouchZone
-    ; objects that store the previously executed techniques that activate timing lockouts
-    static pivot := new basePivot
-    static uncrouch := new baseUncrouch
-
-    static limitOutputsInitialized := False
-    if !limitOutputsInitialized {
-        /*  this is a way to bundle outOfDeadzone info with the pivot and uncrouch objects
-            to make the info visible to pivot.getNerfedCoords() and uncrouch.getNerfedCoords()
-        */
-        ;
-        pivot.outOfDeadzone := outOfDeadzone
-        uncrouch.outOfDeadzone := outOfDeadzone
-        limitOutputsInitialized := True
-    }
-
-    ; ### update the variables
-
-    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS)
-    /*  true if current input and those that follow can't be considered as part of the previous multipress;
-        only runs once, after a multipress ends.
-    */
-    if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS
-        and !output.hist[1].multipress.ended) {
-        output.hist[1].multipress.ended := true
-        outOfDeadzone.saveHistory()
-        crouchZone.saveHistory()
-        uncrouch.saveHistory()
-        dashZone.saveHistory()
-        pivot.saveHistory()
-    }
-    uncrouch.lockoutExpiryCheck()
-    dashZone.checkHistoryEntryStaleness()
-    pivot.lockoutExpiryCheck()
-
-    ; ### processes the player input and converts it into legal output
-
-    output.reverseNeutralBNerf()
-
-    ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
-    pivot.nerfSearch(output.limited.x, output.limited.y, dashZone)
-    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
-
-    output.chooseLockout(pivot, uncrouch)
-
-    ; fuzz the y when x is +1.00 or -1.00
-    output.horizontalRimFuzz()
-
-    ; ### record output to read it in next calls of this function
-
-    uncrouch.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, crouchZone)
-    pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
-
-    if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
-        outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
-        crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
-        dashZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
-
-        ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
-        if output.hist[1].multipress.ended {
-            output.limited.multipress.began := true
-            output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obviously, currentTimeMS
-        }
-        ; registers even the shortest-lasting leftstick coordinates passed to vjoy
-        output.hist.Pop(), output.hist.InsertAt(1, output.limited)
-    }
-
-    return output.limited
 }
 
 /*  //////////////////////////////////////
@@ -1141,10 +1066,4 @@ stringJoin(sep, params) {
     return SubStr(str, 1, -StrLen(sep))
 }
 
-; arbitrary vjoy initial status bug fix: reset all buttons on startup
 
-if enabledHotkeys {
-    for index in hotkeys {
-        gosub Label%index%_UP
-    }
-}

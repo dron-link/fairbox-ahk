@@ -1,5 +1,8 @@
 #Requires AutoHotkey v1.1
-; the idea and comments behind these constants is copied from CarVac/HayBox
+/*  constants... extracted from the game engine, and other sources of information.
+    the idea and comments behind these constants is copied from CarVac/HayBox
+*/
+
 ANALOG_STEP := 1
 MS_PER_FRAME := 1000 / 60  ; game runs at 60 fps
 PI := 3.141592653589793
@@ -64,4 +67,4 @@ TIMESTALE_PIVOT_INPUTSEQUENCE := 15 * MS_PER_FRAME
 FORCE_FTILT := 30 ; value taken from CarVac haybox
 TIMESTALE_SDI_INPUTSEQUENCE := 8 * MS_PER_FRAME
 
-FUZZ_1_00_PROBABILITY := 50 ; percent of probability that the X output is 0.9875 instead of 1.0000
+FUZZ_1_00_PROBABILITY := 50 ; %, probability that the X output is 0.9875 instead of 1.0000

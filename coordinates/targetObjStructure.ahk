@@ -16,6 +16,13 @@ class targetCoordinateTree {
     airdodge := {}
     fireFox := new modCAngleRole
     extendedB := new modCAngleRole
+
+    loadCoordinates() {
+        return assignCoordinateValues(this)
+    } 
+    formatCoordinates() {
+        return formatTargetCoordinates(this)
+    }
   
     bindAnglesToCStick() { ; We are going to set personalized c-button angle bindings 
         global keysModCAngleRole   

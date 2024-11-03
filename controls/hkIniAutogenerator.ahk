@@ -1,8 +1,6 @@
 #Requires AutoHotkey v1.1
 
-hkIniAutoGen()
-
-hkIniAutoGen() {
+hkIniAutoGenerator() {
     hkIniPath := A_ScriptDir "\hotkeys.ini"
     ; if hotkeys.ini doesn't exist, create it
     AttributeString := FileExist(hkIniPath)

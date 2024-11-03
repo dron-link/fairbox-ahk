@@ -44,7 +44,7 @@ For that matter I (dron-link) won't be focusing on implementing travel time simu
   Still, Universal Controller Fix v0.84 and newer, and alternatively SSBM1.03 get rid of these problems for Game cube controllers "and" for this script.
 
 ## A pivot nerf case review
-This is a diagram of a coordinate circle. Order of inputs is 2 -> 1 -> aX
+This is a diagram of a coordinate circle. Order of inputs is 2 -> 1 -> aX (aX is current input)
 ```
 
               y ^
@@ -58,7 +58,7 @@ This is a diagram of a coordinate circle. Order of inputs is 2 -> 1 -> aX
           
 ```
 
-* a pivot is detected by examining aX and dashZone history. its timestamp ==currentTime and stale==false.
+* a pivot is detected by examining the dashzone of aX and dashZone history.  
 * aX needs to be nerfed because it's below y deadzone 
 * output gets nerfed, yielding rX as the new stick output
 * dashZone history update is called but because rX is in the same zone as 1, no new entries are added into the dash history (we don't save the same entry twice)
