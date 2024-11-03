@@ -11,7 +11,7 @@ B0XX: Credits
 - produced & engineered by Kyle “simple” McDowell
 
 Helpful people (thank you!):
-- 7excess : testing
+- 7excess : b0xx-ahk testing
 - CarVac : advice
 - Practical_TAS : advice
 - JonnyHaystack : advice 

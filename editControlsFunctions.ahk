@@ -15,13 +15,77 @@ showControlsGui() { ;Show GUI from tray Icon
 }
 
 getHotkeyControlFormat(activationKey) {
-    /*  Remove tilde (~) and Win (#) modifiers...
+    /*  Removes tilde (~) and Win (#) modifiers from hotkey control box content...
         They are incompatible with hotkey controls (cannot be shown in hotkey control boxes).
         The only modifiers supported are  ^ (Control), ! (Alt), and + (Shift).
+
+        The "allow default functionality" modifier (~) still make their way to the
+        hotkey thanks to validateHK()
     */
     result := StrReplace(activationKey, "#", ""), result := StrReplace(result, "~", "")
     return result
 }
+
+loadHotkeyActivationsAndControls() { ; adopt saved hotkeys and initialize Edit Controls menu
+    global
+    for index, element in hotkeys {
+        ; determine start position of each set of gui elements
+        if (index > 24) {
+            xOff := 420 + descriptionWidth
+            yOff := (index-1-24)*25
+        } else {
+            xOff := 0
+            yOff := (index-1)*25
+        }
+    
+        hotkeyIndexNow := index ; save in case of showing error message
+        SetTimer, blameCulpritHotkey, -800 ; if this thread is interrupted by an error, a msgbox will display
+    
+        ; adds borderless text N°1 and associates it to variable gameBtName1, and so on
+        Gui, Add, Text, xm+%xOff% ym+%yOff% vGameBtName%index%, % element " button:"
+        ; Attempt to retrieve a hotkey activation key from the INI file.
+        IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%
+        ;Activate saved hotkey
+        If (enabledHotkeys and strReplace(savedHK%index%, "~", "") != "") { ;If new hotkey exists,
+            Hotkey, % savedHK%index%, Label%index% ;  enable it.
+            Hotkey, % savedHK%index% . " UP", Label%index%_UP ;  enable it.
+    
+            /*  sets the value of the variable associated with the Prevent Default Behavior checkbox.
+                The value is retrieved every time we assign a new hotkey:
+                IF the checkbox is unmarked, we put "~" before the string that represents the key combination
+                retrieved from the hotkey control.
+            */
+            if InStr(savedHK%index%, "~") { ; if ~ is in the activation key
+                ; the user wants the key or key combination to preserve all its functionality
+                preventBehavior%index% := false
+            } else {
+                ; the key will only work as a controller input; won't work outside of the game
+                preventBehavior%index% := true 
+            }
+        }
+        ; empty hotkeys will display as unmarked
+        if (strReplace(savedHK%index%, "~", "") = "") {
+            preventBehavior%index% := false
+        }
+    
+        xOffHK := xOff + 117 ; advance past the text of the button name for the hotkey control location
+    
+        HK%index% := savedHK%index%
+        ;Add controls and show the saved key
+        Gui, Add, Hotkey, xm+%xOffHK% ym+%yOff% w%descriptionWidth% vHK%index% gActivationKeyCheck, % getHotkeyControlFormat(savedHK%index%)
+        if !preventBehavior%index% {
+            Gui, Add, CheckBox, x+5 vPreventBehavior%index% gDefaultBehaviorChange, % "Prevent Default Behavior"
+        } else {
+            Gui, Add, CheckBox, x+5 vPreventBehavior%index% Checked gDefaultBehaviorChange, % "Prevent Default Behavior"
+        }
+        isSpecialKey%index% := false
+        Gui, Add, CheckBox, x+5 vIsSpecialKey%index% gSpecialKeyChange, % "Special Bind"
+    
+        SetTimer, blameCulpritHotkey, Delete ; the operation of retrieving the activation key was successful
+    }
+    return
+}
+
 
 getStrippedFromModifiers(stringIn) {
     /*  strips a hotkey control's content of all modifiers. 
@@ -116,7 +180,7 @@ checkDuplicateHK(num) {
                 Gui, Font, norm cRed
                 GuiControl, Font, gameBtName%duplIndex%
                 Sleep,130
-                Gui, Font, norm cDefault
+                guiFontDefault()
                 GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
                 GuiControl, Font, gameBtName%duplIndex%
                 Sleep,130
@@ -129,7 +193,7 @@ checkDuplicateHK(num) {
 
 setHK(num,INI,GUI) {
     global
-    If !takeoverForTest {
+    If enabledHotkeys {
         If strReplace(INI, "~", "") { ;If previous hotkey exists,
             Hotkey, %INI%, Label%num%, Off ;  disable it.
             Hotkey, %INI% UP, Label%num%_UP, Off ;  disable it.
@@ -155,8 +219,16 @@ defaultBehaviorChange() {
 
 blameCulpritHotkey() {
     global hotkeys, global hotkeyIndexNow
-    myErrorMsg := "Error while reading hotkeys on startup. "
-        . "The culprit hotkey is " hotkeys[hotkeyIndexNow] " (button number " hotkeyIndexNow ")"
+    myErrorMsg := "Error while reading hotkeys on app launch. "
+        . "The culprit hotkey is " hotkeys[hotkeyIndexNow] " (button number " hotkeyIndexNow ").`n`n"
+        . "Attempt one of the following:`n`n"
+        . "Open " A_ScriptDir "\hotkeys.ini and "
+        . "delete the text to the right of ''" hotkeyIndexNow "=''`n"
+        . "There's no need to change anything else.`n`n"
+        . "The other solution is to "
+        . "rename the file the file hotkeys.ini, or moving it away, or deleting it. " 
+        . "All controls will be reset to their factory values but "
+        . "this will let you edit the controls normally again."
     OutputDebug, % myErrorMsg "`n"
     MsgBox, % myErrorMsg
 }
@@ -200,11 +272,11 @@ specialKeyChange() {
 addEditControlsInstructions(xOff, yOff) {
     instructionsText1 := "
 (
-Click on the control you want to edit and press the key you want to bind.
+Click on the control you want to edit and press the key you want to map to it.
 
 To clear a control, click on it and press Back. If you try to bind a 
 key that already was bound, the program won't let you do it, and it will
-alert you of the control you need to clear.
+alert you of the control you need to make a change to.
 
 ''Prevent Default Behavior'' eliminates any side effect of pressing a key
 or key combination. Use it ONLY when you play using keys that can mess
@@ -214,8 +286,9 @@ Tab, Esc, Shift, Alt, Ctrl, Windows icon, F1, F2, F3, F4, F5, F6...
 
     instructionsText2 := "
 (
-To bind one of the keys Back, Shift, Alt, Ctrl, Windows icon, + (no numpad),
-or AltGr, to a control, you must mark it with ''Special Bind'' first.
+To map one of the following: Back, Shift, Alt, Ctrl, Windows icon, + (not
+numpad), or AltGr, you must mark the control with ''Special Bind'' first,
+then click on the control and press the key.
 
 Note: if even with Special Bind active, you can't bind Tab, Back, or Space, 
 and you don't receive an alert that your chosen key is already used, there's
@@ -239,13 +312,13 @@ program ''fairbox'' and delete the file named ''hotkeys.ini'' once.
 
     yOff += 30
     Gui, Font, s11 norm, Segoe
-    Gui, Add, GroupBox, xm+%xOff% ym+%yOff% w475 r25, % "Instructions" ; options r%n% means n rows max allocated
+    Gui, Add, GroupBox, xm+%xOff% ym+%yOff% w475 r27, % "Instructions" ; options r%n% means n rows max allocated
     Gui, Add, Text, xp+15 yp+25, % instructionsText1
-    defaultFont()
+    guiFontDefault()
     Gui, Add, Button, w220 gTurnOffHotkeysMessage, % "How to use marked keys normally again"
     Gui, Font, s11 norm, Segoe
     Gui, Add, Text, xp yp+42, % instructionsText2
-    defaultFont()   
+    guiFontDefault()   
     return
 }
 

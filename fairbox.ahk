@@ -21,39 +21,16 @@ target := new targetCoordinateTree
 #include, nerfBasedOnHistory.ahk
 #include, trackDeadzoneExits.ahk
 #include, editControlsFunctions.ahk
-takeoverForTest := false ; if true, disables all buttons. use it to help your testing
+enabledHotkeys := true
 testNerfsByHand(false) ; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
 
 /*  
-    dron-link - current de facto developer
-    agirardeaudale - developer of b0xx-ahk which this program is a fork of
-    tlandegger - developer of smashbox-ahk which b0xx-ahk is a fork of
-
-    parts of this program are based on CarVac 's work 
-    https://github.com/CarVac/HayBox/blob/master/src/modes/MeleeLimits.cpp
-
-
-    thanks ///////////////
-    7excess : testing
-    CarVac : advice
-    Practical_TAS : advice
-    JonnyHaystack : advice 
-
-    tools - resources //////////////
-    dolphin - fastermelee - slippi
-    Altimor's Stickmap https://marp-e3fcf.web.app/
-    SmashScope https://goomwave.com/2020/06/28/smashscope-guide/
-    Autohotkey v1 documentation and Autohotkey forum
-    B0XX: The Movie  https://www.youtube.com/watch?v=uTYSgyca8cI
-    B0XX 4.0 Software Update https://youtu.be/I25zYh2XI4U
-    B0XX 4.1 Software Update https://youtu.be/1ZJZFcTsy9o
-    20XX Discord server. https://b0xx.com/pages/more-info
-    Melee Controller Ruleset Proposal
 
 DISCLAIMER
 I (dron-link) AM NOT A DEVELOPER BY TRADE.
-Other than to use it due to a lack of alternatives, I made this with the hope that this script
-contains any useful ideas for you if you're a programmer that wants to embark on a project like this.
+Other than due to a lack of alternatives, I made this with the hope that this script
+contains any useful ideas for you if you're an experienced programmer that wants to 
+embark on a project like this.
 
 contact info:
 Discord
@@ -62,8 +39,9 @@ Discord
 GitHub
     https://github.com/dron-link
 
-sdi, uncrouch and pivot nerfs adapted from CarVac 's work  https://github.com/CarVac/HayBox
 
+sdi, uncrouch, and pivot nerfs, and history saving adapted from CarVac 's work  
+https://github.com/CarVac/HayBox/blob/master/src/modes/MeleeLimits.cpp
 
   ---------------------
 
@@ -74,7 +52,9 @@ everything is subject to modification and may not be present in the finalized ve
 +++ i'm considering helping to make a faithful b0xx v4.1-like for keyboards in the future.
 
 rough list of remaining tasks
- - TODO popup messages that get displayed when button pesss, should be owned by gui
+ - TODO custom IfWinActive for users to make the hotkeys only work when the emulator window is focused 
+ - TODO reformat c-stick coordinates, make them into integers instead of floats
+ - TODO that popup message boxes should be owned by the window that the player invoked them from
  - TODO disable all traytip messages option
  - TODO increase hotkey control width option
  - TODO restore default hotkeys button
@@ -129,69 +109,26 @@ hotkeys := [ "Analog Up" ; 1
 ; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-defaultFont() {
-    Gui, Font, s9 norm, Segoe
+guiFontDefault() {
+    Gui, Font, s9 cDefault norm, Segoe
     return
 }
 
-initializeTray()
-descriptionWidth := 130 ; width of the hotkey control boxes
-defaultFont()
+guiFontDefault() ; set the default font for all gui text
+initializeTray() ; creates the Edit Controls option in the tray
 
-; adopt saved hotkeys and initialize Edit Controls menu
-for index, element in hotkeys {
-    ; determine start position of each set of gui elements
-    if (index > 24) {
-        xOff := 420 + descriptionWidth
-        yOff := (index-1-24)*25
-    } else {
-        xOff := 0
-        yOff := (index-1)*25
-    }
-
-    hotkeyIndexNow := index ; save in case of showing error message
-    SetTimer, blameCulpritHotkey, -800 ; if this thread is interrupted by an error, a msgbox will display
-
-    ; adds borderless text N°1 and associates it to variable gameBtName1, and so on
-    Gui, Add, Text, xm+%xOff% ym+%yOff% vGameBtName%index%, % element " button:"
-    ; Attempt to retrieve a hotkey activation key from the INI file.
-    IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%
-    If (savedHK%index% and !takeoverForTest) { ; If something was retrieved,
-        ;Activate saved hotkey
-        Hotkey, % savedHK%index%, Label%index%
-        Hotkey, % savedHK%index% . " UP", Label%index%_UP
-    }
-
-    if InStr(savedHK%index%, "~") {
-        ; When the hotkey fires, its key's native function will not be blocked
-        preventBehavior%index% := false
-    } else if (savedHK%index% = "") {
-        preventBehavior%index% := false
-    } else {
-        preventBehavior%index% := true
-    }
-
-    savedHKCont := getHotkeyControlFormat(savedHK%index%) ; fix text incompatibility with gui hotkey controls
-
-    xOffHK := xOff + 117 ; advance past the text of the button name for the hotkey control location
-
-    HK%index% := savedHK%index%
-    ;Add controls and show the saved key
-    Gui, Add, Hotkey, xm+%xOffHK% ym+%yOff% w%descriptionWidth% vHK%index% gActivationKeyCheck, % savedHKCont
-    if !preventBehavior%index% {
-        Gui, Add, CheckBox, x+5 vPreventBehavior%index% gDefaultBehaviorChange, % "Prevent Default Behavior"
-    } else {
-        Gui, Add, CheckBox, x+5 vPreventBehavior%index% Checked gDefaultBehaviorChange, % "Prevent Default Behavior"
-    }
-    Gui, Add, CheckBox, x+5 vIsSpecialKey%index% gSpecialKeyChange, % "Special Bind"
-    isSpecialKey%index% := false
-
-    SetTimer, blameCulpritHotkey, Delete ; the operation of retrieving the activation key was successful
+for i in hotkeys {
+    ; ### for hotkey activation keys, and gui hotkey controls. create the global variables associated to:
+    ; button name,       hotkey control,  hotkeys.ini values, special bind checkbox, Prev.Def.B. checkbox
+    gameBtName%i% := "", HK%i% := "",     savedHK%i% := "",   isSpecialKey%i% := "", preventBehavior%i% := ""
 }
-; empty now useless variables
-hotkeyIndexNow := ""
+
+xOff := 0, yOff := 0 ; global variables associated with created gui elements' position
+descriptionWidth := 130 ; width of the hotkey control boxes
+loadHotkeyActivationsAndControls() ; adopt saved hotkeys and initialize Edit Controls menu
 
 addEditControlsInstructions(xOff, yOff)
+xOff := "", yOff := ""
 
 ;----------Start Hotkey Handling-----------
 
@@ -634,7 +571,7 @@ setAnalogStick(finalCoords) {
     return
 }
 
-; //////////////// Get CStick coordinates. unit circle format, code written by agirardeaudale
+; //////////////// Get CStick coordinates. unit circle format
 getCStickCoords() {
     global
     if (!anyVertC() and !anyHorizC()) {
@@ -734,17 +671,11 @@ setAnalogR(value) {
             GuiControl,,HK%labelNum%, % "^RAlt" ; make the control display altgr activation key.
         }
         else if InStr(A_ThisHotkey, "*BackSpace") {
-            ; GuiControl,,HK%labelNum%, % StrReplace(A_ThisHotkey, "*BackSpace", "BackSpace")
+            ; leave it as it is
         }
-        /*
-        else if (A_ThisHotkey = "+") {
-            fakeModifier := true
-        }
-        */
         else {
             GuiControl,,HK%labelNum%, % A_ThisHotkey ;  make the control display the hotkey.
         }
-
 
         validateHK(labelNum)
         Critical, Off
@@ -1116,7 +1047,7 @@ Label25:
 Label25_UP:
 return
 
-; /////////////// Creates the Debug message. code written by agirardeaudale
+; /////////////// Creates the Debug message. code not updated yet
 
 getDebug() {
     global
@@ -1212,7 +1143,7 @@ stringJoin(sep, params) {
 
 ; arbitrary vjoy initial status bug fix: reset all buttons on startup
 
-if !takeoverForTest {
+if enabledHotkeys {
     for index in hotkeys {
         gosub Label%index%_UP
     }
