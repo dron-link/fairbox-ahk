@@ -6,21 +6,21 @@
 SetBatchLines, -1
 #MenuMaskKey vkE8 ; virtual key code which generally has no effect
 #include %A_ScriptDir%
-#include, engineConstants.ahk ; needed for most other things
-#include, hkIniAutogenerator.ahk ; create hotkeys.ini
-#include, testingTools.ahk
-#include, targetObjStructure.ahk ; defines targetCoordinateTree class
+#include, constants\engineConstants.ahk ; needed for most other things
+#include, controls\hkIniAutogenerator.ahk ; create hotkeys.ini
+#include, test\testingTools.ahk
+#include, coordinates\targetObjStructure.ahk ; defines targetCoordinateTree class
 target := new targetCoordinateTree
-#include, targetCoordinateValues.ahk ; you can customize the coordinates here
-#include, targetFormatting.ahk
-#include, fairboxGlobalDeclarations.ahk
-#include, outputMiscMethods.ahk
-#include, nerfUncrouch.ahk
-#include, nerfPivot.ahk
-#include, nerfSDI.ahk
-#include, nerfBasedOnHistory.ahk
-#include, trackDeadzoneExits.ahk
-#include, editControlsFunctions.ahk
+#include, coordinates\targetCoordinateValues.ahk ; you can customize the coordinates here
+#include, coordinates\targetFormatting.ahk
+#include, constants\fairboxGlobalDeclarations.ahk
+#include, limitOutputs\outputMiscMethods.ahk
+#include, technique\nerfUncrouch.ahk
+#include, technique\nerfPivot.ahk
+#include, technique\nerfSDI.ahk
+#include, technique\nerfBasedOnHistory.ahk
+#include, analogZoneInfo\trackDeadzoneExits.ahk
+#include, controls\editControlsFunctions.ahk
 enabledHotkeys := true
 testNerfsByHand(false) ; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
 
