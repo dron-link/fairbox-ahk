@@ -16,8 +16,8 @@
 !coordinates/*
 !docs
 !docs/*
-!gui
-!gui/*
+!menu
+!menu/*
 !limitOutputs
 !limitOutputs/*
 !technique

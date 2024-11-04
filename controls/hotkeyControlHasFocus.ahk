@@ -2,30 +2,27 @@
 
 hotkeyCtrlHasFocus() {
     global
-    OutputDebug, % "HotkeyCtrlHasFocus ran " A_TickCount " `n"
-    ;Retrieves the control ID (ClassNN) for the control that currently has focus
-    GuiControlGet, vCurrentControlID, Focus
+    ; Retrieves the control ID (ClassNN) for the control that currently has focus
+    GuiControlGet, vCurrentControlID, controlsWindow:Focus
 
-    If (InStr(vCurrentControlID, "hotkey")) {
-        GuiControlGet, vCurrentControlAssociatedVarName, FocusV
+    If InStr(vCurrentControlID, "hotkey") {
+        GuiControlGet, vCurrentControlAssociatedVarName, controlsWindow:FocusV
         Return vCurrentControlAssociatedVarName
     }
-    Return
+    Return false
 }
 
 hotkeyCtrlHasFocusIsSpecial() {
     global
-    OutputDebug, % "HotkeyCtrlHasFocusIsSpecial ran " A_TickCount " `n"
     ;Retrieves the control ID (ClassNN) for the control that currently has focus
-    GuiControlGet, vCurrentControlID, Focus
+    GuiControlGet, vCurrentControlID, controlsWindow:Focus
 
-    If (InStr(vCurrentControlID, "hotkey")) {
-        GuiControlGet, vCurrentControlAssociatedVarName, FocusV
+    If InStr(vCurrentControlID, "hotkey") {
+        GuiControlGet, vCurrentControlAssociatedVarName, controlsWindow:FocusV
         hotkeyIndex := SubStr(vCurrentControlAssociatedVarName, 3)
-        OutputDebug, % "hotkeyIndex " hotkeyIndex " isSpecialKey " isSpecialKey%hotkeyIndex% "`n"
         If isSpecialKey%hotkeyIndex% {
             Return vCurrentControlAssociatedVarName
         }
     }
-    Return
+    Return false
 }

@@ -6,10 +6,12 @@
 SetBatchLines, -1
 #MenuMaskKey vkE8 ; virtual key code that is unused by windows
 #include %A_ScriptDir%
+currentTimeMS := 0
 #include, controls\hkIniAutogenerator.ahk 
-#include, system\gameEngineConstants.ahk
 #include, system\fairboxConstants.ahk
+#include, system\gameEngineConstants.ahk
 #include, system\infoEntryClasses.ahk
+#include, menu\menu.ahk
 #include, coordinates\targetObjStructure.ahk
 #include, coordinates\targetCoordinateValues.ahk ; you can customize the coordinates in this file
 #include, coordinates\targetFormatting.ahk
@@ -31,8 +33,8 @@ SetBatchLines, -1
 #include, technique\pivot\detectPivot.ahk
 #include, technique\pivot\getPivotLockoutNerfedCoords.ahk
 #include, controls\hotkeyHelpers.ahk
-#include, controls\setControlsAndInitEditControls.ahk
-#include, controls\gFunctionsUponInteraction.ahk
+#include, controls\setControlsAndConstructGui.ahk
+#include, controls\goFunctionsUponInteraction.ahk
 #include, controls\hotkeyValidation.ahk
 #include, controls\editControlsInstructions.ahk
 #include, controls\hotkeyControlHasFocus.ahk
@@ -70,12 +72,11 @@ everything is subject to modification and may not be present in the finalized ve
 rough list of remaining tasks
  - TODO custom IfWinActive for users to make the hotkeys only work when the emulator window is focused 
  - TODO reformat c-stick coordinates, make them into integers instead of floats
- - TODO that popup message boxes should be owned by the window that the player invoked them from
+ - TODO that popup message boxes should be owned by the window that the user invoked them from
  - TODO disable all traytip messages option
  - TODO increase hotkey control width option
  - TODO restore default hotkeys button
  - TODO check that displayed hotkeys always reflect the real ones
- - TODO rename gui, subcommands to gui, editControls:subcommands. as a measure set editControls as default
  - TODO primitive input viewer, or graphic input viewer, as a separate .exe app
  - TODO b0xx example layout picture window? maybe not necessary if i do the graphic input viewer
  - TODO create a ReloadAndShowWindowAgain
@@ -87,7 +88,7 @@ rough list of remaining tasks
     ¬ use setTimer to lift a 2f jump nerf 2 frames after it was forced (idea origin: CarVac HayBox)
  - TODO implement coordinate target inconditional bans
  - TODO write tests
- - TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac)
+ - TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac/Haybox)
  - TODO make a debug mode, debugACertainProcess? outputDebug, % expression
 
 setTimer firing rate is apparently 15.6ms, don't expect much precision from it
@@ -108,13 +109,17 @@ enabledHotkeys := true
 ; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
 testNerfsByHand(false) 
 
-guiFontDefault() { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
-    Gui, Font, s9 cDefault norm, Segoe
+guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
+    Gui, % windowName ":Font", s8 cDefault norm, Tahoma
     return
 }
 
-guiFontDefault()
-initializeTray() ; creates the Edit Controls option in the tray
+guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
+    Gui, % windowName ":Font", s10 cDefault norm, Arial
+    return
+}
+
+trayAddEditControls() ; creates the Edit Controls option in the tray
 
 for i in hotkeys {
     ; ### for hotkey activation keys, and gui hotkey controls. create the global variables associated to:
@@ -122,13 +127,8 @@ for i in hotkeys {
     gameBtName%i% := "", HK%i% := "",     savedHK%i% := "",   isSpecialKey%i% := "", preventBehavior%i% := ""
 }
 
-xOff := 0, yOff := 0 ; global variables associated with created gui elements' position
-descriptionWidth := 130 ; width of the hotkey control boxes
-setControlsAndInitWindow()  ; adopt saved hotkeys and initialize Edit Controls menu. 
-                            ; also sets xoff yoff for next step
-
-addEditControlsInstructions(xOff, yOff)
-xOff := "", yOff := ""
+descriptionWidth := 115 ; width of the hotkey control boxes of the Edit Controls Window
+setControlsAndConstructGui()  ; adopt saved hotkeys and initialize Edit Controls Window. 
 
 ;----------Start Hotkey Handling-----------
 
@@ -154,6 +154,9 @@ buttonDown := false
 buttonLeft := false
 buttonRight := false
 
+buttonModX := false
+buttonModY := false
+
 buttonA := false
 buttonB := false
 buttonL := false
@@ -162,16 +165,21 @@ buttonX := false
 buttonY := false
 buttonZ := false
 
-buttonLightShield := false
-buttonMidShield := false
-
-buttonModX := false
-buttonModY := false
-
 buttonCUp := false
 buttonCDown := false
 buttonCLeft := false
 buttonCRight := false
+
+buttonLightShield := false
+buttonMidShield := false
+
+buttonStart := false
+
+buttonDPadUp := false
+buttonDPadDown := false
+buttonDPadLeft := false
+buttonDPadRight := false
+
 
 ; strings for when press order matters
 mostRecentVertical := "" ; this pair of variables went unused because of neutral SOCD
@@ -589,17 +597,17 @@ setAnalogR(value) {
     RWin::
     +:: 
         Critical, On
-        Gui, Submit, NoHide
+        Gui, controlsWindow:Submit, NoHide
         labelNum := SubStr(currentControlVarNameSp, 3)
         OutputDebug, % A_ThisHotkey " " labelNum "`n"
         If (A_ThisHotkey = "LControl & RAlt") {
-            GuiControl,,HK%labelNum%, % "^RAlt" ; make the control display altgr activation key.
+            GuiControl, controlsWindow:, HK%labelNum%, % "^RAlt" ; make the control display altgr activation key.
         }
         else if InStr(A_ThisHotkey, "*BackSpace") {
             ; leave it as it is
         }
         else {
-            GuiControl,,HK%labelNum%, % A_ThisHotkey ;  make the control display the hotkey.
+            GuiControl,controlsWindow:, HK%labelNum%, % A_ThisHotkey ;  make the control display the hotkey.
         }
 
         validateHK(labelNum)
@@ -614,8 +622,8 @@ setAnalogR(value) {
             modifier .= "^"
         If GetKeyState("Alt","P")
             modifier .= "!"
-        Gui, Submit, NoHide
-        GuiControl,,%currentControlVarNameSp%, % modifier "BackSpace" ; overwrite the control content
+        Gui, controlsWindow:Submit, NoHide
+        GuiControl, controlsWindow:, %currentControlVarNameSp%, % modifier "BackSpace" ; overwrite the control content
         labelNum := SubStr(currentControlVarNameSp, 3)
         validateHK(labelNum)
         Critical, Off
@@ -639,13 +647,13 @@ setAnalogR(value) {
             modifier .= "^"
         If GetKeyState("Alt","P")
             modifier .= "!"
-        Gui, Submit, NoHide
-        GuiControl,,%currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) ; overwrite the control content
+        Gui, controlsWindow:Submit, NoHide
+        ; overwrite the control content
+        GuiControl, controlsWindow:, %currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) 
         labelNum := SubStr(currentControlVarName, 3)
         validateHK(labelNum)
         Critical, Off
     return
-
 #If ; end of conditional hotkeys
 
 ;-------macros
@@ -665,160 +673,119 @@ Return
 
 ; Analog Up
 Label1:
-    buttonUp := true
-    updateAnalogStick()
-    updateCStick()
+    buttonUp := true, updateAnalogStick(), updateCStick()
 return
 
 Label1_UP:
-    buttonUp := false
-
-    updateAnalogStick()
-    updateCStick()
+    buttonUp := false, updateAnalogStick(), updateCStick()
 return
 
 ; Analog Down
 Label2:
-    buttonDown := true
-    updateAnalogStick()
-    updateCStick()
+    buttonDown := true, updateAnalogStick(), updateCStick()
 return
 
 Label2_UP:
-    buttonDown := false
-    updateAnalogStick()
-    updateCStick()
+    buttonDown := false, updateAnalogStick(), updateCStick()
 return
 
 ; Analog Left
 Label3:
-    buttonLeft := true
-    updateAnalogStick()
+    buttonLeft := true, updateAnalogStick()
 return
 
 Label3_UP:
-    buttonLeft := false
-    updateAnalogStick()
+    buttonLeft := false, updateAnalogStick()
 return
 
 ; Analog Right
 Label4:
-    buttonRight := true
-    updateAnalogStick()
+    buttonRight := true, updateAnalogStick()
 return
 
 Label4_UP:
-    buttonRight := false
-    updateAnalogStick()
+    buttonRight := false, updateAnalogStick()
 return
 
 ; ModX
 Label5:
-    buttonModX := true
-    updateAnalogStick()
-    updateCStick()
+    buttonModX := true, updateAnalogStick(), updateCStick()
 return
 
 Label5_UP:
-    buttonModX := false
-    updateAnalogStick()
-    updateCStick()
+    buttonModX := false, updateAnalogStick(), updateCStick()
 return
 
 ; ModY
 Label6:
-    buttonModY := true
-    updateAnalogStick()
+    buttonModY := true, updateAnalogStick()
 return
 
 Label6_UP:
-    buttonModY := false
-    updateAnalogStick()
+    buttonModY := false, updateAnalogStick()
 return
 
 ; A
 Label7:
-    buttonA := true
-    myStick.SetBtn(1,5)
+    buttonA := true, myStick.SetBtn(1,5)
 return
 
 Label7_UP:
-    buttonA := false
-    myStick.SetBtn(0,5)
+    buttonA := false, myStick.SetBtn(0,5)
 return
 
 ; B
 Label8:
-    buttonB := true
-    myStick.SetBtn(1, 4)
-    updateAnalogStick()
+    buttonB := true, myStick.SetBtn(1, 4), updateAnalogStick()
 return
 
 Label8_UP:
-    buttonB := false
-    myStick.SetBtn(0, 4)
-    updateAnalogStick()
+    buttonB := false, myStick.SetBtn(0, 4), updateAnalogStick()
 return
 
 ; L
 Label9:
-    buttonL := true
-    myStick.SetBtn(1, 1)
-    updateAnalogStick()
+    buttonL := true, myStick.SetBtn(1, 1), updateAnalogStick()
 return
 
 Label9_UP:
-    buttonL := false
-    myStick.SetBtn(0, 1)
-    updateAnalogStick()
+    buttonL := false, myStick.SetBtn(0, 1), updateAnalogStick()
 return
 
 ; R
 Label10:
-    buttonR := true
-    myStick.SetBtn(1, 3)
-    updateAnalogStick()
+    buttonR := true, myStick.SetBtn(1, 3), updateAnalogStick()
 return
 
 Label10_UP:
-    buttonR := false
-    myStick.SetBtn(0, 3)
-    updateAnalogStick()
+    buttonR := false, myStick.SetBtn(0, 3), updateAnalogStick()
 return
 
 ; X
 Label11:
-    buttonX := true
-    myStick.SetBtn(1, 6)
+    buttonX := true, myStick.SetBtn(1, 6)
 return
 
 Label11_UP:
-    buttonX := false
-    myStick.SetBtn(0, 6)
+    buttonX := false, myStick.SetBtn(0, 6)
 return
 
 ; Y
 Label12:
-    buttonY := true
-    myStick.SetBtn(1, 2)
+    buttonY := true, myStick.SetBtn(1, 2)
 return
 
 Label12_UP:
-    buttonY := false
-    myStick.SetBtn(0, 2)
+    buttonY := false, myStick.SetBtn(0, 2)
 return
 
 ; Z
 Label13:
-    buttonZ := true
-    myStick.SetBtn(1, 7)
-    updateAnalogStick()
+    buttonZ := true, myStick.SetBtn(1, 7), ; updateAnalogStick() ; I wonder why was this here
 return
 
 Label13_UP:
-    buttonZ := false
-    myStick.SetBtn(0, 7)
-    updateAnalogStick()
+    buttonZ := false, myStick.SetBtn(0, 7), ; updateAnalogStick()
 return
 
 ; C Up
@@ -828,16 +795,12 @@ Label14:
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 9)
     } else {
-        updateCStick()
-        updateAnalogStick()
+        updateAnalogStick(), updateCStick()
     }
 return
 
 Label14_UP:
-    buttonCUp := false
-    myStick.SetBtn(0, 9)
-    updateCStick()
-    updateAnalogStick()
+    buttonCUp := false, myStick.SetBtn(0, 9), updateAnalogStick(), updateCStick()
 return
 
 ; C Down
@@ -847,16 +810,12 @@ Label15:
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 11)
     } else {
-        updateCStick()
-        updateAnalogStick()
+        updateAnalogStick(), updateCStick()
     }
 return
 
 Label15_UP:
-    buttonCDown := false
-    myStick.SetBtn(0, 11)
-    updateCStick()
-    updateAnalogStick()
+    buttonCDown := false, myStick.SetBtn(0, 11), updateAnalogStick(), updateCStick()
 return
 
 ; C Left
@@ -866,16 +825,12 @@ Label16:
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 10)
     } else {
-        updateCStick()
-        updateAnalogStick()
+        updateAnalogStick(), updateCStick()
     }
 return
 
 Label16_UP:
-    buttonCLeft := false
-    myStick.SetBtn(0, 10)
-    updateCStick()
-    updateAnalogStick()
+    buttonCLeft := false, myStick.SetBtn(0, 10), updateAnalogStick(), updateCStick()
 return
 
 ; C Right
@@ -885,89 +840,82 @@ Label17:
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 12)
     } else {
-        updateCStick()
-        updateAnalogStick()
+        updateAnalogStick(), updateCStick()
     }
 return
 
 Label17_UP:
-    buttonCRight := false
-    myStick.SetBtn(0, 12)
-    updateCStick()
-    updateAnalogStick()
+    buttonCRight := false, myStick.SetBtn(0, 12), updateAnalogStick(), updateCStick()
 return
 
 ; Lightshield (Light)
 Label18:
-    buttonLightShield := true
-    setAnalogR(49)
+    buttonLightShield := true, setAnalogR(49)
 return
 
 Label18_UP:
-    buttonLightShield := false
-    setAnalogR(0)
+    buttonLightShield := false, setAnalogR(0)
 return
 
 ; Lightshield (Medium)
 Label19:
-    buttonMidShield := true
-    setAnalogR(94)
+    buttonMidShield := true, setAnalogR(94)
 return
 
 Label19_UP:
-    buttonMidShield := false
-    setAnalogR(0)
+    buttonMidShield := false, setAnalogR(0)
 return
 
 ; Start
 Label20:
-    myStick.SetBtn(1, 8)
+    buttonStart := true, myStick.SetBtn(1, 8)
 return
 
 Label20_UP:
-    myStick.SetBtn(0, 8)
+    buttonStart := false, myStick.SetBtn(0, 8)
 return
 
 ; D Up
 Label21:
-    myStick.SetBtn(1, 9)
+    buttonDPadUp := true, myStick.SetBtn(1, 9)
 return
 
 Label21_UP:
-    myStick.SetBtn(0, 9)
+    buttonDPadUp := true, myStick.SetBtn(0, 9)
 return
 
 ; D Down
 Label22:
-    myStick.SetBtn(1, 11)
+    buttonDPadDown := true, myStick.SetBtn(1, 11)
 return
 
 Label22_UP:
-    myStick.SetBtn(0, 11)
+    buttonDPadDown := false, myStick.SetBtn(0, 11)
 return
 
 ; D Left
 Label23:
-    myStick.SetBtn(1, 10)
+    buttonDPadLeft := true, myStick.SetBtn(1, 10)
 return
 
 Label23_UP:
-    myStick.SetBtn(0, 10)
+    buttonDPadLeft := false, myStick.SetBtn(0, 10)
 return
 
 ; D Right
 Label24:
-    myStick.SetBtn(1, 12)
+    buttonDPadRight := true, myStick.SetBtn(1, 12)
 return
 
 Label24_UP:
-    myStick.SetBtn(0, 12)
+    buttonDPadRight := false, myStick.SetBtn(0, 12)
 return
 
 ; Debug
 Label25:
     debugString := getDebug()
     Msgbox % debugString
+return
 
 Label25_UP:
 return

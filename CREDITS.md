@@ -26,5 +26,6 @@ Tools and resources
 - [B0XX 4.1 Software Update](https://youtu.be/1ZJZFcTsy9o)
 - [20XX Discord server](https://b0xx.com/pages/more-info)
 - [Melee Controller Ruleset Proposal](https://docs.google.com/document/d/1abMqoatAGh_ZhQD1qJaQx6YqFAppCjU5KyF3mgvDQVw/edit?tab=t.0)
+- [AHK Debugging with Visual Studio Code](https://gist.github.com/anonymous1184/4b5463e2e37c4a8e6873eb580a3a7f0f)
 
 I (dron-link) am not affiliated with the creators/producers of the B0XX.

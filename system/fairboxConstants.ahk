@@ -55,6 +55,8 @@ FINAL_DASHZONE := 1, FINAL_SDIZONE := 1<<1, FINAL_CROUCHRANGE := 1<<2
 ; coordinate components simple array keys
 xComp := 1, yComp := 2
 
-; actual variables ----------------------------------------------------
-currentTimeMS := 0
-
+; window titles to use in commands like     Gui, % controlsWindow ":Add", ... 
+;controlsWindow := "controlsWindow"
+;inputViewerWindow := "inputViewerWindow"
+;settingsWindow := "settingsWindow"
+;mainMenuWindow := "mainMenuWindow"

@@ -2,7 +2,7 @@
 
 validateHK(num) { ; you came from activationKeyCheck() or #If Expression hotkeys
     global
-    Gui, Submit, NoHide ; saves every control contents to their respective variables. need Hotkey control -> HK
+    Gui, controlsWindow:Submit, NoHide ; saves every control contents to their respective variables. need Hotkey control -> HK
     If !hotkeys[num] {
         MsgBox, % "validateHK corruption prevention . num: (" num ")`n"
         ExitApp
@@ -19,7 +19,7 @@ validateHK(num) { ; you came from activationKeyCheck() or #If Expression hotkeys
     }
     setHK(num, savedHK%num%, HK%num%) ;  update INI/GUI
     savedHK%num% := HK%num%
-    GuiControl,, HK%num%, % getHotkeyControlFormat(HK%num%)
+    GuiControl, controlsWindow:, HK%num%, % getHotkeyControlFormat(HK%num%)
     return
 }
 
@@ -37,22 +37,22 @@ checkDuplicateHK(num) {
             StringUpper, printDuplicateKey, HK%num%, T ; HK%num% Title Case string
             MsgBox, % "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
 
-            GuiControl,,HK%num% ; clear the control.
-            Gui, Submit, NoHide ; clear HK%num%
+            GuiControl, controlsWindow:, HK%num% ; clear the control.
+            Gui, controlsWindow:Submit, NoHide ; clear HK%num%
             /*  known Issue:
                 Keys Tab, Enter, Space and Backspace, do not flash. 
                 probably all keys that otherwise perform operations in windows GUI, do not flash.
             */
             
             Loop,3 {
-                Gui, Font, w1000 underline
-                GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
-                Gui, Font, norm cRed
-                GuiControl, Font, gameBtName%duplIndex%
+                Gui, controlsWindow:Font, w1000 underline
+                GuiControl, controlsWindow:Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
+                Gui, controlsWindow:Font, norm cRed
+                GuiControl, controlsWindow:Font, gameBtName%duplIndex%
                 Sleep,130
-                guiFontDefault()
-                GuiControl, Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
-                GuiControl, Font, gameBtName%duplIndex%
+                guiFontDefault("controlsWindow")
+                GuiControl, controlsWindow:Font, HK%duplIndex% ;Flash the original hotkey to alert the user.
+                GuiControl, controlsWindow:Font, gameBtName%duplIndex%
                 Sleep,130
             }
             break

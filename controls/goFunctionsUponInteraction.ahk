@@ -1,20 +1,13 @@
 #Requires AutoHotkey v1.1
 
-initializeTray() {
-    Menu, Tray, Click, 1
-    Menu, Tray, Add, % "Edit Controls", showControlsGui
-    Menu, Tray, Default, % "Edit Controls"
-    return
-}
-
-showControlsGui() { ;Show GUI from tray Icon
-    Gui, show,, % "Controls Editor"
+showControlsWindow() {
+    Gui, controlsWindow:Show,, % "Controls Editor Window"
     ; prevents immediately waiting for input on the 1st input box (HK1) when showing gui
-    GuiControl, Focus, gameBtName1
+    GuiControl, controlsWindow:Focus, gameBtName1
     return
 }
 
-activationKeyCheck() {
+activationKeyCheck() { ; thread launched by controlsWindow GUI
     global
     Critical, On
     ; A_GuiControl is the name of the variable with the content of the hotkey control that is in focus

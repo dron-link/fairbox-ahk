@@ -1,7 +1,8 @@
 #Requires AutoHotkey v1.1
 
-setControlsAndInitWindow() { ; adopt saved hotkeys and initialize Edit Controls menu
+setControlsAndConstructGui() { ; adopt saved hotkeys and initialize Edit Controls menu
     global
+    
     for index, element in hotkeys {
         ; determine start position of each set of gui elements
         if (index > 24) {
@@ -16,7 +17,7 @@ setControlsAndInitWindow() { ; adopt saved hotkeys and initialize Edit Controls 
         SetTimer, blameCulpritHotkey, -800 ; if this thread is interrupted by an error, a msgbox will display
     
         ; adds borderless text N°1 and associates it to variable gameBtName1, and so on
-        Gui, Add, Text, xm+%xOff% ym+%yOff% vGameBtName%index%, % element " button:"
+        Gui, controlsWindow:Add, Text, xm+%xOff% ym+%yOff% vGameBtName%index%, % element " button:"
         ; Attempt to retrieve a hotkey activation key from the INI file.
         IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%
         ;Activate saved hotkey
@@ -46,17 +47,19 @@ setControlsAndInitWindow() { ; adopt saved hotkeys and initialize Edit Controls 
     
         HK%index% := savedHK%index%
         ;Add controls and show the saved key
-        Gui, Add, Hotkey, xm+%xOffHK% ym+%yOff% w%descriptionWidth% vHK%index% gActivationKeyCheck, % getHotkeyControlFormat(savedHK%index%)
+        Gui, controlsWindow:Add, Hotkey, xm+%xOffHK% ym+%yOff% w%descriptionWidth% vHK%index% gActivationKeyCheck, % getHotkeyControlFormat(savedHK%index%)
         if !preventBehavior%index% {
-            Gui, Add, CheckBox, x+5 vPreventBehavior%index% gDefaultBehaviorChange, % "Prevent Default Behavior"
+            Gui, controlsWindow:Add, CheckBox, x+5 vPreventBehavior%index% gDefaultBehaviorChange, % "Prevent Default Behavior"
         } else {
-            Gui, Add, CheckBox, x+5 vPreventBehavior%index% Checked gDefaultBehaviorChange, % "Prevent Default Behavior"
+            Gui, controlsWindow:Add, CheckBox, x+5 vPreventBehavior%index% Checked gDefaultBehaviorChange, % "Prevent Default Behavior"
         }
         isSpecialKey%index% := false
-        Gui, Add, CheckBox, x+5 vIsSpecialKey%index% gSpecialKeyChange, % "Special Bind"
+        Gui, controlsWindow:Add, CheckBox, x+5 vIsSpecialKey%index% gSpecialKeyChange, % "Special Bind"
     
         SetTimer, blameCulpritHotkey, Delete ; the operation of retrieving the activation key was successful
     }
+    addEditControlsInstructions(xOff, yOff)
+
     return
 }
 
