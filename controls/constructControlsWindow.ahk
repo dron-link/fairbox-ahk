@@ -2,7 +2,7 @@
 
 constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls menu
     global
-    GuiFontDefault("controlsWindow")
+    descriptionWidth := 115 ; width of the hotkey control boxes of the Edit Controls Window
     
     for index, element in hotkeys {
         ; determine upper left position of each set of gui elements
@@ -32,6 +32,8 @@ constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls m
             preventBehavior%index% := true 
         }
         
+        GuiFontDefault("controlsWindow")
+
         ; adds borderless text of the control name and associates it to variable gameBtName1, and so on
         Gui, controlsWindow:Add, Text, xm+ ym+%yOff% vGameBtName%index%, % element " button:"
         ;Add controls and show the saved key
@@ -43,7 +45,7 @@ constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls m
         isSpecialKey%index% := false
         Gui, controlsWindow:Add, CheckBox, x+5 vIsSpecialKey%index% gSpecialKeyChange, % "Special Bind"    
     }
-    addControlsWindowInstructions()
+    addControlsWindowInstructions(descriptionWidth)
 
     return
 }

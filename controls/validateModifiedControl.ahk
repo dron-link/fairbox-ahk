@@ -48,7 +48,8 @@ checkDuplicateHK(num) {
 
             duplIndex := A_Index ; store index. we can't rely on A_Index because of the next inner loop
             Gui, +OwnDialogs
-            MsgBox, % "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
+            MsgBox,, % "Controls Editor: Can't assign duplicate key", % "" 
+            . "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
 
             /*  known Issue:
                 Keys Tab, Enter, Space and Backspace, do not flash. 

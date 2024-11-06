@@ -43,6 +43,8 @@ currentTimeMS := 0
 ; #include, test\calibrationTest.ahk
 #include, test\testNerfsByHand.ahk
 
+enabledHotkeys := true
+
 /*  
 
 DISCLAIMER
@@ -105,7 +107,6 @@ target.formatCoordinates()
 ; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-enabledHotkeys := true
 ; configure at test\testNerfsByHand.ahk, then set this parameter true. to test timing lockout nerfs
 testNerfsByHand(false) 
 
@@ -130,7 +131,6 @@ for i in hotkeys {
 loadHotkeysIniFail := false
 loadHotkeysIni()
 
-descriptionWidth := 115 ; width of the hotkey control boxes of the Edit Controls Window
 constructControlsWindow()
 
 ; Create an object from vJoy Interface Class.
