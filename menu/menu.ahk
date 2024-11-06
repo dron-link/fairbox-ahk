@@ -1,8 +1,8 @@
 #Requires AutoHotkey v1.1
 
-trayAddEditControls() {
-    Menu, Tray, Click, 1
+constructTrayMenu() {
     Menu, Tray, Add, % "Edit Controls", showControlsWindow
     Menu, Tray, Default, % "Edit Controls"
+    Menu, Tray, Click, 1
     return
 }

@@ -4,13 +4,13 @@
 #NoEnv
 #include <CvJoyInterface>
 SetBatchLines, -1
-#MenuMaskKey vkE8 ; virtual key code that is unused by windows
+#MenuMaskKey vke8
 #include %A_ScriptDir%
 currentTimeMS := 0
 #include, controls\hkIniAutogenerator.ahk 
-#include, system\fairboxConstants.ahk
-#include, system\gameEngineConstants.ahk
-#include, system\infoEntryClasses.ahk
+#include, system\fairboxConstants.ahk ; globals
+#include, system\gameEngineConstants.ahk ; globals
+#include, system\infoEntriesClasses.ahk
 #include, menu\menu.ahk
 #include, coordinates\targetObjStructure.ahk
 #include, coordinates\targetCoordinateValues.ahk ; you can customize the coordinates in this file
@@ -32,11 +32,12 @@ currentTimeMS := 0
 #include, technique\pivot\pivotClass.ahk
 #include, technique\pivot\detectPivot.ahk
 #include, technique\pivot\getPivotLockoutNerfedCoords.ahk
+#include, controls\loadHotkeysIni.ahk
 #include, controls\hotkeyHelpers.ahk
-#include, controls\setControlsAndConstructGui.ahk
-#include, controls\goFunctionsUponInteraction.ahk
-#include, controls\hotkeyValidation.ahk
-#include, controls\editControlsInstructions.ahk
+#include, controls\constructControlsWindow.ahk
+#include, controls\goToFunctionsUponGuiInteraction.ahk
+#include, controls\validateModifiedControl.ahk
+#include, controls\addControlsWindowInstructions.ahk
 #include, controls\hotkeyControlHasFocus.ahk
 #include, test\miscTestingTools.ahk
 ; #include, test\calibrationTest.ahk
@@ -106,7 +107,7 @@ target.formatCoordinates()
 target.bindAnglesToCStick()
 
 enabledHotkeys := true
-; configure at testingTools.ahk, then set this parameter true. to test timing lockout nerfs
+; configure at test\testNerfsByHand.ahk, then set this parameter true. to test timing lockout nerfs
 testNerfsByHand(false) 
 
 guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
@@ -119,7 +120,7 @@ guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will hav
     return
 }
 
-trayAddEditControls() ; creates the Edit Controls option in the tray
+constructTrayMenu() ; creates the Edit Controls option in the tray
 
 for i in hotkeys {
     ; ### for hotkey activation keys, and gui hotkey controls. create the global variables associated to:
@@ -127,8 +128,13 @@ for i in hotkeys {
     gameBtName%i% := "", HK%i% := "",     savedHK%i% := "",   isSpecialKey%i% := "", preventBehavior%i% := ""
 }
 
+loadHotkeysIniFail := false
+loadHotkeysIni()
+
 descriptionWidth := 115 ; width of the hotkey control boxes of the Edit Controls Window
-setControlsAndConstructGui()  ; adopt saved hotkeys and initialize Edit Controls Window. 
+constructControlsWindow()  ; adopt saved hotkeys and initialize Edit Controls Window. 
+;Activate saved hotkey
+
 
 ;----------Start Hotkey Handling-----------
 
@@ -179,7 +185,6 @@ buttonDPadUp := false
 buttonDPadDown := false
 buttonDPadLeft := false
 buttonDPadRight := false
-
 
 ; strings for when press order matters
 mostRecentVertical := "" ; this pair of variables went unused because of neutral SOCD
@@ -472,14 +477,11 @@ reflectCoords(quadrantICoords) {
 */
 updateAnalogStick() {
     global currentTimeMS
-    Critical, On ; thread can't be interrupted by a hotkey until the following code executes
     currentTimeMS := A_TickCount
     coords := getAnalogCoords()
     finalOutput := limitOutputs(coords)
     finalCoords := [finalOutput.x, finalOutput.y]
     setAnalogStick(finalCoords)
-    Critical, Off
-    Sleep, -1
     return
 }
 
@@ -596,25 +598,25 @@ setAnalogR(value) {
     LWin::
     RWin::
     +:: 
-        Critical, On
+        Critical
         Gui, controlsWindow:Submit, NoHide
-        labelNum := SubStr(currentControlVarNameSp, 3)
-        OutputDebug, % A_ThisHotkey " " labelNum "`n"
+        hotkeyNum := SubStr(currentControlVarNameSp, 3)
+        OutputDebug, % A_ThisHotkey " " hotkeyNum "`n"
         If (A_ThisHotkey = "LControl & RAlt") {
-            GuiControl, controlsWindow:, HK%labelNum%, % "^RAlt" ; make the control display altgr activation key.
+            GuiControl, controlsWindow:, HK%hotkeyNum%, % "^RAlt" ; make the control display altgr activation key.
         }
         else if InStr(A_ThisHotkey, "*BackSpace") {
             ; leave it as it is
         }
         else {
-            GuiControl,controlsWindow:, HK%labelNum%, % A_ThisHotkey ;  make the control display the hotkey.
+            GuiControl,controlsWindow:, HK%hotkeyNum%, % A_ThisHotkey ;  make the control display the hotkey.
         }
 
-        validateHK(labelNum)
-        Critical, Off
+        validateModifiedControl(hotkeyNum)
+        Critical Off
     return
     *BackSpace::
-        Critical, On
+        Critical
         modifier := ""
         If GetKeyState("Shift","P")
             modifier .= "+"
@@ -624,9 +626,9 @@ setAnalogR(value) {
             modifier .= "!"
         Gui, controlsWindow:Submit, NoHide
         GuiControl, controlsWindow:, %currentControlVarNameSp%, % modifier "BackSpace" ; overwrite the control content
-        labelNum := SubStr(currentControlVarNameSp, 3)
-        validateHK(labelNum)
-        Critical, Off
+        hotkeyNum := SubStr(currentControlVarNameSp, 3)
+        validateModifiedControl(hotkeyNum)
+        Critical Off
     return
 #If
 
@@ -639,7 +641,7 @@ setAnalogR(value) {
     *PrintScreen::
     *Space::
     *Tab::
-        Critical, On
+        Critical
         modifier := ""
         If GetKeyState("Shift","P")
             modifier .= "+"
@@ -650,9 +652,9 @@ setAnalogR(value) {
         Gui, controlsWindow:Submit, NoHide
         ; overwrite the control content
         GuiControl, controlsWindow:, %currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) 
-        labelNum := SubStr(currentControlVarName, 3)
-        validateHK(labelNum)
-        Critical, Off
+        hotkeyNum := SubStr(currentControlVarName, 3)
+        validateModifiedControl(hotkeyNum)
+        Critical Off
     return
 #If ; end of conditional hotkeys
 
@@ -673,56 +675,92 @@ Return
 
 ; Analog Up
 Label1:
+    Critical
     buttonUp := true, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 Label1_UP:
+    Critical
     buttonUp := false, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 ; Analog Down
 Label2:
+    Critical
     buttonDown := true, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 Label2_UP:
+    Critical
     buttonDown := false, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 ; Analog Left
 Label3:
+    Critical
     buttonLeft := true, updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 Label3_UP:
+    Critical
     buttonLeft := false, updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 ; Analog Right
 Label4:
+    Critical
     buttonRight := true, updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 Label4_UP:
+    Critical
     buttonRight := false, updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 ; ModX
 Label5:
+    Critical
     buttonModX := true, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 Label5_UP:
+    Critical
     buttonModX := false, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 ; ModY
 Label6:
+    Critical
     buttonModY := true, updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 Label6_UP:
+    Critical
     buttonModY := false, updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 ; A
@@ -736,29 +774,47 @@ return
 
 ; B
 Label8:
+    Critical
     buttonB := true, myStick.SetBtn(1, 4), updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 Label8_UP:
+    Critical
     buttonB := false, myStick.SetBtn(0, 4), updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 ; L
 Label9:
+    Critical
     buttonL := true, myStick.SetBtn(1, 1), updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 Label9_UP:
+    Critical
     buttonL := false, myStick.SetBtn(0, 1), updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 ; R
 Label10:
+    Critical
     buttonR := true, myStick.SetBtn(1, 3), updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 Label10_UP:
+    Critical
     buttonR := false, myStick.SetBtn(0, 3), updateAnalogStick()
+    Critical Off
+    Sleep -1
 return
 
 ; X
@@ -790,6 +846,7 @@ return
 
 ; C Up
 Label14:
+    Critical
     buttonCUp := true
     if (bothMods()) {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
@@ -797,14 +854,20 @@ Label14:
     } else {
         updateAnalogStick(), updateCStick()
     }
+    Critical Off
+    Sleep -1
 return
 
 Label14_UP:
+    Critical
     buttonCUp := false, myStick.SetBtn(0, 9), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 ; C Down
 Label15:
+    Critical
     buttonCDown := true
     if (bothMods()) {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
@@ -812,14 +875,20 @@ Label15:
     } else {
         updateAnalogStick(), updateCStick()
     }
+    Critical Off
+    Sleep -1
 return
 
 Label15_UP:
+    Critical
     buttonCDown := false, myStick.SetBtn(0, 11), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 ; C Left
 Label16:
+    Critical
     buttonCLeft := true
     if (bothMods()) {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
@@ -827,14 +896,20 @@ Label16:
     } else {
         updateAnalogStick(), updateCStick()
     }
+    Critical Off
+    Sleep -1
 return
 
 Label16_UP:
+    Critical
     buttonCLeft := false, myStick.SetBtn(0, 10), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 ; C Right
 Label17:
+    Critical
     buttonCRight := true
     if (bothMods()) {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
@@ -842,10 +917,15 @@ Label17:
     } else {
         updateAnalogStick(), updateCStick()
     }
+    Critical Off
+    Sleep -1
 return
 
 Label17_UP:
+    Critical
     buttonCRight := false, myStick.SetBtn(0, 12), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
 return
 
 ; Lightshield (Light)
