@@ -47,6 +47,7 @@ checkDuplicateHK(num) {
             Gui, controlsWindow:Submit, NoHide ; clear HK%num%
 
             duplIndex := A_Index ; store index. we can't rely on A_Index because of the next inner loop
+            Gui, +OwnDialogs
             MsgBox, % "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
 
             /*  known Issue:

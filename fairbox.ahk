@@ -71,17 +71,16 @@ everything is subject to modification and may not be present in the finalized ve
 +++ i'm considering helping to make a faithful b0xx v4.1-like for keyboards in the future.
 
 rough list of remaining tasks
+ - TODO create a showControlsWindowOnLaunch
  - TODO custom IfWinActive for users to make the hotkeys only work when the emulator window is focused 
  - TODO reformat c-stick coordinates, make them into integers instead of floats
- - TODO that popup message boxes should be owned by the window that the user invoked them from
  - TODO disable all traytip messages option
  - TODO increase hotkey control width option
  - TODO restore default hotkeys button
- - TODO check that displayed hotkeys always reflect the real ones
+ - TODO ensure that displayed hotkeys always reflect the real ones
  - TODO primitive input viewer, or graphic input viewer, as a separate .exe app
  - TODO b0xx example layout picture window? maybe not necessary if i do the graphic input viewer
- - TODO create a ReloadAndShowWindowAgain
- - TODO add cx and cy entries to the output history
+ - TODO add cx and cy entries to the output history, but for what specifically?
  - TODO consider outputting 1.0 cardinals and 45° large diagonals past the analog circle?
  - TODO implement SDI nerfs
  - TODO use setTimer to lift nerfs without waiting for player input
@@ -132,11 +131,7 @@ loadHotkeysIniFail := false
 loadHotkeysIni()
 
 descriptionWidth := 115 ; width of the hotkey control boxes of the Edit Controls Window
-constructControlsWindow()  ; adopt saved hotkeys and initialize Edit Controls Window. 
-;Activate saved hotkey
-
-
-;----------Start Hotkey Handling-----------
+constructControlsWindow()
 
 ; Create an object from vJoy Interface Class.
 vJoyInterface := new CvJoyInterface()
@@ -149,9 +144,6 @@ if (!vJoyInterface.vJoyEnabled()) {
 }
 
 myStick := vJoyInterface.Devices[1]
-
-; Alert User that script has started
-TrayTip, % "fairbox", % "Script Started", 3, 0
 
 ; state variables
 ; if true, keyboard key is pressed
@@ -217,6 +209,9 @@ if enabledHotkeys {
         gosub Label%index%_UP
     }
 }
+
+; Alert User that script has started
+TrayTip, % "fairbox", % "Script Started", 3, 0
 
 /*  ////////////////////////////////
     check what directions, modifiers and buttons we should listen to,
@@ -600,13 +595,10 @@ setAnalogR(value) {
     +:: 
         Critical
         Gui, controlsWindow:Submit, NoHide
-        hotkeyNum := SubStr(currentControlVarNameSp, 3)
-        OutputDebug, % A_ThisHotkey " " hotkeyNum "`n"
+        ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
+        hotkeyNum := SubStr(currentControlVarNameSp, 3) 
         If (A_ThisHotkey = "LControl & RAlt") {
             GuiControl, controlsWindow:, HK%hotkeyNum%, % "^RAlt" ; make the control display altgr activation key.
-        }
-        else if InStr(A_ThisHotkey, "*BackSpace") {
-            ; leave it as it is
         }
         else {
             GuiControl,controlsWindow:, HK%hotkeyNum%, % A_ThisHotkey ;  make the control display the hotkey.
@@ -625,7 +617,9 @@ setAnalogR(value) {
         If GetKeyState("Alt","P")
             modifier .= "!"
         Gui, controlsWindow:Submit, NoHide
-        GuiControl, controlsWindow:, %currentControlVarNameSp%, % modifier "BackSpace" ; overwrite the control content
+        ; overwrite the control content
+        GuiControl, controlsWindow:, %currentControlVarNameSp%, % modifier "BackSpace" 
+        ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
         hotkeyNum := SubStr(currentControlVarNameSp, 3)
         validateModifiedControl(hotkeyNum)
         Critical Off
@@ -652,6 +646,7 @@ setAnalogR(value) {
         Gui, controlsWindow:Submit, NoHide
         ; overwrite the control content
         GuiControl, controlsWindow:, %currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) 
+        ; overwrite the control content
         hotkeyNum := SubStr(currentControlVarName, 3)
         validateModifiedControl(hotkeyNum)
         Critical Off

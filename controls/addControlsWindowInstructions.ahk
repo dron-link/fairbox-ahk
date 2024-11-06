@@ -2,7 +2,6 @@
 
 addControlsWindowInstructions() {
     global descriptionWidth
-
     instructionsText1 := "
 (
 Click on the control you want to edit and press the key you want to map to it.
@@ -42,6 +41,7 @@ Tip #2: to restore defaults, close this program, go to the folder containing you
 }
 
 turnOffHotkeysMessage() {
+    Gui, +OwnDialogs
     MsgBox, % "If you need to use the keys normally, right-click the program's tray icon "
         . "and click ''Suspend Hotkeys'' - or press Ctrl+Alt+S if each one of those keys work. "
         . "This turns off all game buttons "
