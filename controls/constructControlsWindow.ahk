@@ -33,9 +33,8 @@ constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls m
         }
         
         GuiFontDefault("controlsWindow")
-
         ; adds borderless text of the control name and associates it to variable gameBtName1, and so on
-        Gui, controlsWindow:Add, Text, xm+ ym+%yOff% vGameBtName%index%, % element " button:"
+        Gui, controlsWindow:Add, Text, xm ym+%yOff% vGameBtName%index%, % element " button:"
         ;Add controls and show the saved key
         Gui, controlsWindow:Add, Hotkey, xm+107 yp-3 w%descriptionWidth% vHK%index% gActivationKeyCheck, % getHotkeyControlFormat(savedHK%index%)
         ; add Prevent Default Behavior checkbox

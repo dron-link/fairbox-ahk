@@ -8,10 +8,13 @@ loadHotkeysIni() {
         ; Attempt to retrieve a hotkey activation key from the INI file.
         IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%
 
-        savedHK%index% := strReplace(savedHK%index%, "#") ; do away with win modifiers if there's any
+        savedHK%index% := strReplace(savedHK%index%, "<#") ; do away with win modifiers if there's any
+        savedHK%index% := strReplace(savedHK%index%, ">#")
+        savedHK%index% := strReplace(savedHK%index%, "#")
+
         If (enabledHotkeys and strReplace(savedHK%index%, "~") != "") { ;If new hotkey exists,
-            Hotkey, % savedHK%index%, Label%index% ;  enable it.
-            Hotkey, % savedHK%index% . " UP", Label%index%_UP ;  enable it.
+            Hotkey, % savedHK%index%, Label%index%              ; enable it.
+            Hotkey, % savedHK%index% . " UP", Label%index%_UP
         }
 
         HK%index% := savedHK%index%
@@ -31,11 +34,15 @@ class blameCulpritHotkey {
     blameMethod() {
         global hotkeys, global loadHotkeysIniFail
         myErrorMsg := "Error while reading hotkeys on app launch. "
-            . "The culprit hotkey is " hotkeys[this.num] " (button number " this.num ").`n`n"
-            . "Attempt one of the following:`n`n"
+            . "The culprit hotkey is " hotkeys[this.num] " (button number " this.num ")."
+            . "`n`n"
+            . "Attempt one of the following:"
+            . "`n`n"
             . "Open " A_ScriptDir "\hotkeys.ini and "
-            . "delete the text to the right of ''" this.num "=''`n"
-            . "There's no need to change anything else.`n`n"
+            . "delete the text to the right of ''" this.num "=''"
+            . "`n"
+            . "There's no need to change anything else."
+            . "`n`n"
             . "The other solution is to "
             . "rename the file the file hotkeys.ini, or moving it away, or deleting it. "
             . "All controls will be reset to their factory values but "

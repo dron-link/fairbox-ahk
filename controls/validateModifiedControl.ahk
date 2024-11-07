@@ -11,16 +11,19 @@ validateModifiedControl(num) { ; you came from activationKeyCheck() or #If Expre
     ; saves every control contents to their respective variables. we need control content stored in HK%num%
     Gui, controlsWindow:Submit, NoHide 
 
+    HK%num% := getHotkeyControlFormat(HK%num%) ; strip of ~ and # modifiers
+
     HK%num% := strReplace(HK%num%, "SC15D", "AppsKey")      ; Use friendlier names,
     HK%num% := strReplace(HK%num%, "SC154", "PrintScreen")  ; instead of these scan codes.
     
-    checkDuplicateHK(num)
-    /*  Keep in mind that the ~ modifier is never included in the retrieved control content.
-        So, if the user doesn't want to prevent functionality,
+    /*  Keep in mind that the ~ modifier is never included in the retrieved hotkey control content.
+        So, we need to add it before setting the hotkey, if the user wants to.
     */
     if !preventBehavior%num% {
         HK%num% := "~" HK%num% ;    add the (~) modifier. This prevents a key from being blocked.
     }
+
+    checkDuplicateHK(num)
 
     setHotkeyFromGui(num, savedHK%num%, HK%num%)
     IniWrite, % HK%num%, hotkeys.ini, Hotkeys, % num
@@ -36,8 +39,8 @@ checkDuplicateHK(num) {
 
     Loop,% hotkeys.Length() {
         ; if hotkey is non-empty and is case-insensitive equal to a saved hotkey, then it can be a duplicate
-        If (HK%num% != "" and HK%num% = strReplace(savedHK%A_Index%, "~", "")) { 
-            If (num == A_Index) { ; the "duplicated control" is actually itself
+        If (strReplace(HK%num%, "~") != "" and HK%num% = strReplace(savedHK%A_Index%, "~", "")) { 
+            If (num == A_Index) { ; if the apparent "duplicated control" is actually itself
                 continue
             }
             

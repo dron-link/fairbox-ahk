@@ -7,7 +7,7 @@ showControlsWindow() {
         ; prevents immediately waiting for input on the 1st input box (assoc variable HK1) when showing gui
         GuiControl, controlsWindow:Focus, gameBtName1
     } else {
-        MsgBox, % "Controls failed to load on startup. The Controls Editor can't launch."
+        MsgBox, % "Controls failed to load from the file hotkeys.ini. The Controls Editor can't launch."
     }
     
     return
@@ -21,7 +21,7 @@ activationKeyCheck() { ; thread launched by controlsWindow GUI / hotkey control 
     */
     num := SubStr(A_GuiControl, 3) ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
 
-    if (SubStr(SubStr(SubStr(%A_GuiControl%, "+"), "^"), "!") = "")  { ;If the hotkey contains only modifiers
+    if (getStrippedFromModifiers(%A_GuiControl%) = "")  { ;If the hotkey contains only modifiers
         GuiControl,,%A_GuiControl%, % "" ; clear the key.
         validateModifiedControl(num)
     }
@@ -33,7 +33,7 @@ activationKeyCheck() { ; thread launched by controlsWindow GUI / hotkey control 
         ;Reshow the existing hotkey in the hotkey control. Mask key cannot be intentional from the user
         GuiControl,,%A_GuiControl%, % getHotkeyControlFormat(HK%num%) 
     } 
-    else if (InStr(%A_GuiControl%, "#")) { ; user can't enter hotkeys with the win modifier, but just in case
+    else if InStr(%A_GuiControl%, "#") { ; user can't enter hotkeys with the win modifier, but just in case
         ; extraneous case
         OutputDebug,% "activationKeyCheck(): win modifier was found!`n"
                     . "activationKeyCheck(): extraneous case, this should never need to happen`n"
