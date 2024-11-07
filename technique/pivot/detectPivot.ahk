@@ -3,11 +3,11 @@
 detectPivot(aX, aY, dashZone) {
     global P_RIGHTLEFT, global P_LEFTRIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
     global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME
-
     result := False
     pivotDebug := false ; if you want to test detectPivot() live, set this true
     pivotDiscarded := -1 ; for testing. -1 to avoid all switch-cases
-    currentDashZone := getCurrentDashZoneInfo(aX, aY, dashZone)
+    currentDashZone := getCurrentDashZoneInfo(aX, aY, dashZone) ; remember this is an obj
+
     /*  ignoring timing, has the player inputted the correct sequence?
         empty pivot inputs:
         --- past --> current

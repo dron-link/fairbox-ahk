@@ -42,8 +42,17 @@ currentTimeMS := 0
 #include, test\miscTestingTools.ahk
 ; #include, test\calibrationTest.ahk
 #include, test\testNerfsByHand.ahk
+#include, test\inputsOvertake.ahk
 
-enabledHotkeys := true
+guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
+    Gui, % windowName ":Font", s8 cDefault norm, Tahoma
+    return
+}
+
+guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
+    Gui, % windowName ":Font", s10 cDefault norm, Arial
+    return
+}
 
 /*  
 
@@ -73,31 +82,37 @@ everything is subject to modification and may not be present in the finalized ve
 +++ i'm considering helping to make a faithful b0xx v4.1-like for keyboards in the future.
 
 rough list of remaining tasks
- - TODO create a showControlsWindowOnLaunch
- - TODO custom IfWinActive for users to make the hotkeys only work when the emulator window is focused 
- - TODO reformat c-stick coordinates, make them into integers instead of floats
- - TODO disable all traytip messages option
- - TODO increase hotkey control width option
- - TODO restore default hotkeys button
- - TODO ensure that displayed hotkeys always reflect the real ones
- - TODO primitive input viewer, or graphic input viewer, as a separate .exe app
- - TODO b0xx example layout picture window? maybe not necessary if i do the graphic input viewer
- - TODO add cx and cy entries to the output history, but for what specifically?
- - TODO consider outputting 1.0 cardinals and 45° large diagonals past the analog circle?
- - TODO implement SDI nerfs
- - TODO use setTimer to lift nerfs without waiting for player input
+- TODO create a showControlsWindowOnLaunch
+- TODO deleteFailingHotkey all invalid hotkeys at once. path: groundhog day of timer threads
+- TODO custom IfWinActive for users to make the hotkeys only work when the emulator window is focused 
+- TODO reformat c-stick coordinates, make them into integers instead of floats
+- TODO disable all traytip messages option
+- TODO increase hotkey control width option
+- TODO restore default hotkeys button
+- TODO ensure that displayed hotkeys always reflect the real ones
+- TODO primitive input viewer, or graphic input viewer, as a separate .exe app
+- TODO b0xx example layout picture window? maybe not necessary if i do the graphic input viewer
+- TODO add cx and cy entries to the output history, but for what specifically?
+- TODO consider outputting 1.0 cardinals and 45° large diagonals past the analog circle?
+- TODO implement SDI nerfs
+- TODO use setTimer to lift nerfs without waiting for player input
     ¬ call updateAnalogStick and possibly lift pivot nerfs after 4 frames, 5 frames and 8 frames
     ¬ use setTimer to lift a 2f jump nerf 2 frames after it was forced (idea origin: CarVac HayBox)
- - TODO implement coordinate target inconditional bans
- - TODO write tests
- - TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac/Haybox)
- - TODO make a debug mode, debugACertainProcess? outputDebug, % expression
+- TODO implement coordinate target inconditional bans
+- TODO write tests
+- TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac/Haybox)
+- TODO make a debug mode, debugACertainProcess? outputDebug, % expression
+
 
 setTimer firing rate is apparently 15.6ms, don't expect much precision from it
 (at least it's shorter than a game cube input polling interval), but I expect that most nerf lifts will be one frame late sometimes.
 Maybe we can improve the script by increasing the polling frequency? solution using WinMM dll
 
 */
+
+deleteFailingHotkey := true
+
+enabledHotkeys := true
 
 hkIniAutoGenerator() ; create hotkeys.ini if missing
 
@@ -110,21 +125,11 @@ target.bindAnglesToCStick()
 ; configure at test\testNerfsByHand.ahk, then set this parameter true. to test timing lockout nerfs
 testNerfsByHand(false) 
 
-guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
-    Gui, % windowName ":Font", s8 cDefault norm, Tahoma
-    return
-}
-
-guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
-    Gui, % windowName ":Font", s10 cDefault norm, Arial
-    return
-}
-
-constructTrayMenu() ; creates the Edit Controls option in the tray
+constructTrayMenu() ; puts the custom menu items in the tray
 
 for i in hotkeys {
     ; ### for hotkey activation keys, and gui hotkey controls. create the global variables associated to:
-    ; button name,       hotkey control,  hotkeys.ini values, special bind checkbox, Prev.Def.B. checkbox
+    ; button name,       hotkey control,  the real hotkey,    special bind checkbox, Prev.Def.B. checkbox
     gameBtName%i% := "", HK%i% := "",     savedHK%i% := "",   isSpecialKey%i% := "", preventBehavior%i% := ""
 }
 
@@ -210,8 +215,14 @@ if enabledHotkeys {
     }
 }
 
-; Alert User that script has started
-TrayTip, % "fairbox", % "Script Started", 3, 0
+if enabledHotkeys {
+    ; Alert User that script has started
+    TrayTip, % "fairbox", % "Script Started", 3, 0
+} else {
+    TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
+    inputsOvertake()
+}
+
 
 /*  ////////////////////////////////
     check what directions, modifiers and buttons we should listen to,
@@ -832,11 +843,11 @@ return
 
 ; Z
 Label13:
-    buttonZ := true, myStick.SetBtn(1, 7), ; updateAnalogStick() ; I wonder why was this here
+    buttonZ := true, myStick.SetBtn(1, 7)
 return
 
 Label13_UP:
-    buttonZ := false, myStick.SetBtn(0, 7), ; updateAnalogStick()
+    buttonZ := false, myStick.SetBtn(0, 7)
 return
 
 ; C Up

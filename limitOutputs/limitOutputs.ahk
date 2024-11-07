@@ -2,7 +2,7 @@
 
 limitOutputs(rawCoords) { ; ///////////// Get coordinates but now with nerfs
     global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
-    global xComp, global yComp, global currentTimeMS, global sdiZoneHist
+    global xComp, global yComp, global currentTimeMS
 
     ; ### first call setup
 

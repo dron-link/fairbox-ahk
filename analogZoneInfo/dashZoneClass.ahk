@@ -1,8 +1,6 @@
 #Requires AutoHotkey v1.1
 
 class baseDashZone {
-    static historyLength := 5 ; MINIMUM 3
-
     string := "dashZone"
 
     unsaved := new dashZoneHistoryEntry(false, -1000, true)
@@ -15,8 +13,9 @@ class baseDashZone {
     }
 
     __New() { ; generates dashZone.hist
+        this.historyLength := 5 ; MINIMUM 3
         this.hist := []
-        Loop, % this.historyLength {
+        Loop, 5 {
             this.hist.Push(new dashZoneHistoryEntry(false, -1000, true))
         }
     }

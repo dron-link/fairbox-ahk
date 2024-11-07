@@ -15,7 +15,6 @@ getCurrentDashZoneInfo(aX, aY, dashZone) {
     global currentTimeMS
 
     currentZone := getDashZoneOf(aX, aY)
-
     if (currentZone == dashZone.saved.zone) {
         return dashZone.saved
     } else if IsObject(dashZone.queue[currentZone]) {

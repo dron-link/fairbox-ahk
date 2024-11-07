@@ -29,13 +29,21 @@ class blameCulpritHotkey {
     __New(culpritNum) { ; adapted from autohotkey documentation example on setTimer
         this.num := culpritNum
         timer := this.timer
-        setTimer, % timer, -800 ; if retrieving the activation key takes more than 800ms, blameMethod will fire
+        setTimer, % timer, -500 ; if retrieving the activation key takes more than 500ms, blameMethod will fire
     }
     blameMethod() {
-        global hotkeys, global loadHotkeysIniFail
+        global
         myErrorMsg := "Error while reading hotkeys on app launch. "
-            . "The culprit hotkey is " hotkeys[this.num] " (button number " this.num ")."
+            . "An invalid key is bound to " hotkeys[this.num] " (button number " this.num ")."
             . "`n`n"
+        if deleteFailingHotkey {
+            IniWrite, % "~", hotkeys.ini, Hotkeys, % this.num ; deletes this hotkey in hotkeys.ini
+            myErrorMsg .= ""
+            . "We undid the binding: attempt opening the application again, then open the Controls Editor "
+            . "and try binding a key to the " hotkeys[this.num] " button again."
+        }
+        else {
+            myErrorMsg .= ""
             . "Attempt one of the following:"
             . "`n`n"
             . "Open " A_ScriptDir "\hotkeys.ini and "
@@ -47,9 +55,12 @@ class blameCulpritHotkey {
             . "rename the file the file hotkeys.ini, or moving it away, or deleting it. "
             . "All controls will be reset to their factory values but "
             . "this will let you edit the controls normally again."
+            
+        }
         loadHotkeysIniFail := true
         OutputDebug, % "`n "myErrorMsg "`n"
         MsgBox, % myErrorMsg
+        ExitApp
         return
     }
     stop() {
