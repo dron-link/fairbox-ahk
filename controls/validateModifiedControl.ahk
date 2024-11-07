@@ -36,41 +36,43 @@ validateModifiedControl(num) { ; you came from activationKeyCheck() or #If Expre
 
 checkDuplicateHK(num) {
     global
-
-    Loop,% hotkeys.Length() {
-        ; if hotkey is non-empty and is case-insensitive equal to a saved hotkey, then it can be a duplicate
-        If (strReplace(HK%num%, "~") != "" and HK%num% = strReplace(savedHK%A_Index%, "~", "")) { 
-            If (num == A_Index) { ; if the apparent "duplicated control" is actually itself
-                continue
+    searchHK := strReplace(HK%num%, "~")
+    if (searchHK != "") { ; if there's a hotkey
+        Loop,% hotkeys.Length() {
+            ; if hotkey is case-insensitive equal to a saved hotkey then it can be a duplicate
+            If (searchHK = strReplace(savedHK%A_Index%, "~", "")) { 
+                If (num == A_Index) { ; if the apparent "duplicated control" is actually itself
+                    continue
+                }
+                
+                StringUpper, printDuplicateKey, searchHK, T ; HK%num% Title Case string for pretty message
+    
+                GuiControl, controlsWindow:, HK%num% ; clear the control.
+                Gui, controlsWindow:Submit, NoHide ; clear HK%num%
+    
+                duplIndex := A_Index ; store index. we can't rely on A_Index because of the next inner loop
+                Gui, +OwnDialogs
+                MsgBox,, % "Controls Editor: Can't assign duplicate key", % "" 
+                . "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
+    
+                /*  known Issue:
+                    Keys Tab, Enter, Space and Backspace, do not flash. 
+                    probably all keys that normally can perform tasks in windows GUI, do not flash.
+                */            
+                ;Flash the original hotkey to alert the user.
+                Loop,3 {
+                    Gui, controlsWindow:Font, bold underline
+                    GuiControl, controlsWindow:Font, HK%duplIndex% 
+                    Gui, controlsWindow:Font, norm underline cRed
+                    GuiControl, controlsWindow:Font, gameBtName%duplIndex%
+                    Sleep,130
+                    guiFontDefault("controlsWindow")
+                    GuiControl, controlsWindow:Font, HK%duplIndex%
+                    GuiControl, controlsWindow:Font, gameBtName%duplIndex%
+                    Sleep,130
+                }
+                break
             }
-            
-            StringUpper, printDuplicateKey, HK%num%, T ; HK%num% Title Case string for pretty message
-
-            GuiControl, controlsWindow:, HK%num% ; clear the control.
-            Gui, controlsWindow:Submit, NoHide ; clear HK%num%
-
-            duplIndex := A_Index ; store index. we can't rely on A_Index because of the next inner loop
-            Gui, +OwnDialogs
-            MsgBox,, % "Controls Editor: Can't assign duplicate key", % "" 
-            . "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
-
-            /*  known Issue:
-                Keys Tab, Enter, Space and Backspace, do not flash. 
-                probably all keys that normally can perform tasks in windows GUI, do not flash.
-            */            
-            ;Flash the original hotkey to alert the user.
-            Loop,3 {
-                Gui, controlsWindow:Font, bold underline
-                GuiControl, controlsWindow:Font, HK%duplIndex% 
-                Gui, controlsWindow:Font, norm underline cRed
-                GuiControl, controlsWindow:Font, gameBtName%duplIndex%
-                Sleep,130
-                guiFontDefault("controlsWindow")
-                GuiControl, controlsWindow:Font, HK%duplIndex%
-                GuiControl, controlsWindow:Font, gameBtName%duplIndex%
-                Sleep,130
-            }
-            break
         }
     }
     return
