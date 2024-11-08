@@ -8,6 +8,10 @@
 !CREDITS.md
 !analogZoneInfo
 !analogZoneInfo/*
+!analogZoneInfo/dashZone
+!analogZoneInfo/dashZone/*
+!analogZoneInfo/crouchZone
+!analogZoneInfo/crouchZone/*
 !system
 !system/*
 !controls
@@ -26,5 +30,7 @@
 !technique/pivot/*
 !technique/sdi
 !technique/sdi/*
+!technique/uncrouch
+!technique/uncrouch/*
 !test
 !test/*

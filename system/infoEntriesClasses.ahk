@@ -15,21 +15,6 @@ class outOfDeadzoneInfo {
     }
 }
 
-class crouchZoneHistoryEntry {
-    __New(zone, timestamp) {
-        this.zone := zone
-        this.timestamp := timestamp
-    }
-}
-
-class dashZoneHistoryEntry {
-    __New(zone, timestamp, stale) {
-        this.zone := zone
-        this.timestamp := timestamp
-        this.stale := stale
-    }
-}
-
 class techniqueClassThatHasTimingLockouts {
     __New(did, timestamp) {
         this.did := did
@@ -37,8 +22,3 @@ class techniqueClassThatHasTimingLockouts {
     }
 }
 
-class uncrouchInfo extends techniqueClassThatHasTimingLockouts {
-}
-
-class pivotInfo extends techniqueClassThatHasTimingLockouts {
-}

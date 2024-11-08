@@ -9,11 +9,11 @@ limitOutputs(rawCoords) { ; ///////////// Get coordinates but now with nerfs
     static output := new outputBase
     ; objects that store the info of previous relevant areas the control stick was inside of
     static outOfDeadzone := new leftstickOutOfDeadzoneBase
-    static dashZone := new baseDashZone
-    static crouchZone := new baseCrouchZone
+    static dashZone := new dashZoneHistoryObject
+    static crouchZone := new crouchZoneHistoryObject
     ; objects that store the previously executed techniques that activate timing lockouts
-    static pivot := new basePivot
-    static uncrouch := new baseUncrouch
+    static pivot := new pivotTrackAndNerfObject
+    static uncrouch := new uncrouchTrackAndNerfObject
 
     static limitOutputsInitialized := False
     if !limitOutputsInitialized {

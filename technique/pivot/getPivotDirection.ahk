@@ -1,10 +1,10 @@
 #Requires AutoHotkey v1.1
 
-detectPivot(aX, aY, dashZone) {
+getPivotDirection(aX, aY, dashZone) {
     global P_RIGHTLEFT, global P_LEFTRIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
     global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME
     result := False
-    pivotDebug := false ; if you want to test detectPivot() live, set this true
+    pivotDebug := false ; if you want to test getPivotDirection() live, set this true
     pivotDiscarded := -1 ; for testing. -1 to avoid all switch-cases
     currentDashZone := getCurrentDashZoneInfo(aX, aY, dashZone) ; remember this is an obj
 
@@ -58,8 +58,26 @@ detectPivot(aX, aY, dashZone) {
     } ; end of block for discarding pivot attempts
     
     if pivotDebug {
-        pivotLiveDebugMessages(result, pivotDiscarded) ; over at testingTools.ahk
+        pivotLiveDebugMessages(result, pivotDiscarded) ; over at miscTestingTools.ahk
     }
 
-    return result ; returns whether there was no pivot, or the direction of the pivot if there was
+    return result
+}
+
+pivotLiveDebugMessages(result, pivotDiscarded) {
+    global P_RIGHTLEFT, global P_LEFTRIGHT
+    Switch pivotDiscarded
+    {
+    Case false:
+        if (result == P_LEFTRIGHT) {
+            OutputDebug, % "P_LEFTRIGHT`n"
+        } else if (result == P_RIGHTLEFT) {
+            OutputDebug, % "P_RIGHTLEFT`n"
+        }
+    Case 1:
+        OutputDebug, % "check #1 stale, no pivot`n"
+    Case 2:
+        OutputDebug, % "check #2 length, no pivot`n"
+    }
+    return
 }

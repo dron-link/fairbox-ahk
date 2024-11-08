@@ -1,15 +1,12 @@
 #Requires AutoHotkey v1.1
 
-class basePivot {
+class pivotHistoryObject {
     string := "pivot"
 
     unsaved := new pivotInfo(false, -1000)
     queue := {}
     saved := new pivotInfo(false, -1000)
     lockout := new pivotInfo(false, -1000)
-
-    wasNerfed := false
-    nerfedCoords := ""
 
     saveHistory() {
         if (this.unsaved.did and this.unsaved.did != this.saved.did) {
@@ -27,20 +24,20 @@ class basePivot {
         return
     }
 
-    detect(aX, aY, dashZone) {
-        return detectPivot(aX, aY, dashZone)
-    }
-    nerfSearch(aX, aY, dashZone) {
-        return nerfBasedOnHistory(aX, aY, dashZone, pivotInfo, this)
-    }
-    generateNerfedCoords(aX, aY, pivotInstance) {
-        this.nerfedCoords := getPivotLockoutNerfedCoords(aX, aY, pivotInstance, this)
-        return
-    }
-    getCurrentInfo(aX, aY, dashZone) {
-        return getCurrentPivotInfo(aX, aY, detectPivot(aX, aY, dashZone), this)
-    }
     storeInfoBeforeMultipressEnds(aX, aY, dashZone) {
-        return storePivotsBeforeMultipressEnds(aX, aY, detectPivot(aX, aY, dashZone), this)
+        global currentTimeMS
+
+        outputDidPivot := getPivotDirection(aX, aY, dashZone)
+    
+        if (outputDidPivot == this.saved.did) {
+            this.unsaved.did := this.saved.did
+        } else {
+            if !IsObject(this.queue[outputDidPivot]) {
+                this.queue[outputDidPivot] := new pivotInfo(outputDidPivot, currentTimeMS)
+            }
+            this.unsaved := this.queue[outputDidPivot]
+        }
+    
+        return
     }
 }

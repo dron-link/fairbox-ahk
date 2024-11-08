@@ -5,44 +5,73 @@
 #include <CvJoyInterface>
 SetBatchLines, -1
 #MenuMaskKey vke8
-#include %A_ScriptDir%
+
 currentTimeMS := 0
-#include, controls\hkIniAutogenerator.ahk 
-#include, system\fairboxConstants.ahk ; globals
-#include, system\gameEngineConstants.ahk ; globals
-#include, system\infoEntriesClasses.ahk
-#include, menu\menu.ahk
-#include, coordinates\targetObjStructure.ahk
-#include, coordinates\targetCoordinateValues.ahk ; you can customize the coordinates in this file
-#include, coordinates\targetFormatting.ahk
-#include, limitOutputs\outputClass.ahk
-#include, limitOutputs\limitOutputs.ahk
-#include, limitOutputs\getFuzzyHorizontal100.ahk
-#include, analogZoneInfo\outOfDeadzone.ahk
-#include, analogZoneInfo\outOfDeadzoneClass.ahk
-#include, analogZoneInfo\crouchZone.ahk
-#include, analogZoneInfo\crouchZoneClass.ahk
-#include, analogZoneInfo\dashZone.ahk 
-#include, analogZoneInfo\dashZoneClass.ahk
-#include, technique\reverseNeutralB.ahk
-#include, technique\nerfBasedOnHistory.ahk
-#include, technique\uncrouch.ahk
-#include, technique\uncrouchClass.ahk
-#include, technique\pivot\pivot.ahk
-#include, technique\pivot\pivotClass.ahk
-#include, technique\pivot\detectPivot.ahk
-#include, technique\pivot\getPivotLockoutNerfedCoords.ahk
-#include, controls\loadHotkeysIni.ahk
-#include, controls\hotkeyHelpers.ahk
-#include, controls\constructControlsWindow.ahk
-#include, controls\goToFunctionsUponGuiInteraction.ahk
-#include, controls\validateModifiedControl.ahk
-#include, controls\addControlsWindowInstructions.ahk
-#include, controls\hotkeyControlHasFocus.ahk
-#include, test\miscTestingTools.ahk
-; #include, test\calibrationTest.ahk
-#include, test\testNerfsByHand.ahk
-#include, test\inputsOvertake.ahk
+#include %A_ScriptDir%\analogZoneInfo\crouchZone
+#include, crouchZone.ahk
+#include, crouchZoneHistoryObject.ahk
+#include, getCrouchZone.ahk
+
+#include %A_ScriptDir%\analogZoneInfo\dashZone
+#include, dashZone.ahk 
+#include, dashZoneHistoryObject.ahk
+#include, getDashZone.ahk
+
+#include %A_ScriptDir%\analogZoneInfo
+#include, outOfDeadzone.ahk
+#include, outOfDeadzoneClass.ahk
+
+#include %A_ScriptDir%\controls
+#include, addControlsWindowInstructions.ahk
+#include, constructControlsWindow.ahk
+#include, goToFunctionsUponGuiInteraction.ahk
+#include, hkIniAutogenerator.ahk 
+#include, hotkeyControlHasFocus.ahk
+#include, hotkeyHelpers.ahk
+#include, loadHotkeysIni.ahk
+#include, validateModifiedControl.ahk
+
+#include %A_ScriptDir%\coordinates
+#include, targetCoordinateValues.ahk ; you can customize the coordinates in this file
+#include, targetFormatting.ahk
+#include, targetObjStructure.ahk
+
+#include %A_ScriptDir%\limitOutputs
+#include, getFuzzyHorizontal100.ahk
+#include, limitOutputs.ahk
+#include, outputClass.ahk
+
+#include %A_ScriptDir%\menu
+#include, menu.ahk
+
+#include %A_ScriptDir%\system
+#include, fairboxConstants.ahk ; globals
+#include, gameEngineConstants.ahk ; globals
+#include, infoEntriesClasses.ahk
+
+#include %A_ScriptDir%\technique\pivot
+#include, getPivot.ahk
+#include, getPivotDirection.ahk
+#include, getPivotLockoutNerfedCoords.ahk
+#include, pivot.ahk
+#include, pivotHistoryObject.ahk
+#include, pivotTrackAndNerfObject.ahk
+
+#include %A_ScriptDir%\technique\uncrouch
+#include, getUncrouch.ahk
+#include, uncrouch.ahk
+#include, uncrouchHistoryObject.ahk
+#include, uncrouchTrackAndNerfObject.ahk
+
+#include %A_ScriptDir%\technique
+#include, reverseNeutralB.ahk
+
+#include %A_ScriptDir%\test
+; #include, calibrationTest.ahk
+#include, inputsOvertake.ahk
+#include, miscTestingTools.ahk
+#include, testNerfsByHand.ahk
+
 
 guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
     Gui, % windowName ":Font", s8 cDefault norm, Tahoma

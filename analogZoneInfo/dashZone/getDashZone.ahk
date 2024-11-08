@@ -23,17 +23,3 @@ getCurrentDashZoneInfo(aX, aY, dashZone) {
         return new dashZoneHistoryEntry(currentZone, currentTimeMS, false)
     }
 }
-
-storeDashZoneInfoBeforeMultipressEnds(aX, aY, ByRef dashZone) {
-    global currentTimeMS
-    dashZoneOfOutput := getDashZoneOf(aX, aY)
-    if (dashZoneOfOutput == dashZone.saved.zone) {
-        dashZone.unsaved := dashZone.saved
-    } else {
-        if !IsObject(dashZone.queue[dashZoneOfOutput]) {
-            dashZone.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS, false)
-        }
-        dashZone.unsaved := dashZone.queue[dashZoneOfOutput]
-    }
-    return
-}

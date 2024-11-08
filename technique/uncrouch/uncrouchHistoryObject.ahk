@@ -1,15 +1,12 @@
 #Requires AutoHotkey v1.1
 
-class baseUncrouch {
+class uncrouchHistoryObject {
     string:="uncrouch"
 
     unsaved := new uncrouchInfo(false, -1000)
     queue := {}
     saved := new uncrouchInfo(false, -1000)
     lockout := new uncrouchInfo(false, -1000)
-
-    wasNerfed := false
-    nerfedCoords := ""
 
     saveHistory() {
         if (this.unsaved.did and this.unsaved.did != this.saved.did) {
@@ -27,20 +24,20 @@ class baseUncrouch {
         return
     }
 
-    detect(aX, aY, crouchZone) {
-        return detectUncrouch(aX, aY, crouchZone)
-    }
-    nerfSearch(aX, aY, crouchZone) {
-        return nerfBasedOnHistory(aX, aY, crouchZone, uncrouchInfo, this)
-    }
-    generateNerfedCoords(aX, aY, uncrouchInstance) {
-        this.nerfedCoords := getUncrouchLockoutNerfedCoords(aX, aY, uncrouchInstance, this)
-        return
-    }
-    getCurrentInfo(aX, aY, crouchZone) {
-        return getCurrentUncrouchInfo(aX, aY, detectUncrouch(aX, aY, crouchZone), this)
-    }
     storeInfoBeforeMultipressEnds(aX, aY, crouchZone) {
-        return storeUncrouchesBeforeMultipressEnds(aX, aY, detectUncrouch(aX, aY, crouchZone), this)
+        global currentTimeMS
+
+        outputDidUncrouch := getUncrouchDid(aX, aY, crouchZone)
+
+        if (outputDidUncrouch == this.saved.did) {
+            this.unsaved := this.saved
+        } else {
+            if !IsObject(this.queue[outputDidUncrouch]) {
+                this.queue[outputDidUncrouch] := new uncrouchInfo(outputDidUncrouch, currentTimeMS)
+            }
+            this.unsaved := this.queue[outputDidUncrouch]
+        }
+
+        return
     }
 }

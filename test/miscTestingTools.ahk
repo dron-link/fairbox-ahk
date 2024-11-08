@@ -1,23 +1,5 @@
 #Requires AutoHotkey v1.1
 
-pivotLiveDebugMessages(result, pivotDiscarded) { ; called by detectPivot() when pivotDebug == true
-    global P_RIGHTLEFT, global P_LEFTRIGHT
-    Switch pivotDiscarded
-    {
-    Case false:
-        if (result == P_LEFTRIGHT) {
-            OutputDebug, % "P_LEFTRIGHT`n"
-        } else if (result == P_RIGHTLEFT) {
-            OutputDebug, % "P_RIGHTLEFT`n"
-        }
-    Case 1:
-        OutputDebug, % "check #1 stale, no pivot`n"
-    Case 2:
-        OutputDebug, % "check #2 length, no pivot`n"
-    }
-    return
-}
-
 testTrimToCircle() {
     global
 

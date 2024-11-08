@@ -4,6 +4,7 @@ inputsOvertake() {
     global
     currentTimeMS := 1000
     uncrouchNerfDemo()
+    ExitApp
     return
 }
 
