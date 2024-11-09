@@ -2,8 +2,9 @@
 #Warn All, OutputDebug
 #SingleInstance force
 #NoEnv
-#include <CvJoyInterface>
 SetBatchLines, -1
+ListLines Off
+#include <CvJoyInterface>
 #MenuMaskKey vke8
 
 currentTimeMS := 0
@@ -36,6 +37,7 @@ currentTimeMS := 0
 #include, targetCoordinateValues.ahk ; you can customize the coordinates in this file
 #include, targetFormatting.ahk
 #include, targetObjStructure.ahk
+#include, trimToCircle.ahk
 
 #include %A_ScriptDir%\limitOutputs
 #include, getFuzzyHorizontal100.ahk
@@ -143,7 +145,7 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 deleteFailingHotkey := true
 
-enabledHotkeys := false
+enabledHotkeys := true
 
 hkIniAutoGenerator() ; create hotkeys.ini if missing
 
