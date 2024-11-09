@@ -1,4 +1,4 @@
 #Requires AutoHotkey v1.1
 
-class uncrouchInfo extends techniqueClassThatHasTimingLockouts {
+class uncrouchInfo extends timingBasedTechniqueHistoryEntry {
 }

@@ -12,6 +12,8 @@
 !analogZoneInfo/dashZone/*
 !analogZoneInfo/crouchZone
 !analogZoneInfo/crouchZone/*
+!analogZoneInfo/outOfDeadzone
+!analogZoneInfo/outOfDeadzone/*
 !system
 !system/*
 !controls

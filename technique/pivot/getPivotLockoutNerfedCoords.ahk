@@ -1,13 +1,13 @@
 #Requires AutoHotkey v1.1
 
-getPivotLockoutNerfedCoords(aX, aY, pivotInstance, pivot) {
+getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivot, pivotInstance) {
     global ANALOG_STICK_MAX, global FORCE_FTILT, global ZONE_CENTER, global ZONE_L, global ZONE_R
     global TIMELIMIT_TAPSHUTOFF, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
     global P_RIGHTLEFT, global P_LEFTRIGHT, global xComp, global yComp, global currentTimeMS
+    aX := coords[xComp], aY := coords[yComp]
 
-    upYDeadzone := getCurrentOutOfDeadzoneInfo(aY, pivot.outOfDeadzone.up)
-    downYDeadzone := getCurrentOutOfDeadzoneInfo(aY, pivot.outOfDeadzone.down)
-    doTrimCoordinate := false
+    upYDeadzone := getCurrentOutOfDeadzoneInfo_up(aY, outOfDeadzone.up)
+    downYDeadzone := getCurrentOutOfDeadzoneInfo_down(aY, outOfDeadzone.down)
 
     if ((aX != 0 or aY != 0) and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
         maxDistanceFactor := 1.1 * ANALOG_STICK_MAX / sqrt(aX**2 + aY**2) ; 1.1 ensures shoot beyond circle
@@ -15,7 +15,8 @@ getPivotLockoutNerfedCoords(aX, aY, pivotInstance, pivot) {
         /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing
             the pivot (such as upY dashes and downY dashes)
         */
-        if (upYDeadzone.out and (currentTimeMS - upYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF or upYDeadzone.timestamp >= pivotInstance.timestamp)) {
+        if (upYDeadzone.out and (currentTimeMS - upYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF
+            or upYDeadzone.timestamp >= pivotInstance.timestamp)) {
             if (Abs(aX) > aY) {
                 /*  //Force all upward angles to a minimum of 45deg away from the horizontal
                     //to prevent pivot uftilt and ensure tap jump
@@ -42,7 +43,7 @@ getPivotLockoutNerfedCoords(aX, aY, pivotInstance, pivot) {
         ; if the player shut off tap downsmash, by pivoting with downY dashes
         else if (downYDeadzone.out and downYDeadzone.timestamp < pivotInstance.timestamp
             and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
-            return [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT     , -FORCE_FTILT]
+            return [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, -FORCE_FTILT]
         }
     }
     return false ; if we reach this, conditions for applying nerfs weren't fulfilled

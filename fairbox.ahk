@@ -17,9 +17,10 @@ currentTimeMS := 0
 #include, dashZoneHistoryObject.ahk
 #include, getDashZone.ahk
 
-#include %A_ScriptDir%\analogZoneInfo
+#include %A_ScriptDir%\analogZoneInfo\outOfDeadzone
+#include, deadzoneHistoryObjects.ahk
+#include, getOutOfDeadzone.ahk
 #include, outOfDeadzone.ahk
-#include, outOfDeadzoneClass.ahk
 
 #include %A_ScriptDir%\controls
 #include, addControlsWindowInstructions.ahk
@@ -38,8 +39,9 @@ currentTimeMS := 0
 
 #include %A_ScriptDir%\limitOutputs
 #include, getFuzzyHorizontal100.ahk
+#include, limitedOutputsObject.ahk
 #include, limitOutputs.ahk
-#include, outputClass.ahk
+#include, output.ahk
 
 #include %A_ScriptDir%\menu
 #include, menu.ahk
@@ -47,10 +49,9 @@ currentTimeMS := 0
 #include %A_ScriptDir%\system
 #include, fairboxConstants.ahk ; globals
 #include, gameEngineConstants.ahk ; globals
-#include, infoEntriesClasses.ahk
 
 #include %A_ScriptDir%\technique\pivot
-#include, getPivot.ahk
+#include, getCurrentPivotInfo.ahk
 #include, getPivotDirection.ahk
 #include, getPivotLockoutNerfedCoords.ahk
 #include, pivot.ahk
@@ -64,7 +65,8 @@ currentTimeMS := 0
 #include, uncrouchTrackAndNerfObject.ahk
 
 #include %A_ScriptDir%\technique
-#include, reverseNeutralB.ahk
+#include, getReverseNeutralBNerf.ahk
+#include, timingBasedTechniqueHistoryEntry.ahk
 
 #include %A_ScriptDir%\test
 ; #include, calibrationTest.ahk
@@ -141,7 +143,7 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 deleteFailingHotkey := true
 
-enabledHotkeys := true
+enabledHotkeys := false
 
 hkIniAutoGenerator() ; create hotkeys.ini if missing
 
@@ -251,7 +253,6 @@ if enabledHotkeys {
     TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
     inputsOvertake()
 }
-
 
 /*  ////////////////////////////////
     check what directions, modifiers and buttons we should listen to,
@@ -511,12 +512,11 @@ reflectCoords(quadrantICoords) {
     based on the currently seen cardinal directions and modifiers
 */
 updateAnalogStick() {
-    global currentTimeMS
+    global xComp, global yComp, global currentTimeMS
     currentTimeMS := A_TickCount
     coords := getAnalogCoords()
-    finalOutput := limitOutputs(coords)
-    finalCoords := [finalOutput.x, finalOutput.y]
-    setAnalogStick(finalCoords)
+    finalOutput := limitOutputs(coords[xComp], coords[yComp])
+    setAnalogStick([finalOutput.x, finalOutput.y])
     return
 }
 

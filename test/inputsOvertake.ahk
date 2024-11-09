@@ -11,7 +11,7 @@ inputsOvertake() {
 testOut(x, y, advanceTime) {
     global currentTimeMS
     currentTimeMS += advanceTime
-    return limitOutputs([x, y])
+    return limitOutputs(x, y)
 }
 
 ; samples

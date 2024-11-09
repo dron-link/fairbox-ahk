@@ -2,18 +2,19 @@
 
 class pivotTrackAndNerfObject extends pivotHistoryObject {
     wasNerfed := false
-    nerfedCoords := ""
+    nerfedCoords := false
 
-    nerfSearch(aX, aY, dashZone) {
+    nerfSearch(aX, aY, dashZone, outOfDeadzone) {
         global TIMELIMIT_SIMULTANEOUS, global xComp, global yComp, global currentTimeMS
 
         this.wasNerfed := false ; pivot hasn't been nerfed yet
 
         ; we nerf if the technique was completed in the near past
         if this.lockout.did {
-            this.generateNerfedCoords(aX, aY, this.lockout)
+            this.generateNerfedCoords(aX, aY, outOfDeadzone, this.lockout)
         }
-        ; we are able to overwrite aX and aY with nerfed values for the next steps
+
+        ; we are able to overwrite aX and aY with nerfed values, just for the next steps
         if this.wasNerfed {
             aX := this.nerfedCoords[xComp], aY := this.nerfedCoords[yComp]
         }
@@ -21,16 +22,16 @@ class pivotTrackAndNerfObject extends pivotHistoryObject {
         ; this check is unnecessary but, if it failed, new empty pivot would be doomed anyways 
         if (getDashZoneOf(aX, aY) != dashZone.saved.zone) {
             currentPivotInfo := getCurrentPivotInfo(aX, aY, getPivotDirection(aX, aY, dashZone), this)
-            ; take care to not nerf the same coordinates twice
+            ; if there's a current pivot atop the lockout pivot, take care to not nerf the coordinates again
             if (currentPivotInfo.did and !this.wasNerfed) {
-                this.generateNerfedCoords(aX, aY, currentPivotInfo)
+                this.generateNerfedCoords(aX, aY, outOfDeadzone, currentPivotInfo)
             }
         }
         return
     }
 
-    generateNerfedCoords(aX, aY, pivotInstance) {
-        this.nerfedCoords := getPivotLockoutNerfedCoords(aX, aY, pivotInstance, this)
+    generateNerfedCoords(aX, aY, outOfDeadzone, pivotInstance) {
+        this.nerfedCoords := getPivotLockoutNerfedCoords([aX, aY], outOfDeadzone, this, pivotInstance)
         if this.nerfedCoords {
             this.wasNerfed := true
         } else {

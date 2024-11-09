@@ -1,8 +1,9 @@
 #Requires AutoHotkey v1.1
 
-getReverseNeutralBNerf(ByRef aX, ByRef aY) {
+getReverseNeutralBNerf(coords) {
     global ANALOG_DEAD_MAX, global ANALOG_STICK_MIN, global ANALOG_STICK_MAX, 
-    global ANALOG_SPECIAL_LEFT, global ANALOG_SPECIAL_RIGHT, global buttonB
+    global ANALOG_SPECIAL_LEFT, global ANALOG_SPECIAL_RIGHT, global xComp, global yComp, global buttonB
+    aX := coords[xComp], aY := coords[yComp]
 
     if (buttonB and Abs(aX) > ANALOG_DEAD_MAX and Abs(aY) <= ANALOG_DEAD_MAX) { ; out of x deadzone and in y deadzone
         if (aX < 0 and aX > ANALOG_SPECIAL_LEFT) { ; inside leftward neutral-B range

@@ -1,41 +1,31 @@
 #Requires AutoHotkey v1.1
 
-limitOutputs(rawCoords) { ; ///////////// Get coordinates but now with nerfs
+limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
     global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
     global xComp, global yComp, global currentTimeMS
 
     ; ### first call setup
 
-    static output := new outputBase
+    static output := new limitedOutputsObject
     ; objects that store the info of previous relevant areas the control stick was inside of
-    static outOfDeadzone := new leftstickOutOfDeadzoneBase
+    static outOfDeadzone := {up: new upDeadzoneHistoryObject, down: new downDeadzoneHistoryObject}
     static dashZone := new dashZoneHistoryObject
     static crouchZone := new crouchZoneHistoryObject
     ; objects that store the previously executed techniques that activate timing lockouts
     static pivot := new pivotTrackAndNerfObject
     static uncrouch := new uncrouchTrackAndNerfObject
 
-    static limitOutputsInitialized := False
-    if !limitOutputsInitialized {
-        /*  this is a way to bundle outOfDeadzone info with the pivot and uncrouch objects
-            to make the info visible to pivot.getNerfedCoords() and uncrouch.getNerfedCoords()
-        */
-        ;
-        pivot.outOfDeadzone := outOfDeadzone
-        uncrouch.outOfDeadzone := outOfDeadzone
-        limitOutputsInitialized := True
-    }
-
     ; ### update the variables
 
-    output.limited := new outputHistoryEntry(rawCoords[xComp], rawCoords[yComp], currentTimeMS)
+    output.limited := new outputHistoryEntry(aX, aY, currentTimeMS)
     /*  true if current input and those that follow can't be considered as part of the previous multipress;
         only runs once, after a multipress ends.
     */
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS
         and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
-        outOfDeadzone.saveHistory()
+        outOfDeadzone.up.saveHistory()
+        outOfDeadzone.down.saveHistory()
         crouchZone.saveHistory()
         uncrouch.saveHistory()
         dashZone.saveHistory()
@@ -50,8 +40,8 @@ limitOutputs(rawCoords) { ; ///////////// Get coordinates but now with nerfs
     output.reverseNeutralBNerf()
 
     ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
-    pivot.nerfSearch(output.limited.x, output.limited.y, dashZone)
-    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
+    pivot.nerfSearch(output.limited.x, output.limited.y, dashZone, outOfDeadzone)
+    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone, outOfDeadzone)
 
     output.chooseLockout(pivot, uncrouch)
 
@@ -64,7 +54,8 @@ limitOutputs(rawCoords) { ; ///////////// Get coordinates but now with nerfs
     pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
 
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
-        outOfDeadzone.storeInfoBeforeMultipressEnds(output.limited.y)
+        outOfDeadzone.up.storeInfoBeforeMultipressEnds(output.limited.y)
+        outOfDeadzone.down.storeInfoBeforeMultipressEnds(output.limited.y)
         crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
         dashZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
 

@@ -1,11 +1,11 @@
 #Requires AutoHotkey v1.1
 
-class outputBase {
-    static historyLength := 15
-    limited := {}
+class limitedOutputsObject {
+    historyLength := 15
+    limited := {} ; this element is controlled by limitOutputs()
     latestMultipressBeginningTimestamp := -1000
 
-    __New() {
+    __New() { ; creates output.hist
         this.hist := []
         Loop, % this.historyLength {
             this.hist.Push(new outputHistoryEntry(0, 0, -1000))
@@ -14,7 +14,7 @@ class outputBase {
 
     reverseNeutralBNerf() {
         global xComp, global yComp
-        nerfedCoords := getReverseNeutralBNerf(this.limited.x, this.limited.y)
+        nerfedCoords := getReverseNeutralBNerf([this.limited.x, this.limited.y])
         this.limited.x := nerfedCoords[xComp], this.limited.y := nerfedCoords[yComp]
         return
     }

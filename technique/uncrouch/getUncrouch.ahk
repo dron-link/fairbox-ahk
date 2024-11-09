@@ -9,12 +9,15 @@ getUncrouchDid(aX, aY, crouchZone) {
     }
 }
 
-getUncrouchLockoutNerfedCoords(aX, aY, uncrouchInstance, uncrouch) {
-    global ANALOG_DEAD_MAX, global ANALOG_STICK_MAX, global TIMELIMIT_DOWNUP, global currentTimeMS
+getUncrouchLockoutNerfedCoords(coords, outOfDeadzone, uncrouch, uncrouchInstance) {
+    global ANALOG_DEAD_MAX, global ANALOG_STICK_MAX, global TIMELIMIT_DOWNUP
+    global xComp, global yComp, global currentTimeMS
+    aX := coords[xComp], aY := coords[yComp]
 
-    upYDeadzone := getCurrentOutOfDeadzoneInfo(aY, uncrouch.outOfDeadzone.up)
+    upYDeadzone := getCurrentOutOfDeadzoneInfo_up(aY, outOfDeadzone.up)
 
-    if (currentTimeMS - uncrouchInstance.timestamp < TIMELIMIT_DOWNUP and upYDeadzone.out and Abs(aX) <= ANALOG_DEAD_MAX) {
+    if (currentTimeMS - uncrouchInstance.timestamp < TIMELIMIT_DOWNUP and upYDeadzone.out 
+        and Abs(aX) <= ANALOG_DEAD_MAX) {
         return [0, ANALOG_STICK_MAX]
     }
     return false ; if we reach this, conditions for applying nerfs weren't fulfilled
