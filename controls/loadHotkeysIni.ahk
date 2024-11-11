@@ -16,12 +16,11 @@ loadHotkeysIni() {
         If (enabledHotkeys and strReplace(savedHK%index%, "~") != "") { ;If what was retrieved is a hotkey,
             if (hotkeys[index] = "Input On/Off") {
                 Hotkey, If ; always active
-                Hotkey, % savedHK%index%, LabelGameControlsToggle              ; enable it.
             } else {
                 Hotkey, If, enabledGameControls ; conditional hotkey
-                Hotkey, % savedHK%index%, Label%index%              ; enable it.
-                Hotkey, % savedHK%index% . " UP", Label%index%_UP
             }
+            Hotkey, % savedHK%index%, Label%index%              ; enable the hotkey.
+            Hotkey, % savedHK%index% . " UP", Label%index%_UP
         }
 
         HK%index% := savedHK%index%

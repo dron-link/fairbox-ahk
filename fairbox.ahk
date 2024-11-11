@@ -111,15 +111,15 @@ everything is subject to modification and may not be present in the finalized ve
 +++ i'm considering helping to make a faithful b0xx v4.1-like for keyboards in the future.
 
 rough list of remaining tasks
+- TODO write tests
 - TODO create a showControlsWindowOnLaunch
 - TODO deleteFailingHotkey all invalid hotkeys at once. path: groundhog day of timer threads
-- TODO custom IfWinActive for users to make the hotkeys only work when the emulator window is focused 
 - TODO reformat c-stick coordinates, make them into integers instead of floats
 - TODO disable all traytip messages option
 - TODO increase hotkey control width option
 - TODO restore default hotkeys button
-- TODO ensure that displayed hotkeys always reflect the real ones
-- TODO primitive input viewer, or graphic input viewer, as a separate .exe app
+- TODO somehow ensure that displayed hotkeys always reflect the real ones. i suggest a test
+- TODO primitive input viewer, or graphic input viewer, possibly as a separate .exe app
 - TODO b0xx example layout picture window? maybe not necessary if i do the graphic input viewer
 - TODO add cx and cy entries to the output history, but for what specifically?
 - TODO consider outputting 1.0 cardinals and 45° large diagonals past the analog circle?
@@ -128,7 +128,6 @@ rough list of remaining tasks
     ¬ call updateAnalogStick and possibly lift pivot nerfs after 4 frames, 5 frames and 8 frames
     ¬ use setTimer to lift a 2f jump nerf 2 frames after it was forced (idea origin: CarVac HayBox)
 - TODO implement coordinate target inconditional bans
-- TODO write tests
 - TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac/Haybox)
 - TODO make a debug mode, debugACertainProcess? outputDebug, % expression
 
@@ -235,9 +234,6 @@ lastCoordTrace := ""
 
 ; arbitrary vjoy initial status - bug fix: reset all buttons on startup
 for index in hotkeys {
-    if (hotkeys[index] = "Input On/Off") {
-        continue
-    }
     gosub Label%index%_UP
 }
 
@@ -614,13 +610,6 @@ setAnalogR(value) {
 }
 
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
-
-LabelGameControlsToggle:
-    enabledGameControls := !enabledGameControls
-Return
-
-#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls 
-#If
 
 /*  FYI:
     when a hotkey control has the checkbox Special Bind, these hotkeys take priority over the
@@ -1047,6 +1036,17 @@ return
 
 Label25_UP:
 return
+
+; Input On/Off
+Label26:
+    enabledGameControls := !enabledGameControls
+return
+
+Label26_UP:
+return
+
+#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls 
+#If
 
 ; /////////////// Creates the Debug message. code not updated yet
 
