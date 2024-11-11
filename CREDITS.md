@@ -1,10 +1,10 @@
-dron-link - de facto developer for this project
+dron-link - de-facto-developer for this project
 
 [agirardeau](https://github.com/agirardeau) - this project is a fork of b0xx-ahk and agirardeaudale is its developer
 
 [tlandegger](https://github.com/tlandegger) - developer of smashbox-ahk, from where b0xx-ahk was initially forked
 
-parts of this program are based on CarVac 's work on his [HayBox fork](https://github.com/CarVac/HayBox/blob/master/src/modes/MeleeLimits.cpp "MeleeLimits.cpp")
+parts of this program are based on CarVac's work on his [HayBox fork](https://github.com/CarVac/HayBox/blob/master/src/modes/MeleeLimits.cpp "MeleeLimits.cpp")
 
 B0XX: Credits
 - designed by Aziz “Hax$” Al-Yami
@@ -27,5 +27,6 @@ Tools and resources
 - [20XX Discord server](https://b0xx.com/pages/more-info)
 - [Melee Controller Ruleset Proposal](https://docs.google.com/document/d/1abMqoatAGh_ZhQD1qJaQx6YqFAppCjU5KyF3mgvDQVw/edit?tab=t.0)
 - [AHK Debugging with Visual Studio Code](https://gist.github.com/anonymous1184/4b5463e2e37c4a8e6873eb580a3a7f0f)
+- Input viewer default layout is the B0XX layout. We adapted it from [B0XX-DIY](https://github.com/Crane1195/DIYB0XX/blob/master/LayoutFiles/PDF/B0XX_24mm_TopPanel.pdf) by Crane1195.
 
 I (dron-link) am not affiliated with the creators/producers of the B0XX.

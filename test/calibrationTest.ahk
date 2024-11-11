@@ -53,9 +53,8 @@ calibrationTest() {
     OutputDebug, % "stick reset`n"
     ExitApp
 
-    /*
-      findings:
-      FASTER MELEE / SLIPPI
+    /*  findings:
+        FASTER MELEE / SLIPPI
         b0xx-ahk controller config
             ; To get an x coordinate ingame, the vjoy axis must be in the interval [axisMin, axisMax]
             if x <= -80
@@ -95,17 +94,17 @@ calibrationTest() {
                 axisMax = -128y - 65
             if y >= 80
                 axis <= -128*(80) - 65
-    the convertIntegerToVJoy() return have to be kept fitted in these boundaries for
-    fairbox-ahk to be precise in slippi
+        the convertIntegerToVJoy() return have to be kept fitted in these boundaries for
+        fairbox-ahk to be precise in slippi
     */
 
     return
 }
 
 rangeStepper(axisIndex, startStep, endStep, sleepTime) {
-    /*
-    steps from a starting coordinate towards an ending coordinate,
-    advancing through the vjoy axis range according to a function that converts game coordinate-->vjoy axis value
+    /*  steps from a starting coordinate towards an ending coordinate,
+        advancing through the vjoy axis range according to a function
+        that converts game coordinate-->vjoy axis value
     */
     global
     OutputDebug, % "rangeStepper`n"
@@ -130,8 +129,7 @@ rangeStepper(axisIndex, startStep, endStep, sleepTime) {
 }
 
 rangeCrawler(axisIndex, startAxis, endAxis, sleepTime) {
-    /*
-        advances from a axis position (relative to center) to another axis position,
+    /*  advances from a axis position (relative to center) to another axis position,
         stopping in every possible value
     */
     global

@@ -49,8 +49,6 @@ BITS_SDI_TAP_DIAG := 1<<6
 BITS_SDI_TAP_CRDG := 1<<7
 ; direction types per sdi popcount
 POP_CENTER := 0, POP_CARD := 1, POP_DIAG := 2
-; analog history simultaneousFinish bits
-FINAL_DASHZONE := 1, FINAL_SDIZONE := 1<<1, FINAL_CROUCHRANGE := 1<<2
 
 ; coordinate components simple array keys
 xComp := 1, yComp := 2

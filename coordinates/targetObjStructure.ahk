@@ -27,21 +27,8 @@ class targetCoordinateTree {
     bindAnglesToCStick() { ; We are going to set personalized c-button angle bindings 
         global keysModCAngleRole   
         global modCAngleRole
-        cIniPath := A_ScriptDir "\c-stick-angle-bindings.ini"
         ; if c-stick-angle-bindings.ini doesn't exist, create it
-        AttributeString := FileExist(cIniPath)
-        if (!AttributeString) {
-            OutputDebug, c-stick-angle-bindings.ini found to not exist. generating it...
-            cIniTextDefault := "
-            (
-[cStickAngling]
-" keysModCAngleRole[1] "=c-down
-" keysModCAngleRole[2] "=c-left
-" keysModCAngleRole[3] "=c-up
-" keysModCAngleRole[4] "=c-right
-            )"
-            FileAppend, % cIniTextDefault, % cIniPath
-        }
+        FileInstall, install\c-stick-angle-bindings.ini, % A_ScriptDir "\c-stick-angle-bindings.ini", 0
   
         readModCAngleRole := {} ; stores values read from ini
         cIniCompleteness := 0 ; each bit set represents one of four cardinal c-stick directions read

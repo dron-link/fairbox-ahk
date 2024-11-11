@@ -70,7 +70,6 @@ formatTargetCoordinates(ByRef target) {
             } ; end of trimmed-values alert
 
             specificCoords[xComp] := trimmedCoords[xComp], specificCoords[yComp] := trimmedCoords[yComp]
-            detectNonIntegers(specificCoords[xComp], specificCoords[yComp])
         }
     }
     

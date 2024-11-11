@@ -22,6 +22,11 @@
 !coordinates/*
 !docs
 !docs/*
+!imginstall
+!imginstall/button.png
+!imginstall/button_press.png
+!install
+!install/*
 !menu
 !menu/*
 !limitOutputs
@@ -36,3 +41,9 @@
 !technique/uncrouch/*
 !test
 !test/*
+!test/coordinates
+!test/coordinates/*
+!test/limitOutputs
+!test/limitOutputs/*
+!test/system
+!test/system/*

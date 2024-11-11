@@ -8,8 +8,7 @@ class crouchZoneHistoryObject {
     saved := new crouchZoneHistoryEntry(false, -1000)
 
     saveHistory() { ; called every time a multipress has ended
-        this.saved := this.unsaved
-        this.queue := {}
+        this.saved := this.unsaved, this.queue := {}
         return
     }
 

@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1.37
+#Requires AutoHotkey v1.1.37.02
 #Warn All, OutputDebug
 #SingleInstance force
 #NoEnv
@@ -27,7 +27,6 @@ currentTimeMS := 0
 #include, addControlsWindowInstructions.ahk
 #include, constructControlsWindow.ahk
 #include, goToFunctionsUponGuiInteraction.ahk
-#include, hkIniAutogenerator.ahk 
 #include, hotkeyControlHasFocus.ahk
 #include, hotkeyHelpers.ahk
 #include, loadHotkeysIni.ahk
@@ -71,10 +70,7 @@ currentTimeMS := 0
 #include, timingBasedTechniqueHistoryEntry.ahk
 
 #include %A_ScriptDir%\test
-; #include, calibrationTest.ahk
-#include, inputsOvertake.ahk
-#include, miscTestingTools.ahk
-#include, testNerfsByHand.ahk
+#include, suite.ahk
 
 
 guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
@@ -147,16 +143,11 @@ deleteFailingHotkey := true
 
 enabledHotkeys := true
 
-hkIniAutoGenerator() ; create hotkeys.ini if missing
-
 target := new targetCoordinateTree
 target.loadCoordinates()
 target.formatCoordinates()
 ; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
-
-; configure at test\testNerfsByHand.ahk, then set this parameter true. to test timing lockout nerfs
-testNerfsByHand(false) 
 
 constructTrayMenu() ; puts the custom menu items in the tray
 
@@ -242,19 +233,16 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 lastCoordTrace := ""
 
 ; arbitrary vjoy initial status bug fix: reset all buttons on startup
-if enabledHotkeys {
-    for index in hotkeys {
-        gosub Label%index%_UP
-    }
+for index in hotkeys {
+    gosub Label%index%_UP
 }
 
 if enabledHotkeys {
     ; Alert User that script has started
     TrayTip, % "fairbox", % "Script Started", 3, 0
-} else {
-    TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
-    inputsOvertake()
 }
+
+endOfLaunchThreadTests()
 
 /*  ////////////////////////////////
     check what directions, modifiers and buttons we should listen to,
@@ -697,7 +685,6 @@ setAnalogR(value) {
 
 ;-------macros
 
-Pause::Suspend
 ^!r:: Reload ; Ctrl+Alt+R
 SetKeyDelay, 0
 #MaxHotkeysPerInterval 200

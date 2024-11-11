@@ -2,6 +2,7 @@
 
 loadHotkeysIni() {
     global
+    FileInstall, install\hotkeys.ini, % A_ScriptDir "\hotkeys.ini", 0 ; for when hotkeys.ini doesn't exist
     for index in hotkeys {
         alertTimer := new blameCulpritHotkey(index)
 
