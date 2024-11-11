@@ -24,7 +24,8 @@ hotkeys := [ "Analog Up" ; 1
     , "D-pad Down" ; 22
     , "D-pad Left" ; 23
     , "D-pad Right" ; 24
-    , "Debug"] ; 25
+    , "Debug" ; 25
+    , "Input On/Off"] ; 26
 
 ; named values------------------------------------------------------------------------------
 

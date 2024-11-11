@@ -43,9 +43,15 @@ addControlsWindowInstructions(descriptionWidth) {
 turnOffHotkeysMessage() {
     Gui, +OwnDialogs
     MsgBox,, % "Prevent Default Behavior info" , % ""
-        . "If you need to use the keys normally, right-click the program's tray icon "
-        . "and click ''Suspend Hotkeys'' - or press Ctrl+Alt+S if each one of those keys work. "
-        . "This turns off all game buttons "
-        . "until you repeat this action.`n`n"
-        . "Additionally, closing this program also makes all keys work again."
+        . "If you need to use the keys normally, "
+        . "the easiest thing you can do is binding a key as the Input On/Off control. "
+        . "Pressing it turns off all game buttons and lets you use all the keyboard keys normally. "
+        . "To go back to playing, press it again."
+        . "`n`n" 
+        . "Another option is to right-click the program's tray icon "
+        . "and click ''Suspend Hotkeys''. "
+        . "This turns off all controls "
+        . "until you repeat this action. "
+        . "`n`n"
+        . "Last, closing fairbox makes all keys work again."
 }

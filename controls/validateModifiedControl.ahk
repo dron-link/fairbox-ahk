@@ -82,12 +82,22 @@ setHotkeyFromGui(num, existingHotkey, guiHotkey) {
     global
     If enabledHotkeys {
         If (existingHotkey != "") { ;If previous hotkey exists,
-            Hotkey, %existingHotkey%, Label%num%, Off ;  disable it.
-            Hotkey, %existingHotkey% UP, Label%num%_UP, Off ;  disable it.
+            if (hotkeys[num] = "Input On/Off") {
+                Hotkey, %existingHotkey%, LabelGameControlsToggle, Off
+            } else {
+                Hotkey, %existingHotkey%, Label%num%, Off ;  disable it.
+                Hotkey, %existingHotkey% UP, Label%num%_UP, Off ;  disable it.
+            }
         }
         If (strReplace(guiHotkey, "~") != ""){ ;If new hotkey exists,
-            Hotkey, %guiHotkey%, Label%num%, On ;  enable it.
-            Hotkey, %guiHotkey% UP, Label%num%_UP, On ;  enable it.
+            if (hotkeys[num] = "Input On/Off") {
+                Hotkey, If ; always active
+                Hotkey, %guiHotkey%, LabelGameControlsToggle    ; enable hotkey.
+            } else {
+                Hotkey, If, enabledGameControls ; conditional hotkey
+                Hotkey, %guiHotkey%, Label%index%              ; enable hotkey.
+                Hotkey, %guiHotkey% . " UP", Label%index%_UP
+            }
         }
     }
     return

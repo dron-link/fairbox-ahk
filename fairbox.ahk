@@ -142,6 +142,7 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 deleteFailingHotkey := true
 
 enabledHotkeys := true
+enabledGameControls := true
 
 target := new targetCoordinateTree
 target.loadCoordinates()
@@ -232,8 +233,11 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 ; Debug info
 lastCoordTrace := ""
 
-; arbitrary vjoy initial status bug fix: reset all buttons on startup
+; arbitrary vjoy initial status - bug fix: reset all buttons on startup
 for index in hotkeys {
+    if (hotkeys[index] = "Input On/Off") {
+        continue
+    }
     gosub Label%index%_UP
 }
 
@@ -611,7 +615,21 @@ setAnalogR(value) {
 
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
 
-; when a hotkey has the checkbox Special Bind, these hotkey labels take priority over the others
+LabelGameControlsToggle:
+    enabledGameControls := !enabledGameControls
+Return
+
+#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls 
+#If
+
+/*  FYI:
+    when a hotkey control has the checkbox Special Bind, these hotkeys take priority over the
+    others below, just because they appear earlier in the script.
+
+    currentControlVarNameSp := HotkeyCtrlHasFocusIsSpecial() doubles as an assignment and a expression
+    that is interpreted as false if and only if HotkeyCtrlHasFocusIsSpecial() evaluates to 0 or "".
+    And each time one of the following keys is pressed, HotkeyCtrlHasFocusIsSpecial() gets newly evaluated.
+*/ 
 #If currentControlVarNameSp := HotkeyCtrlHasFocusIsSpecial()
     LControl & RAlt::
     LControl::
@@ -654,9 +672,13 @@ setAnalogR(value) {
         validateModifiedControl(hotkeyNum)
         Critical Off
     return
-#If
+#If ; end of conditional hotkeys
 
-#If currentControlVarName := HotkeyCtrlHasFocus() ; expr evaluated every time we press one of these keys
+/*  FYI: currentControlVarNameSp := HotkeyCtrlHasFocus() doubles as an assignment and a expression
+    that is interpreted as false if and only if HotkeyCtrlHasFocus() evaluates to 0 or "".
+    And each time one of the following keys is pressed, HotkeyCtrlHasFocus() gets newly evaluated.
+*/
+#If currentControlVarName := HotkeyCtrlHasFocus()
     *AppsKey::      ; Add support for these keys,
     *Delete::       ; which the hotkey control does not normally allow.
     *Enter::
@@ -689,6 +711,7 @@ setAnalogR(value) {
 SetKeyDelay, 0
 #MaxHotkeysPerInterval 200
 
+/*
 ^!s:: ; Ctrl+Alt+S
     Suspend, Toggle
     If A_IsSuspended
@@ -696,6 +719,7 @@ SetKeyDelay, 0
     Else
         TrayTip, % "Rectangle Controller Script:", % "Hotkeys Enabled", 2, 0
 Return
+*/
 
 ; Analog Up
 Label1:
