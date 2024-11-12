@@ -2,9 +2,12 @@
 
 loadHotkeysIni() {
     global
+
+    invalidHotkeysMsg := ""
+
     FileInstall, install\hotkeys.ini, % A_ScriptDir "\hotkeys.ini", 0 ; for when hotkeys.ini doesn't exist
     for index in hotkeys {
-        alertTimer := new blameCulpritHotkey(index)
+        ; alertTimer := new blameCulpritHotkey(index)
 
         ; Attempt to retrieve a hotkey activation key from the INI file.
         IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%
@@ -19,59 +22,73 @@ loadHotkeysIni() {
             } else {
                 Hotkey, If, enabledGameControls ; conditional hotkey
             }
-            Hotkey, % savedHK%index%, Label%index%              ; enable the hotkey.
-            Hotkey, % savedHK%index% . " UP", Label%index%_UP
+            Hotkey, % savedHK%index%, Label%index%, UseErrorLevel              ; enable the hotkey.
+            If (ErrorLevel != KEY_NAME_ERROR) {
+                Switch ErrorLevel
+                {
+                    Case 1:
+                        MsgBox, % "LoadHotkeys: The Label parameter specifies a nonexistent label name. "
+                    Case 3:
+                        MsgBox, % "LoadHotkeys: Unsupported prefix key."
+                    Case 4:
+                        MsgBox, % "LoadHotkeys: The KeyName parameter is not suitable for use with the AltTab or ShiftAltTab actions. A combination of (at most) two keys is required."
+                    Case 5:
+                        MsgBox, % "LoadHotkeys: The command attempted to modify a nonexistent hotkey."
+                    Case 6:
+                        MsgBox, % "LoadHotkeys: The command attempted to modify a nonexistent variant of an existing hotkey. To solve this, use Hotkey IfWin to set the criteria to match those of the hotkey to be modified."
+                }
+                Hotkey, % savedHK%index% . " UP", Label%index%_UP
+            } else {
+                invalidHotkeysMsg .= ""
+                    . "The key name #" index " that corresponds to the " hotkeys[index] " button: "
+                    . savedHK%index% " is not a valid hotkey." "`n"
+                if deleteFailingHotkey {
+                    IniWrite, % "~", hotkeys.ini, Hotkeys, % index ; deletes this hotkey in hotkeys.ini
+                }
+            }
+
         }
 
         HK%index% := savedHK%index%
 
-        alertTimer.stop() ; the operation of retrieving the activation key finished
+        ; alertTimer.stop() ; the operation of retrieving the activation key finished
     }
+
+    if invalidHotkeysMsg {
+        if deleteFailingHotkey {
+            invalidHotkeysMsg .= "`nThe key bindings mentioned were cleared.`n"
+                . "Attempt opening the Controls Editor "
+                . "and try binding a key to these buttons again."
+
+            MsgBox, % invalidHotkeysMsg
+        } else {
+            enabledHotkeys := false
+            promptInvalidHotkeys(invalidHotkeysMsg)
+        }
+    }
+
     return
 }
 
-class blameCulpritHotkey {
-    timer := ObjBindMethod(this, "blameMethod")
-    __New(culpritNum) { ; adapted from autohotkey documentation example on setTimer
-        this.num := culpritNum
-        timer := this.timer
-        setTimer, % timer, -500 ; if retrieving the activation key takes more than 500ms, blameMethod will fire
-    }
-    blameMethod() {
-        global
-        myErrorMsg := "Error while reading hotkeys on app launch. "
-            . "An invalid key is bound to " hotkeys[this.num] " (button number " this.num ")."
-            . "`n`n"
-        if deleteFailingHotkey {
-            IniWrite, % "~", hotkeys.ini, Hotkeys, % this.num ; deletes this hotkey in hotkeys.ini
-            myErrorMsg .= ""
-            . "We undid the binding: attempt opening the application again, then open the Controls Editor "
-            . "and try binding a key to the " hotkeys[this.num] " button again."
-        }
-        else {
-            myErrorMsg .= ""
-            . "Attempt one of the following:"
-            . "`n`n"
-            . "Open " A_ScriptDir "\hotkeys.ini and "
-            . "delete the text to the right of ''" this.num "=''"
-            . "`n"
-            . "There's no need to change anything else."
-            . "`n`n"
-            . "The other solution is to "
-            . "rename the file the file hotkeys.ini, or moving it away, or deleting it. "
-            . "All controls will be reset to their factory values but "
-            . "this will let you edit the controls normally again."
-            
-        }
-        loadHotkeysIniFail := true
-        OutputDebug, % "`n "myErrorMsg "`n"
-        MsgBox, % myErrorMsg
-        ExitApp
-        return
-    }
-    stop() {
-        timer := this.timer
-        setTimer, % timer, Delete
-        return
-    }
+promptInvalidHotkeys(invalidHotkeysMsg) {
+    Critical
+    invalidHotkeysMsg .= "`ndeleteFailingHotkey is turned off.`n`n`n"
+
+    invalidHotkeysMsg .= ""
+        . "Attempt one of the following:"
+        . "`n`n"
+        . "Open " A_ScriptDir "\hotkeys.ini and "
+        . "delete the text (key name) to the right of the ''='' sign after each invalid hotkey's number,"
+        . "or write a valid key name in its place."
+        . "`n"
+        . "There's no need to change anything else."
+        . "`n`n"
+        . "The other solution is to "
+        . "rename the file the file hotkeys.ini, or moving it away, or deleting it. "
+        . "All controls will be reset to their factory values but "
+        . "this will let you edit the controls normally again."
+
+    MsgBox, % invalidHotkeysMsg
+    Critical Off
+    ExitApp
 }

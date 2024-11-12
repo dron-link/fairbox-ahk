@@ -1,5 +1,12 @@
 #Requires AutoHotkey v1.1
 
+/*  The KeyName parameter specifies one or more keys that are either not recognized or 
+    not supported by the current keyboard layout/language.
+*/
+KEY_NAME_ERROR := 2
+
+; the script depends on the order of these: a remnant of the old design. don't alter it except to append
+; a new element.
 hotkeys := [ "Analog Up" ; 1
     , "Analog Down" ; 2
     , "Analog Left" ; 3
@@ -29,10 +36,9 @@ hotkeys := [ "Analog Up" ; 1
 
 ; named values------------------------------------------------------------------------------
 
-/*  P_X, U_X and BITS_SDI_X technique values are affirmations and must be different to 0,
-    as 0 (false) will serve as the negation of technique
+/*  P_X, U_X and BITS_SDI_X technique values indicate a trace of technique and must be different to 0,
+    as 0 (false) will fulfill the role of "no technique"
 */
-
 P_RIGHTLEFT := 1 ; id: right to left empty pivot
 P_LEFTRIGHT := 2 ; id: left to right pivot
 U_YES := 1 ; id: uncrouch

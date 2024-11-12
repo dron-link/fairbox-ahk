@@ -138,9 +138,9 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 */
 
-deleteFailingHotkey := true
+deleteFailingHotkey := false
 
-enabledHotkeys := false
+enabledHotkeys := true
 enabledGameControls := true
 
 target := new targetCoordinateTree

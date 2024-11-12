@@ -81,7 +81,8 @@ checkDuplicateHK(num) {
 setHotkeyFromGui(num, existingHotkey, guiHotkey) {
     global
     If enabledHotkeys {
-        If (existingHotkey != "") { ;If previous hotkey exists,
+        ;If previous hotkey exists,
+        If (strReplace(existingHotkey, "~") != "") { ; note that this relies on Hotkey "~" not existing
             Hotkey, %existingHotkey%, Label%num%, Off ;  disable it.
             Hotkey, %existingHotkey% UP, Label%num%_UP, Off ;  disable it.
         }
