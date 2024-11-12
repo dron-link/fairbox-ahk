@@ -27,15 +27,15 @@ loadHotkeysIni() {
                 Switch ErrorLevel
                 {
                     Case 1:
-                        MsgBox, % "LoadHotkeys: The Label parameter specifies a nonexistent label name. "
+                        MsgBox, % "LoadHotkeys " index ": The Label parameter specifies a nonexistent label name. "
                     Case 3:
-                        MsgBox, % "LoadHotkeys: Unsupported prefix key."
+                        MsgBox, % "LoadHotkeys " index ": Unsupported prefix key."
                     Case 4:
-                        MsgBox, % "LoadHotkeys: The KeyName parameter is not suitable for use with the AltTab or ShiftAltTab actions. A combination of (at most) two keys is required."
+                        MsgBox, % "LoadHotkeys " index ": The KeyName parameter is not suitable for use with the AltTab or ShiftAltTab actions. A combination of (at most) two keys is required."
                     Case 5:
-                        MsgBox, % "LoadHotkeys: The command attempted to modify a nonexistent hotkey."
+                        MsgBox, % "LoadHotkeys " index ": The command attempted to modify a nonexistent hotkey."
                     Case 6:
-                        MsgBox, % "LoadHotkeys: The command attempted to modify a nonexistent variant of an existing hotkey. To solve this, use Hotkey IfWin to set the criteria to match those of the hotkey to be modified."
+                        MsgBox, % "LoadHotkeys " index ": The command attempted to modify a nonexistent variant of an existing hotkey. To solve this, use Hotkey IfWin to set the criteria to match those of the hotkey to be modified."
                 }
                 Hotkey, % savedHK%index% . " UP", Label%index%_UP
             } else {
