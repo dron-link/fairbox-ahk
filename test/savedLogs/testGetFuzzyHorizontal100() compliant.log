@@ -1,0 +1,10 @@
+testGetFuzzyHorizontal100()
+Running: noFuzzConditions
+End of noFuzzConditions.
+Running: alreadyFuzzed
+End of alreadyFuzzed.
+Running: shouldFuzz
+End of shouldFuzz.
+Test finished.
+
+
