@@ -60,6 +60,7 @@ checkDuplicateHK(num) {
                     probably all keys that normally can perform tasks in windows GUI, do not flash.
                 */            
                 ;Flash the original hotkey to alert the user.
+                guiFontDefault("controlsWindow")
                 Loop,3 {
                     Gui, controlsWindow:Font, bold underline
                     GuiControl, controlsWindow:Font, HK%duplIndex% 
@@ -83,17 +84,18 @@ setHotkeyFromGui(num, existingHotkey, guiHotkey) {
     If enabledHotkeys {
         ;If previous hotkey exists,
         If (strReplace(existingHotkey, "~") != "") { ; note that this relies on Hotkey "~" not existing
-            Hotkey, %existingHotkey%, Label%num%, Off ;  disable it.
-            Hotkey, %existingHotkey% UP, Label%num%_UP, Off ;  disable it.
+            Hotkey, % existingHotkey, Label%num%, Off ;  disable it.
+            Hotkey, % existingHotkey " UP", Label%num%_UP, Off ;  disable it.
         }
         If (strReplace(guiHotkey, "~") != ""){ ;If new hotkey exists,
             if (hotkeys[num] = "Input On/Off") {
                 Hotkey, If ; hotkey always active
-            } else {
+            } 
+            else {
                 Hotkey, If, enabledGameControls ; conditional hotkey
             }
-            Hotkey, %guiHotkey%, Label%index%              ; enable hotkey.
-            Hotkey, %guiHotkey% . " UP", Label%index%_UP
+            Hotkey, % guiHotkey, Label%num%, On             ; enable hotkey.
+            Hotkey, % guiHotkey " UP", Label%num%_UP, On
         }
     }
     return

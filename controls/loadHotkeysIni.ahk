@@ -3,12 +3,10 @@
 loadHotkeysIni() {
     global
 
-    invalidHotkeysMsg := ""
+    invalidHotkeysMsg := "" ; empty string unless we encounter an invalid key on hotkeys.ini
 
     FileInstall, install\hotkeys.ini, % A_ScriptDir "\hotkeys.ini", 0 ; for when hotkeys.ini doesn't exist
     for index in hotkeys {
-        ; alertTimer := new blameCulpritHotkey(index)
-
         ; Attempt to retrieve a hotkey activation key from the INI file.
         IniRead, savedHK%index%, hotkeys.ini, Hotkeys, % index, %A_Space%
 
@@ -19,7 +17,8 @@ loadHotkeysIni() {
         If (enabledHotkeys and strReplace(savedHK%index%, "~") != "") { ;If what was retrieved is a hotkey,
             if (hotkeys[index] = "Input On/Off") {
                 Hotkey, If ; always active
-            } else {
+            } 
+            else {
                 Hotkey, If, enabledGameControls ; conditional hotkey
             }
             Hotkey, % savedHK%index%, Label%index%, UseErrorLevel              ; enable the hotkey.
@@ -37,7 +36,7 @@ loadHotkeysIni() {
                     Case 6:
                         MsgBox, % "LoadHotkeys " index ": The command attempted to modify a nonexistent variant of an existing hotkey. To solve this, use Hotkey IfWin to set the criteria to match those of the hotkey to be modified."
                 }
-                Hotkey, % savedHK%index% . " UP", Label%index%_UP
+                Hotkey, % savedHK%index% " UP", Label%index%_UP
             } else {
                 invalidHotkeysMsg .= ""
                     . "The key name #" index " that corresponds to the " hotkeys[index] " button: "

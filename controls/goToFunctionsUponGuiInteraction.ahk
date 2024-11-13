@@ -22,8 +22,8 @@ activationKeyCheck() { ; thread launched by controlsWindow GUI / hotkey control 
     num := SubStr(A_GuiControl, 3) ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
 
     if (getStrippedFromModifiers(%A_GuiControl%) = "")  { ;If the hotkey contains only modifiers
-        GuiControl,,%A_GuiControl%, % "" ; clear the key.
-        validateModifiedControl(num)
+        ;Reshow the existing hotkey in the hotkey control.
+        GuiControl,,%A_GuiControl%, % getHotkeyControlFormat(savedHK%num%)
     }
     /*  finding the MenuMaskKey (vke8) means that Autohotkey wants to prevent
         the OS from interpreting some spurious thing as the press of an important key, such as Windows key.

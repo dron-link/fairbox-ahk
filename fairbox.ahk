@@ -1048,6 +1048,7 @@ return
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls 
 #If
 
+
 ; /////////////// Creates the Debug message. code not updated yet
 
 getDebug() {
@@ -1137,6 +1138,7 @@ conditionalAppend(array, condition, value) {
 
 ; From https://www.autohotkey.com/boards/viewtopic.php?t=7124
 stringJoin(sep, params) {
+    str := ""
     for index,param in params
         str .= param . sep
     return SubStr(str, 1, -StrLen(sep))
