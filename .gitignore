@@ -1,6 +1,7 @@
 *
 !.gitignore
 !fairbox.ahk
+!StandaloneControlsEditor.ahk
 !README.md
 !LICENSE
 !fairbox-kb-recalibrated.ini

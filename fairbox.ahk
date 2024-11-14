@@ -14,7 +14,7 @@ currentTimeMS := 0
 #include, getCrouchZone.ahk
 
 #include %A_ScriptDir%\analogZoneInfo\dashZone
-#include, dashZone.ahk 
+#include, dashZone.ahk
 #include, dashZoneHistoryObject.ahk
 #include, getDashZone.ahk
 
@@ -29,6 +29,7 @@ currentTimeMS := 0
 #include, goToFunctionsUponGuiInteraction.ahk
 #include, hotkeyControlHasFocus.ahk
 #include, hotkeyHelpers.ahk
+#include, initializeControls.ahk
 #include, loadHotkeysIni.ahk
 #include, validateModifiedControl.ahk
 
@@ -72,7 +73,6 @@ currentTimeMS := 0
 #include %A_ScriptDir%\test
 #include, suite.ahk
 
-
 guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
     Gui, % windowName ":Font", s8 cDefault norm, Tahoma
     return
@@ -83,23 +83,22 @@ guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will hav
     return
 }
 
-/*  
+/*
 
 DISCLAIMER
 I (dron-link) AM NOT A DEVELOPER BY TRADE.
 Other than due to a lack of alternatives, I made this with the hope that this script
-contains any useful ideas for you if you're an experienced programmer that wants to 
+contains any useful ideas for you if you're an experienced programmer that wants to
 embark on a project like this.
 
 contact info:
 Discord
     Aiu     ; over at 20XX Discord server, specifically in #keyboard : https://discord.gg/KydHfzTbdG
-            ; if the link doesnt work try searching for the 20XX invite https://b0xx.com/pages/more-info
+; if the link doesnt work try searching for the 20XX invite https://b0xx.com/pages/more-info
 GitHub
     https://github.com/dron-link
 
-
-sdi, uncrouch, and pivot nerfs, and history saving adapted from CarVac 's work  
+sdi, uncrouch, and pivot nerfs, and history saving adapted from CarVac 's work
 https://github.com/CarVac/HayBox/blob/master/src/modes/MeleeLimits.cpp
 
   ---------------------
@@ -131,7 +130,6 @@ rough list of remaining tasks
 - TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac/Haybox)
 - TODO make a debug mode, debugACertainProcess? outputDebug, % expression
 
-
 setTimer firing rate is apparently 15.6ms, don't expect much precision from it
 (at least it's shorter than a game cube input polling interval), but I expect that most nerf lifts will be one frame late sometimes.
 Maybe we can improve the script by increasing the polling frequency? solution using WinMM dll
@@ -157,8 +155,9 @@ for i in hotkeys {
     gameBtName%i% := "", HK%i% := "",     savedHK%i% := "",   isSpecialKey%i% := "", preventBehavior%i% := ""
 }
 
-loadHotkeysIniFail := false
 loadHotkeysIni()
+
+initializeControls()
 
 constructControlsWindow()
 
@@ -232,17 +231,19 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 ; Debug info
 lastCoordTrace := ""
 
-; arbitrary vjoy initial status - bug fix: reset all buttons on startup
-for index in hotkeys {
-    gosub Label%index%_UP
-}
-
 if enabledHotkeys {
     ; Alert User that script has started
     TrayTip, % "fairbox", % "Script Started", 3, 0
 }
 
+; arbitrary vjoy initial status - bug fix: reset all buttons on startup
+for index in hotkeys {
+    gosub Label%index%_UP
+}
+
 endOfLaunchThreadTests()
+
+return ; end of autoexecute
 
 /*  ////////////////////////////////
     check what directions, modifiers and buttons we should listen to,
@@ -618,7 +619,7 @@ setAnalogR(value) {
     currentControlVarNameSp := HotkeyCtrlHasFocusIsSpecial() doubles as an assignment and a expression
     that is interpreted as false if and only if HotkeyCtrlHasFocusIsSpecial() evaluates to 0 or "".
     And each time one of the following keys is pressed, HotkeyCtrlHasFocusIsSpecial() gets newly evaluated.
-*/ 
+*/
 #If currentControlVarNameSp := HotkeyCtrlHasFocusIsSpecial()
     LControl & RAlt::
     LControl::
@@ -629,11 +630,11 @@ setAnalogR(value) {
     RAlt::
     LWin::
     RWin::
-    +:: 
+    +::
         Critical
         Gui, controlsWindow:Submit, NoHide
         ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
-        hotkeyNum := SubStr(currentControlVarNameSp, 3) 
+        hotkeyNum := SubStr(currentControlVarNameSp, 3)
         If (A_ThisHotkey = "LControl & RAlt") {
             GuiControl, controlsWindow:, HK%hotkeyNum%, % "^RAlt" ; make the control display altgr activation key.
         }
@@ -655,7 +656,7 @@ setAnalogR(value) {
             modifier .= "!"
         Gui, controlsWindow:Submit, NoHide
         ; overwrite the control content
-        GuiControl, controlsWindow:, %currentControlVarNameSp%, % modifier "BackSpace" 
+        GuiControl, controlsWindow:, %currentControlVarNameSp%, % modifier "BackSpace"
         ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
         hotkeyNum := SubStr(currentControlVarNameSp, 3)
         validateModifiedControl(hotkeyNum)
@@ -686,7 +687,7 @@ setAnalogR(value) {
             modifier .= "!"
         Gui, controlsWindow:Submit, NoHide
         ; overwrite the control content
-        GuiControl, controlsWindow:, %currentControlVarName%, % modifier SubStr(A_ThisHotkey,2) 
+        GuiControl, controlsWindow:, %currentControlVarName%, % modifier SubStr(A_ThisHotkey,2)
         ; overwrite the control content
         hotkeyNum := SubStr(currentControlVarName, 3)
         validateModifiedControl(hotkeyNum)
@@ -1030,6 +1031,9 @@ return
 
 ; Debug
 Label25:
+    if (hotkeyCtrlHasFocus() and WinActive("Controls Editor - fairbox")) {
+        return ; skip everything and just let the user edit their controls without int
+    }
     debugString := getDebug()
     Msgbox % debugString
 return
@@ -1045,14 +1049,14 @@ return
 Label26_UP:
 return
 
-#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls 
+#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
 #If
-
 
 ; /////////////// Creates the Debug message. code not updated yet
 
 getDebug() {
     global
+
     activeArray := []
     pressedArray := []
     flagArray := []
@@ -1143,5 +1147,4 @@ stringJoin(sep, params) {
         str .= param . sep
     return SubStr(str, 1, -StrLen(sep))
 }
-
 

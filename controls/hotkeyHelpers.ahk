@@ -19,7 +19,8 @@ getHotkeyControlFormat(activationKey) {
 
 getStrippedFromModifiers(stringIn) {
     /*  strips a hotkey control's content of all modifiers. 
-        this is useful to see if there's anything to the control content - other than modifiers
+        this is useful to see if there's anything to the control content - other than modifiers.
+        The modifiers are  ^ (Control), ! (Alt), and + (Shift).
     */
     modStrippedHK := strReplace(stringIn, "<!")
     modStrippedHK := strReplace(modStrippedHK, ">!")

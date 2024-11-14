@@ -4,7 +4,17 @@ validateModifiedControl(num) { ; you came from activationKeyCheck() or #If Expre
     global
 
     If !hotkeys[num] {
-        MsgBox, % "validateModifiedControl corruption prevention . num: (" num ")`n"
+        collapseControlModificationMsg := "
+( Join`s
+validateModifiedControl(num) corruption prevention.
+`n
+`nThe num value encountered is: " num "
+`n
+`nError: This num value doesn't identify a hotkey.
+`nApp will exit. (Please report this error to the fairbox developers.)
+)"
+        Gui, +OwnDialogs
+        MsgBox, % collapseControlModificationMsg
         ExitApp
     }
 
@@ -29,7 +39,7 @@ validateModifiedControl(num) { ; you came from activationKeyCheck() or #If Expre
     IniWrite, % HK%num%, hotkeys.ini, Hotkeys, % num
     savedHK%num% := HK%num%
     
-    ; display the new hotkey in the window
+    ; update hotkey control contents for the user to see
     GuiControl, controlsWindow:, HK%num%, % getHotkeyControlFormat(HK%num%)
     return
 }
@@ -72,7 +82,7 @@ checkDuplicateHK(num) {
                     GuiControl, controlsWindow:Font, gameBtName%duplIndex%
                     Sleep,130
                 }
-                break
+                break ; a single found key duplicate is enough (also there should be only one)
             }
         }
     }
