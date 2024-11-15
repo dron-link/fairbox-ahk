@@ -35,7 +35,6 @@ validateModifiedControl(num) corruption prevention.
 
     checkDuplicateHK(num)
 
-    setHotkeyFromGui(num, savedHK%num%, HK%num%)
     IniWrite, % HK%num%, hotkeys.ini, Hotkeys, % num
     savedHK%num% := HK%num%
     
@@ -88,6 +87,7 @@ checkDuplicateHK(num) {
     }
     return
 }
+/* ; legacy
 
 setHotkeyFromGui(num, existingHotkey, guiHotkey) {
     global
@@ -110,3 +110,5 @@ setHotkeyFromGui(num, existingHotkey, guiHotkey) {
     }
     return
 }
+
+*/

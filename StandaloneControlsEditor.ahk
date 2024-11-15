@@ -29,12 +29,22 @@ guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will hav
     return
 }
 
+DetectHiddenWindows, On
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.exe
+DetectHiddenWindows, Off
+
+IniRead, openedFromMain, config.ini, LaunchMode, MainIntoControlsWindow
+IniWrite, % false      , config.ini, LaunchMode, MainIntoControlsWindow
+
+manualGoToMain := false ; enabled if the user clicks a certain option from the tray
+
 deleteFailingHotkey := true
 
 enabledHotkeys := false
 enabledGameControls := false
 
-constructTrayMenu() ; puts the custom menu items in the tray
+constructControlsEditorTrayMenu() ; puts the custom menu items in the tray
 
 for i in hotkeys {
     ; ### for hotkey activation keys, and gui hotkey controls. create the global variables associated to:
@@ -53,7 +63,33 @@ return ; end of autoexecute section
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
 
 ControlsWindowGuiClose:
-ExitApp
+    If (openedFromMain or manualGoToMain) {
+        manualGoToMain := false ; false until the user clicks "Resume playing" once more
+        IniWrite, % True, config.ini, LaunchMode, ControlsWindowIntoMain
+        Run, fairbox.ahk, % A_ScriptDir, UseErrorLevel
+        if (ErrorLevel = "ERROR") {
+            Run, fairbox.exe, % A_ScriptDir, UseErrorLevel
+            if (ErrorLevel = "ERROR") {
+                MsgBox, % "Couldn't open fairbox. " A_ScriptDir "\fairbox.*"
+            }
+        }
+        ; if fairbox launches, it will close this script here.
+    } else {
+        ExitApp
+    }
+return
+
+LabelGoToMainFairbox:
+    manualGoToMain := true
+    if !openedFromMain {
+        /*  since we are launching fairbox anew, controls enabled should be the default.
+            but fairbox will attempt to recall if controls were enabled using the ini.
+            We need to ensure controls will be enabled
+        */
+        IniWrite, % true, config.ini, LaunchMode, EnabledControlsRecall
+    }
+    Gosub ControlsWindowGuiClose
+return
 
 /*  FYI:
     when a hotkey control has the checkbox Special Bind, these hotkeys take priority over the
@@ -143,8 +179,6 @@ ExitApp
         Critical Off
     return
 #If ; end of conditional hotkeys
-
-#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
 
 /*  stuffs: there is a graphical glitch
     click on a control

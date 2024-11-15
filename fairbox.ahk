@@ -24,14 +24,8 @@ currentTimeMS := 0
 #include, outOfDeadzone.ahk
 
 #include %A_ScriptDir%\controls
-#include, addControlsWindowInstructions.ahk
-#include, constructControlsWindow.ahk
-#include, goToFunctionsUponGuiInteraction.ahk
-#include, hotkeyControlHasFocus.ahk
-#include, hotkeyHelpers.ahk
 #include, initializeControls.ahk
 #include, loadHotkeysIni.ahk
-#include, validateModifiedControl.ahk
 
 #include %A_ScriptDir%\coordinates
 #include, targetCoordinateValues.ahk ; you can customize the coordinates in this file
@@ -136,10 +130,32 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 */
 
-deleteFailingHotkey := true
+DetectHiddenWindows, On
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.ahk
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.exe
+DetectHiddenWindows, Off
 
+deleteFailingHotkey := true
 enabledHotkeys := true
 enabledGameControls := true
+showWelcomeTray := true
+
+if enabledHotkeys {
+    showWelcomeTray := true
+} else {
+    showWelcomeTray := false
+}
+
+IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey ; actual truth value from config
+
+; do we come from Edit Controls?
+IniRead, openedFromControlsEditor, config.ini, LaunchMode, ControlsWindowIntoMain
+IniWrite, % false                , config.ini, LaunchMode, ControlsWindowIntoMain
+if openedFromControlsEditor {
+    ; we recall the Input On/Off toggle state
+    IniRead, enabledGameControls, config.ini, LaunchMode, ControlsEnabledRecall
+    showWelcomeTray := false
+}
 
 target := new targetCoordinateTree
 target.loadCoordinates()
@@ -147,19 +163,17 @@ target.formatCoordinates()
 ; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
 target.bindAnglesToCStick()
 
-constructTrayMenu() ; puts the custom menu items in the tray
+constructMainsTrayMenu() ; puts the custom menu items in the tray
 
 for i in hotkeys {
-    ; ### for hotkey activation keys, and gui hotkey controls. create the global variables associated to:
-    ; button name,       hotkey control,  the real hotkey,    special bind checkbox, Prev.Def.B. checkbox
-    gameBtName%i% := "", HK%i% := "",     savedHK%i% := "",   isSpecialKey%i% := "", preventBehavior%i% := ""
+    ; ### for hotkey activation keys, and gui hotkey controls. instantiate the global variables associated to:
+    ; the hotkey
+    savedHK%i% := ""
 }
 
 loadHotkeysIni()
 
 initializeControls()
-
-constructControlsWindow()
 
 ; Create an object from vJoy Interface Class.
 vJoyInterface := new CvJoyInterface()
@@ -231,7 +245,7 @@ simultaneousHorizontalModifierLockout := false ; this variable went unused becau
 ; Debug info
 lastCoordTrace := ""
 
-if enabledHotkeys {
+if showWelcomeTray {
     ; Alert User that script has started
     TrayTip, % "fairbox", % "Script Started", 3, 0
 }
@@ -612,89 +626,6 @@ setAnalogR(value) {
 
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
 
-/*  FYI:
-    when a hotkey control has the checkbox Special Bind, these hotkeys take priority over the
-    others below, just because they appear earlier in the script.
-
-    currentControlVarNameSp := HotkeyCtrlHasFocusIsSpecial() doubles as an assignment and a expression
-    that is interpreted as false if and only if HotkeyCtrlHasFocusIsSpecial() evaluates to 0 or "".
-    And each time one of the following keys is pressed, HotkeyCtrlHasFocusIsSpecial() gets newly evaluated.
-*/
-#If currentControlVarNameSp := HotkeyCtrlHasFocusIsSpecial()
-    LControl & RAlt::
-    LControl::
-    RControl::
-    LShift::
-    RShift::
-    LAlt::
-    RAlt::
-    LWin::
-    RWin::
-    +::
-        Critical
-        Gui, controlsWindow:Submit, NoHide
-        ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
-        hotkeyNum := SubStr(currentControlVarNameSp, 3)
-        If (A_ThisHotkey = "LControl & RAlt") {
-            GuiControl, controlsWindow:, HK%hotkeyNum%, % "^RAlt" ; make the control display altgr activation key.
-        }
-        else {
-            GuiControl,controlsWindow:, HK%hotkeyNum%, % A_ThisHotkey ;  make the control display the hotkey.
-        }
-
-        validateModifiedControl(hotkeyNum)
-        Critical Off
-    return
-    *BackSpace::
-        Critical
-        modifier := ""
-        If GetKeyState("Shift","P")
-            modifier .= "+"
-        If GetKeyState("Ctrl","P")
-            modifier .= "^"
-        If GetKeyState("Alt","P")
-            modifier .= "!"
-        Gui, controlsWindow:Submit, NoHide
-        ; overwrite the control content
-        GuiControl, controlsWindow:, %currentControlVarNameSp%, % modifier "BackSpace"
-        ;Get the index of the hotkey control. example: "HK20" -> 20 is Start
-        hotkeyNum := SubStr(currentControlVarNameSp, 3)
-        validateModifiedControl(hotkeyNum)
-        Critical Off
-    return
-#If ; end of conditional hotkeys
-
-/*  FYI: currentControlVarNameSp := HotkeyCtrlHasFocus() doubles as an assignment and a expression
-    that is interpreted as false if and only if HotkeyCtrlHasFocus() evaluates to 0 or "".
-    And each time one of the following keys is pressed, HotkeyCtrlHasFocus() gets newly evaluated.
-*/
-#If currentControlVarName := HotkeyCtrlHasFocus()
-    *AppsKey::      ; Add support for these keys,
-    *Delete::       ; which the hotkey control does not normally allow.
-    *Enter::
-    *Escape::
-    *Pause::
-    *PrintScreen::
-    *Space::
-    *Tab::
-        Critical
-        modifier := ""
-        If GetKeyState("Shift","P")
-            modifier .= "+"
-        If GetKeyState("Ctrl","P")
-            modifier .= "^"
-        If GetKeyState("Alt","P")
-            modifier .= "!"
-        Gui, controlsWindow:Submit, NoHide
-        ; overwrite the control content
-        GuiControl, controlsWindow:, %currentControlVarName%, % modifier SubStr(A_ThisHotkey,2)
-        ; overwrite the control content
-        hotkeyNum := SubStr(currentControlVarName, 3)
-        validateModifiedControl(hotkeyNum)
-        Critical Off
-    return
-#If ; end of conditional hotkeys
-
 ;-------macros
 
 ^!r:: Reload ; Ctrl+Alt+R
@@ -1031,9 +962,6 @@ return
 
 ; Debug
 Label25:
-    if (hotkeyCtrlHasFocus() and WinActive("Controls Editor - fairbox")) {
-        return ; skip everything and just let the user edit their controls without int
-    }
     debugString := getDebug()
     Msgbox % debugString
 return
