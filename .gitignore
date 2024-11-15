@@ -19,6 +19,8 @@
 !system/*
 !controls
 !controls/*
+!controls/controlsEditorWindow
+!controls/controlsEditorWindow/*
 !coordinates
 !coordinates/*
 !docs

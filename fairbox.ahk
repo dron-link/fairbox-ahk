@@ -40,7 +40,7 @@ currentTimeMS := 0
 #include, output.ahk
 
 #include %A_ScriptDir%\menu
-#include, menu.ahk
+#include, mainsTrayMenu.ahk
 
 #include %A_ScriptDir%\system
 #include, fairboxConstants.ahk ; globals

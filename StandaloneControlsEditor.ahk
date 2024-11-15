@@ -4,17 +4,19 @@
 #NoEnv
 #MenuMaskKey vke8
 
-#include %A_ScriptDir%\controls
+#include %A_ScriptDir%\controls\controlsEditorWindow
 #include, addControlsWindowInstructions.ahk
 #include, constructControlsWindow.ahk
 #include, goToFunctionsUponGuiInteraction.ahk
 #include, hotkeyControlHasFocus.ahk
 #include, hotkeyHelpers.ahk
-#include, loadHotkeysIni.ahk
 #include, validateModifiedControl.ahk
 
+#include %A_ScriptDir%\controls
+#include, loadHotkeysIni.ahk
+
 #include %A_ScriptDir%\menu
-#include, menu.ahk
+#include, controlsEditorTrayMenu.ahk
 
 #include %A_ScriptDir%\system
 #include, fairboxConstants.ahk ; globals
@@ -29,8 +31,9 @@ guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will hav
     return
 }
 
+; close fairbox
 DetectHiddenWindows, On
-PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk ; 0x111=WN_COMMAND, 65307 = exit
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.exe
 DetectHiddenWindows, Off
 
@@ -79,7 +82,7 @@ ControlsWindowGuiClose:
     }
 return
 
-LabelGoToMainFairbox:
+LabelManualGoToMainFairbox:
     manualGoToMain := true
     if !openedFromMain {
         /*  since we are launching fairbox anew, controls enabled should be the default.
@@ -89,6 +92,11 @@ LabelGoToMainFairbox:
         IniWrite, % true, config.ini, LaunchMode, EnabledControlsRecall
     }
     Gosub ControlsWindowGuiClose
+return
+
+LabelRefreshControlsWindow:
+    IniWrite, % openedFromMain, config.ini, LaunchMode, ControlsWindowIntoMain
+    Reload
 return
 
 /*  FYI:

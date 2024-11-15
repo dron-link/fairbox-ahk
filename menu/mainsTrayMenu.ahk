@@ -1,7 +1,5 @@
 #Requires AutoHotkey v1.1
 
-; ////////// main's tray menu
-
 constructMainsTrayMenu() {
     Menu, Tray, Add, % "Edit Controls", mainIntoControlsWindow
     Menu, Tray, Default, % "Edit Controls"
@@ -25,14 +23,3 @@ mainIntoControlsWindow() {
 
     return
 }
-
-; ////////// controls editor's tray menu
-
-constructControlsEditorTrayMenu() {
-    Menu, Tray, Add, % "Edit Controls", showControlsWindow
-    Menu, Tray, Default, % "Edit Controls"
-    Menu, Tray, Click, 1
-    Menu, Tray, Add, % "Resume Playing", LabelGoToMainFairbox
-    return
-}
-

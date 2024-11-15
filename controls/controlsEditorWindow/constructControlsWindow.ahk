@@ -48,7 +48,8 @@ constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls m
     addControlsWindowInstructions(descriptionWidth)
 
     guiFontDefault("controlsWindow")
-    Gui, controlsWindow:Add, Button, y+30 w70 h40 gLabelGoToMainFairbox, % "Play"
+    Gui, controlsWindow:Add, Button, y+30 w70 h40 gLabelRefreshControlsWindow, % "Refresh"
+    Gui, controlsWindow:Add, Button, x+6 w70 h40 gLabelManualGoToMainFairbox, % "Play"
 
     return
 }

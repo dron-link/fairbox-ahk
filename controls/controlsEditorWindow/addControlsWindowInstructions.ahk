@@ -1,24 +1,10 @@
 #Requires AutoHotkey v1.1
 
-addControlsWindowInstructionsParagraph(xOff, paragraph) {
-    textWrapWidth := 380
-    paragraphSeparation := 9
-    Gui, controlsWindow:Add, Text, xm+%xOff% y+%paragraphSeparation% +Wrap w%textWrapWidth%, % paragraph
-    return
-}
-
 addControlsWindowInstructions(descriptionWidth) {
     xOff := 380 + descriptionWidth
 
-    ; add the group box and the section title
-    guiFontDefault("controlsWindow")
-    xOffBox := xOff - 15 
-    Gui, controlsWindow:Add, GroupBox, xm+%xOffBox% ym w410 h560, % "Instructions"
-    
     guiFontContent("controlsWindow")
-    ; set up a hidden, empty text element, its coordinates will be used for the next paragraph additions
-    xHide := xOff - 25 
-    Gui, controlsWindow:Add, Text, xm+%xHide% yp, % ""
+    Gui, controlsWindow:Add, Text, xm+%xOff% ym, % "Instructions:"
 
     addControlsWindowInstructionsParagraph(xOff, "
 ( Join`s
@@ -39,7 +25,7 @@ Ctrl, Windows icon, F1, F2, F3, F4, F5, F6...
     
     ; add a help popup button here
     guiFontDefault("controlsWindow")
-    Gui, controlsWindow:Add, Button, w250 gTurnOffHotkeysMessage, % "How to use marked keys normally again"
+    Gui, controlsWindow:Add, Button, w230 gTurnOffHotkeysMessage, % "How to use marked keys normally again"
     
     guiFontContent("controlsWindow")
 
@@ -52,7 +38,7 @@ you must mark the control with ''Special Bind'' first, then click on the control
 
     ; add a help popup button here
     guiFontDefault("controlsWindow")
-    Gui, controlsWindow:Add, Button, w130 gControlsKnownIssuesMessage, % "Known issues (Troubleshooting)"
+    Gui, controlsWindow:Add, Button, w200 gControlsKnownIssuesMessage, % "Known issues (Troubleshooting)"
 
     guiFontContent("controlsWindow")
 
@@ -72,6 +58,13 @@ and delete the file named ''hotkeys.ini'', and then, launch the program.
 )")
     addControlsWindowInstructionsParagraph(xOff, "")
     addControlsWindowInstructionsParagraph(xOff, "Current fairbox folder: " A_ScriptDir)
+    return
+}
+
+addControlsWindowInstructionsParagraph(xOff, paragraph) {
+    textWrapWidth := 380
+    paragraphSeparation := 9
+    Gui, controlsWindow:Add, Text, xm+%xOff% y+%paragraphSeparation% +Wrap w%textWrapWidth%, % paragraph
     return
 }
 
