@@ -4,6 +4,7 @@
 
 testTrimToCircle() {
     global
+    OutputDebug, % "`ntestTrimToCircle()`n"
     Loop, 256 {
         testX := ANALOG_STICK_OFFSETCANCEL + A_Index - 1
         Loop, 256 {

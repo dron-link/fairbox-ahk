@@ -1,7 +1,7 @@
 #Requires AutoHotkey v1.1
 
 getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivot, pivotInstance) {
-    global ANALOG_STICK_MAX, global FORCE_FTILT, global ZONE_CENTER, global ZONE_L, global ZONE_R
+    global ANALOG_STICK_MAX, global FORCE_FTILT
     global TIMELIMIT_TAPSHUTOFF, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
     global P_RIGHTLEFT, global P_LEFTRIGHT, global xComp, global yComp, global currentTimeMS
     aX := coords[xComp], aY := coords[yComp]
@@ -9,9 +9,7 @@ getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivot, pivotInstance) {
     upYDeadzone := getCurrentOutOfDeadzoneInfo_up(aY, outOfDeadzone.up)
     downYDeadzone := getCurrentOutOfDeadzoneInfo_down(aY, outOfDeadzone.down)
 
-    if ((aX != 0 or aY != 0) and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
-        maxDistanceFactor := 1.1 * ANALOG_STICK_MAX / sqrt(aX**2 + aY**2) ; 1.1 ensures shoot beyond circle
-
+    if (currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
         /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing
             the pivot (such as upY dashes and downY dashes)
         */
@@ -21,14 +19,14 @@ getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivot, pivotInstance) {
                 /*  //Force all upward angles to a minimum of 45deg away from the horizontal
                     //to prevent pivot uftilt and ensure tap jump
                 */
-                return trimToCircle([aX > 0 ? 90 : -90, 90]) ; params [90, 90] or [-90, 90]. radius=127
+                return bringToCircleBorder([aX > 0 ? 128 : -128, 128]) ; [+/-128, 128]: 45 degrees
             } else {
-                return trimToCircle([aX * maxDistanceFactor, aY * maxDistanceFactor])
+                return bringToCircleBorder(coords)
             }
         }
         ; if the player hasn't shut off tap downsmash
         else if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
-            return trimToCircle([aX * maxDistanceFactor, aY * maxDistanceFactor])
+            return bringToCircleBorder(coords)
         }
         ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
         else if (upYDeadzone.out and upYDeadzone.timestamp < pivotInstance.timestamp

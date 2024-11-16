@@ -1,12 +1,9 @@
 #Requires AutoHotkey v1.1
 
 getDidPivot(aX, aY, dashZone) {
-    global P_RIGHTLEFT, global P_LEFTRIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
-    global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME
     currentDashZoneInfo := getCurrentDashZoneInfo(aX, aY, dashZone)
 
     direction := getAttemptedPivotDirection(currentDashZoneInfo.zone, dashZone.hist)
-
     if direction {
         return pivotTimingCheck(currentDashZoneInfo.timestamp, dashZone.hist)? direction : false
     }

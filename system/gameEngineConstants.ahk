@@ -11,6 +11,7 @@ DEG_TO_RADIAN := PI / 180
 UNITCIRC_TO_INT := 80 ; factor for converting coordinate formats
 INT_TO_UNITCIRC := 1/80
 ANALOG_STICK_OFFSETCANCEL := -128 ; for converting unsigned bytes into 0-centered coordinatees
+GATE_MAX_RADIUS := 103 ; from Altimor's Stickmap. Octogate max distance from center
 
 ANALOG_STICK_MIN := -80 ; <= neg coordinate, then it's inside down/left unit circle range
 ANALOG_DEAD_MIN := -22 ; <= neg coordinate, then it's inside the deadzone
@@ -28,7 +29,7 @@ ANALOG_SDI_RIGHT := 56 ; <= x coordinate, then it's right sdi range
 ANALOG_SDI_UP := 56 ; <= y coordinate, then it's up sdi range
 ANALOG_SDI_DOWN := -56 ; >= neg y coordinate, then it's down sdi range
 
-MELEE_SDI_RAD := 56 * 56 ; <= x^2+y^2, and not in x or y deadzone then it's diagonal SDI range
+MELEE_SDI_RAD := 56**2 ; <= x^2+y^2, and not in x or y deadzone then it's diagonal SDI range
 ANALOG_ANGLE_FIFTY_RATIO_13 := tan(50 * DEG_TO_RADIAN)  ; <= y/x where y and x are the same sign and out of
                                                         ; deadzone, then coordinate angle is 50 degrees+
                                                         ; away from x axis

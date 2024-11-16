@@ -7,7 +7,11 @@
 #include, testGameEngineConstants.ahk
 
 #include %A_ScriptDir%\test\limitOutputs
-#include testGetFuzzyHorizontal100.ahk
+#include, testGetFuzzyHorizontal100.ahk
+
+#include %A_ScriptDir%\test\coordinates
+#include, testBringToOctagonGate.ahk
+#include, testTrimToCircle.ahk
 
 testStage := ""
 
@@ -18,7 +22,8 @@ endOfLaunchThreadTests() {
     
     if !enabledHotkeys {
         TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
-        testGetFuzzyHorizontal100()
+        ;testTrimToCircle()
+        testBringToOctagonGate()
         ExitApp
     }   
     Critical Off
