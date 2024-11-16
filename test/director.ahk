@@ -1,17 +1,18 @@
 #Requires AutoHotkey v1.1
 
-#include logAppend.ahk
+#include %A_ScriptDir%\test\coordinates
+#include, testBringToOctagonGate.ahk
+#include, testTrimToCircle.ahk
+
+#include %A_ScriptDir%\test\limitOutputs
+#include, testGetFuzzyHorizontal100.ahk
 
 #include %A_ScriptDir%\test\system
 #include, testFairboxConstants.ahk
 #include, testGameEngineConstants.ahk
 
-#include %A_ScriptDir%\test\limitOutputs
-#include, testGetFuzzyHorizontal100.ahk
-
-#include %A_ScriptDir%\test\coordinates
-#include, testBringToOctagonGate.ahk
-#include, testTrimToCircle.ahk
+#include %A_ScriptDir%\test
+#include, logAppend.ahk
 
 testStage := ""
 
@@ -22,14 +23,15 @@ endOfLaunchThreadTests() {
     
     if !enabledHotkeys {
         TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
-        ;testTrimToCircle()
-        testBringToOctagonGate()
+
         ExitApp
     }   
     Critical Off
 }
 
 exitAppTests() {
+    testBringToOctagonGate()
+    testTrimToCircle()
     testFairboxConstants()
     testGameEngineConstants()
     ExitApp

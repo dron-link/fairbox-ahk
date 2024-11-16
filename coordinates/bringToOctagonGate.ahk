@@ -5,7 +5,7 @@ bringToOctagonGate(coords) {
     aX := coords[xComp], aY := coords[yComp]
     if (aX != 0 or aY != 0) { ; avoid division by zero
         coordsRadius := Sqrt(aX**2 + aY**2)
-        gateRadius := getGateRadius(aX, aY, coordsRadius)
+        gateRadius := getGateRadius(Abs(aX), Abs(aY), coordsRadius)
 
         octagonCoords := []
         if (aX < 0) {
@@ -23,11 +23,11 @@ bringToOctagonGate(coords) {
     return coords
 }
 
-getGateRadius(aX, aY, coordsRadius) {
+getGateRadius(absX, absY, coordsRadius) {
     global GATE_MAX_RADIUS
-    if (!aX and !aY) { 
+    if (!absX and !absY) { 
         return 0 ; avoid division by zero
     }
     return coordsRadius * GATE_MAX_RADIUS 
-        / (Abs(aX) > Abs(aY) ? Abs(aX) + (Sqrt(2) - 1) * Abs(aY) : (Sqrt(2) - 1) * Abs(aX) + Abs(aY))
+        / (absX > absY ? absX + (Sqrt(2) - 1) * absY : (Sqrt(2) - 1) * absX + absY)
 }
