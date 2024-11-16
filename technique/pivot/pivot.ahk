@@ -1,7 +1,7 @@
 #Requires AutoHotkey v1.1
 
 #include, getCurrentPivotInfo.ahk
-#include, getPivotDirection.ahk
+#include, getDidPivot.ahk
 #include, getPivotLockoutNerfedCoords.ahk
 ;;; this
 #include, pivotHistoryObject.ahk

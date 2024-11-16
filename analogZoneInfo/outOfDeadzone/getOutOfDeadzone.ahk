@@ -1,5 +1,15 @@
 #Requires AutoHotkey v1.1
 
+getIsOutOfDeadzone_up(aY) {
+    global ANALOG_DEAD_MAX
+    return (ANALOG_DEAD_MAX < aY)
+}
+
+getIsOutOfDeadzone_down(aY) {
+    global ANALOG_DEAD_MIN
+    return (aY < ANALOG_DEAD_MIN)
+}
+
 getCurrentOutOfDeadzoneInfo_up(aY, upObject) {
     global currentTimeMS
 
@@ -8,9 +18,8 @@ getCurrentOutOfDeadzoneInfo_up(aY, upObject) {
         return upObject.saved
     } else if IsObject(upObject.queue[deadzoneUpStatus]) {
         return upObject.queue[deadzoneUpStatus]
-    } else {
-        return new outOfDeadzoneInfo(deadzoneUpStatus, currentTimeMS)
-    }
+    } ; else
+    return new outOfDeadzoneInfo(deadzoneUpStatus, currentTimeMS)
 }
 
 getCurrentOutOfDeadzoneInfo_down(aY, downObject) {
@@ -21,17 +30,7 @@ getCurrentOutOfDeadzoneInfo_down(aY, downObject) {
         return downObject.saved
     } else if IsObject(downObject.queue[deadzoneDownStatus]) {
         return downObject.queue[deadzoneDownStatus]
-    } else {
-        return new outOfDeadzoneInfo(deadzoneDownStatus, currentTimeMS)
-    }
+    } ; else
+    return new outOfDeadzoneInfo(deadzoneDownStatus, currentTimeMS)
 }
 
-getIsOutOfDeadzone_up(aY) {
-    global ANALOG_DEAD_MAX
-    return (ANALOG_DEAD_MAX < aY)
-}
-
-getIsOutOfDeadzone_down(aY) {
-    global ANALOG_DEAD_MIN
-    return (aY < ANALOG_DEAD_MIN)
-}

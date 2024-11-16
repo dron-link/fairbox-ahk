@@ -11,7 +11,7 @@ class directionDeadzoneHistoryObject {
 
     storeInfoBeforeMultipressEnds(aX_or_aY) {
         global currentTimeMS
-        /*  depending on the instance, the following line calls:
+        /*  depending on the class that extends this class, the following line calls:
             getIsOutOfDeadzone_up(aY) or
             getIsOutOfDeadzone_down(aY)
         */

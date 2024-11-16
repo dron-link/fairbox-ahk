@@ -80,8 +80,7 @@ everything is subject to modification and may not be present in the finalized ve
 
 rough list of remaining tasks
 - TODO write tests
-- TODO create a showControlsWindowOnLaunch
-- TODO deleteFailingHotkey all invalid hotkeys at once. path: groundhog day of timer threads
+- TODO create a showControlsWindowOnFirstLaunch
 - TODO reformat c-stick coordinates, make them into integers instead of floats
 - TODO disable all traytip messages option
 - TODO increase hotkey control width option
@@ -97,7 +96,6 @@ rough list of remaining tasks
     ¬ use setTimer to lift a 2f jump nerf 2 frames after it was forced (idea origin: CarVac HayBox)
 - TODO implement coordinate target inconditional bans
 - TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac/Haybox)
-- TODO make a debug mode, debugACertainProcess? outputDebug, % expression
 
 setTimer firing rate is apparently 15.6ms, don't expect much precision from it
 (at least it's shorter than a game cube input polling interval), but I expect that most nerf lifts will be one frame late sometimes.

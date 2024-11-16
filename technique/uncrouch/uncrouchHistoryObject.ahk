@@ -1,15 +1,13 @@
 #Requires AutoHotkey v1.1
 
 class uncrouchHistoryObject {
-    string:="uncrouch"
-
     unsaved := new uncrouchInfo(false, -1000)
     queue := {}
     saved := new uncrouchInfo(false, -1000)
     lockout := new uncrouchInfo(false, -1000)
 
     saveHistory() {
-        if (this.unsaved.did and this.unsaved.did != this.saved.did) {
+        if (this.unsaved.did and this.unsaved != this.saved) {
             this.lockout := this.unsaved
         }
         this.saved := this.unsaved, this.queue := {}

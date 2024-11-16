@@ -1,19 +1,19 @@
 #Requires AutoHotkey v1.1
 
 class pivotHistoryObject {
-    string := "pivot"
-
     unsaved := new pivotInfo(false, -1000)
     queue := {}
     saved := new pivotInfo(false, -1000)
     lockout := new pivotInfo(false, -1000)
 
     saveHistory() {
-        if (this.unsaved.did and this.unsaved.did != this.saved.did) {
+        /*  if the player just performed a pivot
+            and it's a distinct instance from the previous pivot
+        */
+        if (this.unsaved.did and this.unsaved != this.saved) {
             this.lockout := this.unsaved
         }
-        this.saved := this.unsaved
-        this.queue := {}
+        this.saved := this.unsaved, this.queue := {}
     }
 
     lockoutExpiryCheck() {
@@ -27,10 +27,10 @@ class pivotHistoryObject {
     storeInfoBeforeMultipressEnds(aX, aY, dashZone) {
         global currentTimeMS
 
-        outputDidPivot := getPivotDirection(aX, aY, dashZone)
+        outputDidPivot := getDidPivot(aX, aY, dashZone)
     
         if (outputDidPivot == this.saved.did) {
-            this.unsaved.did := this.saved.did
+            this.unsaved := this.saved
         } else {
             if !IsObject(this.queue[outputDidPivot]) {
                 this.queue[outputDidPivot] := new pivotInfo(outputDidPivot, currentTimeMS)
