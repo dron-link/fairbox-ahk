@@ -4,23 +4,21 @@
 #NoEnv
 SetBatchLines, -1
 ListLines Off
-#include <CvJoyInterface>
+
 #MenuMaskKey vke8
+SetWorkingDir, %A_ScriptDir%
+
+#include <CvJoyInterface>
 
 currentTimeMS := 0
+
 #include %A_ScriptDir%\analogZoneInfo\crouchZone
 #include, crouchZone.ahk
-#include, crouchZoneHistoryObject.ahk
-#include, getCrouchZone.ahk
 
 #include %A_ScriptDir%\analogZoneInfo\dashZone
 #include, dashZone.ahk
-#include, dashZoneHistoryObject.ahk
-#include, getDashZone.ahk
 
 #include %A_ScriptDir%\analogZoneInfo\outOfDeadzone
-#include, deadzoneHistoryObjects.ahk
-#include, getOutOfDeadzone.ahk
 #include, outOfDeadzone.ahk
 
 #include %A_ScriptDir%\controls
@@ -28,16 +26,10 @@ currentTimeMS := 0
 #include, loadHotkeysIni.ahk
 
 #include %A_ScriptDir%\coordinates
-#include, targetCoordinateValues.ahk ; you can customize the coordinates in this file
-#include, targetFormatting.ahk
-#include, targetObjStructure.ahk
-#include, trimToCircle.ahk
+#include, coordinates.ahk
 
 #include %A_ScriptDir%\limitOutputs
-#include, getFuzzyHorizontal100.ahk
-#include, limitedOutputsObject.ahk
 #include, limitOutputs.ahk
-#include, output.ahk
 
 #include %A_ScriptDir%\menu
 #include, mainsTrayMenu.ahk
@@ -45,42 +37,25 @@ currentTimeMS := 0
 #include %A_ScriptDir%\system
 #include, fairboxConstants.ahk ; globals
 #include, gameEngineConstants.ahk ; globals
+#include, guiFont.ahk
 
 #include %A_ScriptDir%\technique\pivot
-#include, getCurrentPivotInfo.ahk
-#include, getPivotDirection.ahk
-#include, getPivotLockoutNerfedCoords.ahk
 #include, pivot.ahk
-#include, pivotHistoryObject.ahk
-#include, pivotTrackAndNerfObject.ahk
 
 #include %A_ScriptDir%\technique\uncrouch
-#include, getUncrouch.ahk
 #include, uncrouch.ahk
-#include, uncrouchHistoryObject.ahk
-#include, uncrouchTrackAndNerfObject.ahk
 
 #include %A_ScriptDir%\technique
 #include, getReverseNeutralBNerf.ahk
 #include, timingBasedTechniqueHistoryEntry.ahk
-
+; always save for last.
 #include %A_ScriptDir%\test
-#include, suite.ahk
-
-guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
-    Gui, % windowName ":Font", s8 cDefault norm, Tahoma
-    return
-}
-
-guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
-    Gui, % windowName ":Font", s10 cDefault norm, Arial
-    return
-}
+#include, director.ahk
 
 /*
 
 DISCLAIMER
-I (dron-link) AM NOT A DEVELOPER BY TRADE.
+I, dron-link, AM NOT A DEVELOPER BY TRADE.
 Other than due to a lack of alternatives, I made this with the hope that this script
 contains any useful ideas for you if you're an experienced programmer that wants to
 embark on a project like this.
@@ -88,7 +63,7 @@ embark on a project like this.
 contact info:
 Discord
     Aiu     ; over at 20XX Discord server, specifically in #keyboard : https://discord.gg/KydHfzTbdG
-; if the link doesnt work try searching for the 20XX invite https://b0xx.com/pages/more-info
+            ; if the link doesnt work try searching for the 20XX invite https://b0xx.com/pages/more-info
 GitHub
     https://github.com/dron-link
 
@@ -130,6 +105,7 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 */
 
+; exit an active controls editor
 DetectHiddenWindows, On
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.ahk
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.exe
@@ -140,21 +116,33 @@ enabledHotkeys := true
 enabledGameControls := true
 showWelcomeTray := true
 
-if enabledHotkeys {
-    showWelcomeTray := true
-} else {
-    showWelcomeTray := false
+loadConfigIniLaunchMode()
+loadConfigIniLaunchMode() {
+    global enabledHotkeys
+    global showWelcomeTray
+    
+    if enabledHotkeys {
+        showWelcomeTray := true
+    } else {
+        showWelcomeTray := false
+    }
+
+    ; do we come from Edit Controls?
+    IniRead, openedFromControlsEditor, config.ini, LaunchMode, ControlsWindowIntoMain
+    IniWrite, % false                , config.ini, LaunchMode, ControlsWindowIntoMain
+    if openedFromControlsEditor {
+        ; we recall the Input On/Off toggle state
+        IniRead, enabledGameControls, config.ini, LaunchMode, ControlsEnabledRecall
+        showWelcomeTray := false
+    }
+    return
 }
 
-IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey ; actual truth value from config
-
-; do we come from Edit Controls?
-IniRead, openedFromControlsEditor, config.ini, LaunchMode, ControlsWindowIntoMain
-IniWrite, % false                , config.ini, LaunchMode, ControlsWindowIntoMain
-if openedFromControlsEditor {
-    ; we recall the Input On/Off toggle state
-    IniRead, enabledGameControls, config.ini, LaunchMode, ControlsEnabledRecall
-    showWelcomeTray := false
+loadConfigIniUserSettings()
+loadConfigIniUserSettings() {
+    global deleteFailingHotkey
+    IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey
+    return
 }
 
 target := new targetCoordinateTree

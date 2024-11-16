@@ -1,5 +1,10 @@
 #Requires AutoHotkey v1.1
 
+#include, getFuzzyHorizontal100.ahk
+#include, limitedOutputsObject.ahk
+;;; this
+#include, output.ahk
+
 limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
     global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
     global xComp, global yComp, global currentTimeMS
@@ -32,7 +37,7 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
         pivot.saveHistory()
     }
     uncrouch.lockoutExpiryCheck()
-    dashZone.checkHistoryEntryStaleness()
+    dashZone.checkHistoryEntryStaleness() ; marks some entries as stale for pivot execution
     pivot.lockoutExpiryCheck()
 
     ; ### processes the player input and converts it into legal output
@@ -41,7 +46,7 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
 
     ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
     pivot.nerfSearch(output.limited.x, output.limited.y, dashZone, outOfDeadzone)
-    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone, outOfDeadzone)
+    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
 
     output.chooseLockout(pivot, uncrouch)
 
@@ -54,6 +59,7 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
     pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
 
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
+        ; store analog zones' info
         outOfDeadzone.up.storeInfoBeforeMultipressEnds(output.limited.y)
         outOfDeadzone.down.storeInfoBeforeMultipressEnds(output.limited.y)
         crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)

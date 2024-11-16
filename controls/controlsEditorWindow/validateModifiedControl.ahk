@@ -87,28 +87,3 @@ checkDuplicateHK(num) {
     }
     return
 }
-/* ; legacy
-
-setHotkeyFromGui(num, existingHotkey, guiHotkey) {
-    global
-    If enabledHotkeys {
-        ;If previous hotkey exists,
-        If (strReplace(existingHotkey, "~") != "") { ; note that this relies on Hotkey "~" not existing
-            Hotkey, % existingHotkey, Label%num%, Off ;  disable it.
-            Hotkey, % existingHotkey " UP", Label%num%_UP, Off ;  disable it.
-        }
-        If (strReplace(guiHotkey, "~") != ""){ ;If new hotkey exists,
-            if (hotkeys[num] = "Input On/Off") {
-                Hotkey, If ; hotkey always active
-            } 
-            else {
-                Hotkey, If, enabledGameControls ; conditional hotkey
-            }
-            Hotkey, % guiHotkey, Label%num%, On             ; enable hotkey.
-            Hotkey, % guiHotkey " UP", Label%num%_UP, On
-        }
-    }
-    return
-}
-
-*/

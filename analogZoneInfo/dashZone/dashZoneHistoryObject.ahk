@@ -1,8 +1,6 @@
 #Requires AutoHotkey v1.1
 
 class dashZoneHistoryObject {
-    string := "dashZone"
-
     historyLength := 6
 
     unsaved := new dashZoneHistoryEntry(false, -1000, true)
@@ -23,7 +21,8 @@ class dashZoneHistoryObject {
     }
 
     saveHistory() {
-        if (this.unsaved != this.saved) { ; we avoid inserting the same object consecutively
+        ; we compare addresses to avoid inserting the same old object consecutively
+        if (this.unsaved != this.saved) { 
             this.hist.Pop(), this.hist.InsertAt(1, this.unsaved)
         }
         this.queue := {}
@@ -35,11 +34,7 @@ class dashZoneHistoryObject {
         ; check if a dash entry (and subsequent ones) are stale, and flag them
         Loop, % this.historyLength {
             if (currentTimeMS - this.hist[A_Index].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
-                staleIndex := A_Index ; found entry that has to be stale
-                while (staleIndex <= this.historyLength) {
-                    this.hist[staleIndex].stale := true, staleIndex += 1
-                }
-                break
+                this.hist[A_Index].stale := true
             }
         }
         return

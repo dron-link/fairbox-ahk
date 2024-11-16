@@ -1,8 +1,6 @@
 #Requires AutoHotkey v1.1
 
 class crouchZoneHistoryObject {
-    string := "crouchZone"
-
     unsaved := new crouchZoneHistoryEntry(false, -1000)
     queue := {}
     saved := new crouchZoneHistoryEntry(false, -1000)

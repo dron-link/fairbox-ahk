@@ -10,6 +10,7 @@
 #include, goToFunctionsUponGuiInteraction.ahk
 #include, hotkeyControlHasFocus.ahk
 #include, hotkeyHelpers.ahk
+#include, showControlsWindow.ahk
 #include, validateModifiedControl.ahk
 
 #include %A_ScriptDir%\controls
@@ -20,23 +21,15 @@
 
 #include %A_ScriptDir%\system
 #include, fairboxConstants.ahk ; globals
+#include, guiFont.ahk
 
-guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
-    Gui, % windowName ":Font", s8 cDefault norm, Tahoma
-    return
-}
-
-guiFontContent(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
-    Gui, % windowName ":Font", s10 cDefault norm, Arial
-    return
-}
 
 ; close fairbox
 DetectHiddenWindows, On
-PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk ; 0x111=WN_COMMAND, 65307 = exit
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk ; 0x111 = WN_COMMAND code, 65307 = exit code
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.exe
 DetectHiddenWindows, Off
-
+; MainIntoControlsWindow is designed to only be true in volatile memory
 IniRead, openedFromMain, config.ini, LaunchMode, MainIntoControlsWindow
 IniWrite, % false      , config.ini, LaunchMode, MainIntoControlsWindow
 
@@ -50,16 +43,16 @@ enabledGameControls := false
 constructControlsEditorTrayMenu() ; puts the custom menu items in the tray
 
 for i in hotkeys {
-    ; ### for hotkey activation keys, and gui hotkey controls. create the global variables associated to:
-    ; button name,       hotkey control,  the real hotkey,    special bind checkbox, Prev.Def.B. checkbox
-    gameBtName%i% := "", HK%i% := "",     savedHK%i% := "",   isSpecialKey%i% := "", preventBehavior%i% := ""
+    ; create the global variables associated to:
+    ; button name,       hotkey control,  saved hotkey,     special bind checkbox, Prev. Default B. checkbox
+    gameBtName%i% := "", HK%i% := "",     savedHK%i% := "", isSpecialKey%i% := "", preventBehavior%i% := ""
 }
 
 loadHotkeysIni()
 
 constructControlsWindow()
 
-showControlsWindow()
+showControlsWindow() 
 
 return ; end of autoexecute section
 
