@@ -1,6 +1,6 @@
 #Requires AutoHotkey v1.1
 
-assignCoordinateValues(ByRef target) {
+loadCoordinateValues(ByRef target) {
     /*  true if components are in form: 
         <-1, ..., -0.0125, 0, 0.0125, 0.0250, 0.0375, 0.0500, ..., 0.9875, 1>
         false if they're in the form: 

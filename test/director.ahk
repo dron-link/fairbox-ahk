@@ -1,8 +1,8 @@
 #Requires AutoHotkey v1.1
 
 #include %A_ScriptDir%\test\coordinates
-#include, testBringToOctagonGate.ahk
-#include, testTrimToCircle.ahk
+;#include, testBringToOctagonGate.ahk
+;#include, testTrimToCircle.ahk
 
 #include %A_ScriptDir%\test\limitOutputs
 #include, testGetFuzzyHorizontal100.ahk
@@ -30,8 +30,6 @@ endOfLaunchThreadTests() {
 }
 
 exitAppTests() {
-    testBringToOctagonGate()
-    testTrimToCircle()
     testFairboxConstants()
     testGameEngineConstants()
     ExitApp

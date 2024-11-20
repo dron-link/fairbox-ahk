@@ -20,15 +20,17 @@
 #include, controlsEditorTrayMenu.ahk
 
 #include %A_ScriptDir%\system
-#include, fairboxConstants.ahk ; globals
 #include, guiFont.ahk
-
+#include, hotkeys.ahk ; globals
 
 ; close fairbox
 DetectHiddenWindows, On
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk ; 0x111 = WN_COMMAND code, 65307 = exit code
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.exe
 DetectHiddenWindows, Off
+
+FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when config.ini doesn't exist
+
 ; MainIntoControlsWindow is designed to only be true in volatile memory
 IniRead, openedFromMain, config.ini, LaunchMode, MainIntoControlsWindow
 IniWrite, % false      , config.ini, LaunchMode, MainIntoControlsWindow
@@ -44,11 +46,17 @@ constructControlsEditorTrayMenu() ; puts the custom menu items in the tray
 
 for i in hotkeys {
     ; create the global variables associated to:
-    ; button name,       hotkey control,  saved hotkey,     special bind checkbox, Prev. Default B. checkbox
-    gameBtName%i% := "", HK%i% := "",     savedHK%i% := "", isSpecialKey%i% := "", preventBehavior%i% := ""
+    ; button name,       saved hotkey,     special bind checkbox, Prev. Default B. checkbox
+    gameBtName%i% := "", savedHK%i% := "", isSpecialKey%i% := "", preventBehavior%i% := ""
 }
 
 loadHotkeysIni()
+
+for i in hotkeys {
+    ; create the global variables associated to:
+    ; GUI hotkey control
+    HK%i% := savedHK%i%
+}
 
 constructControlsWindow()
 

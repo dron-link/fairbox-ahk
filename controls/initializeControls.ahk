@@ -2,11 +2,11 @@
 
 initializeControls() {
     global
-
+    
     if !enabledHotkeys {
         return
     }
-
+    
     invalidHotkeysMsg := "" ; empty string unless we encounter an invalid key on hotkeys.ini
 
     for index in hotkeys {
@@ -18,7 +18,10 @@ initializeControls() {
                 Hotkey, If, enabledGameControls ; conditional hotkey
             }
             Hotkey, % savedHK%index%, Label%index%, UseErrorLevel ; try to enable the hotkey.
-            If (ErrorLevel != KEY_NAME_ERROR) {
+            /*  The KeyName parameter specifies one or more keys that are either not recognized or 
+                not supported by the current keyboard layout/language.
+            */
+            If (ErrorLevel != 2) { ; 2 = KEY_NAME
                 Switch ErrorLevel
                 {
                     Case 1:

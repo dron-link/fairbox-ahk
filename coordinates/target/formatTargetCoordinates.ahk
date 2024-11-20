@@ -14,11 +14,13 @@ formatTargetCoordinates(ByRef target) {
             Continue
         }
         for keyName, specificCoords in target[context] { ; such as target.fireFox, target.airdodge, etc
+
             /*  the idea is that if countCoordinatesOutsideUnitCircle ends as 0, it's likely that the
                 coordinates are in unit circle format, and, if many coordinates are outside
                 the unit circle then it's likely that the coordinates are in integer format
             */
             ; 2 is double the unit circle radius: it is even more lenient than using 128/80 = 1.6
+            ; also take into account that most of the time these will be quadrant I coordinates
             if (specificCoords[xComp] >= 2 or specificCoords[yComp] >= 2) { 
                 countCoordinatesOutsideUnitCircle += 1
             }
@@ -32,43 +34,13 @@ formatTargetCoordinates(ByRef target) {
                 specificCoords[xComp] += ANALOG_STICK_OFFSETCANCEL
                 specificCoords[yComp] += ANALOG_STICK_OFFSETCANCEL
             }
-            ; converts to integer, trims values outside the analog coordinate circle
+            ; converts to integer type, trims values outside the analog coordinate circle
             specificCoords[xComp] := Round(specificCoords[xComp])
             specificCoords[yComp] := Round(specificCoords[yComp])
             trimmedCoords := trimToCircle(specificCoords)
 
-            ; start of trimmed-values alert
-            if (trimmedCoords[xComp] != specificCoords [xComp] 
-                or trimmedCoords[yComp] != specificCoords [yComp]) { ; notice if there was a change after trim
-                if target.format.unitCircle {
-                    ; undo into original unit circle format
-                    debugPrintX := specificCoords[xComp] * INT_TO_UNITCIRC 
-                    debugPrintY := specificCoords[yComp] * INT_TO_UNITCIRC
-                    ; get excess magnitude in unit circle format
-                    debugPrintExcessMagnitude := (Sqrt(specificCoords[xComp]**2 + specificCoords[yComp]**2)
-                        - ANALOG_STICK_MAX) * INT_TO_UNITCIRC
-                    ; example output: "x 1.0125 y 0.7500" 
-                    OutputDebug, % "x " Format("{:.4f}", debugPrintX) 
-                    . " y " Format("{:.4f}", debugPrintY) 
-                } else if target.format.centerOffsetBy128 {
-                    ; get excess magnitude in integer format
-                    debugPrintExcessMagnitude := Sqrt(specificCoords[xComp]**2 + specificCoords[yComp]**2)
-                        - ANALOG_STICK_MAX 
-                    ; undo into original offsetcancel and print
-                    OutputDebug, % "x " specificCoords[xComp] - ANALOG_STICK_OFFSETCANCEL
-                        . " y " specificCoords[yComp] - ANALOG_STICK_OFFSETCANCEL
-                } else {
-                    ; get excess magnitude in integer format
-                    debugPrintExcessMagnitude := Sqrt(specificCoords[xComp]**2 + specificCoords[yComp]**2)
-                        - ANALOG_STICK_MAX 
-                    ; example output: "x 81 y 60"
-                    OutputDebug, % "x " specificCoords[xComp] . " y " specificCoords[yComp]
-                }
-
-                OutputDebug, % " excess_magnitude " Format("{:.4f}", debugPrintExcessMagnitude)
-                    . ". Clamped to circle`n"
-            } ; end of trimmed-values alert
-
+            ; trimmedValuesAlertOutputDebug(specificCoords, trimmedCoords, target)
+            
             specificCoords[xComp] := trimmedCoords[xComp], specificCoords[yComp] := trimmedCoords[yComp]
         }
     }
@@ -86,10 +58,52 @@ formatTargetCoordinates(ByRef target) {
     if (suggestedUnitCircleMode != "") {
         warningMsg := "Warning. It was detected that target.format.unitCircle likely needs to be edited to "
             . suggestedUnitCircleMode
-            . " inside the file targetCoordinateValues.ahk ! `n"
-        OutputDebug, % warningMsg "var countCoordinatesOutsideUnitCircle evaluates to " countCoordinatesOutsideUnitCircle "`n"
+            . " inside the source file " A_ScriptDir "\coordinates\target\loadCoordinateValues.ahk !"
+        OutputDebug, % warningMsg 
+        . "`nvar countCoordinatesOutsideUnitCircle evaluates to " countCoordinatesOutsideUnitCircle "`n"
         MsgBox % warningMsg
     }
-
+    return
 }
 
+trimmedValuesAlertOutputDebug(specificCoords, trimmedCoords, target) {
+    global UNITCIRC_TO_INT
+    global ANALOG_STICK_OFFSETCANCEL
+    global ANALOG_STICK_MAX
+    global INT_TO_UNITCIRC
+    global xComp, global yComp
+
+    ; start of trimmed-values alert
+    if (trimmedCoords[xComp] != specificCoords [xComp] 
+        or trimmedCoords[yComp] != specificCoords [yComp]) { ; notice if there was a change after trim
+        if target.format.unitCircle {
+            ; undo into original unit circle format
+            debugPrintX := specificCoords[xComp] * INT_TO_UNITCIRC 
+            debugPrintY := specificCoords[yComp] * INT_TO_UNITCIRC
+            ; get excess magnitude in unit circle format
+            debugPrintExcessMagnitude := (Sqrt(specificCoords[xComp]**2 + specificCoords[yComp]**2)
+                - ANALOG_STICK_MAX) * INT_TO_UNITCIRC
+            ; example output: "x 1.0125 y 0.7500" 
+            OutputDebug, % "x " Format("{:.4f}", debugPrintX) 
+            . " y " Format("{:.4f}", debugPrintY) 
+        } else if target.format.centerOffsetBy128 {
+            ; get excess magnitude in integer format
+            debugPrintExcessMagnitude := Sqrt(specificCoords[xComp]**2 + specificCoords[yComp]**2)
+                - ANALOG_STICK_MAX 
+            ; undo into original offsetcancel and print
+            OutputDebug, % "x " specificCoords[xComp] - ANALOG_STICK_OFFSETCANCEL
+                . " y " specificCoords[yComp] - ANALOG_STICK_OFFSETCANCEL
+        } else {
+            ; get excess magnitude in integer format
+            debugPrintExcessMagnitude := Sqrt(specificCoords[xComp]**2 + specificCoords[yComp]**2)
+                - ANALOG_STICK_MAX 
+            ; example output: "x 81 y 60"
+            OutputDebug, % "x " specificCoords[xComp] . " y " specificCoords[yComp]
+        }
+
+        OutputDebug, % " excess_magnitude " Format("{:.4f}", debugPrintExcessMagnitude)
+            . ". Clamped to circle`n"
+    } ; end of trimmed-values alert
+    return
+
+}

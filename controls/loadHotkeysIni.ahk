@@ -11,8 +11,6 @@ loadHotkeysIni() {
         savedHK%index% := strReplace(savedHK%index%, "<#") ; do away with win modifiers if there's any
         savedHK%index% := strReplace(savedHK%index%, ">#")
         savedHK%index% := strReplace(savedHK%index%, "#")
-
-        HK%index% := savedHK%index%
     }
     return
 }

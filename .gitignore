@@ -23,6 +23,8 @@
 !controls/controlsEditorWindow/*
 !coordinates
 !coordinates/*
+!coordinates/target
+!coordinates/target/*
 !docs
 !docs/*
 !imginstall

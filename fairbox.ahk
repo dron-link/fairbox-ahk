@@ -25,6 +25,9 @@ currentTimeMS := 0
 #include, initializeControls.ahk
 #include, loadHotkeysIni.ahk
 
+#include %A_ScriptDir%\coordinates\target
+#include, target.ahk
+
 #include %A_ScriptDir%\coordinates
 #include, coordinates.ahk
 
@@ -37,7 +40,10 @@ currentTimeMS := 0
 #include %A_ScriptDir%\system
 #include, fairboxConstants.ahk ; globals
 #include, gameEngineConstants.ahk ; globals
+#include, getDebugLegacy.ahk
 #include, guiFont.ahk
+#include, hotkeys.ahk ; globals
+#include, keysModCAngleRole.ahk ; globals
 
 #include %A_ScriptDir%\technique\pivot
 #include, pivot.ahk
@@ -81,7 +87,6 @@ everything is subject to modification and may not be present in the finalized ve
 rough list of remaining tasks
 - TODO write tests
 - TODO create a showControlsWindowOnFirstLaunch
-- TODO reformat c-stick coordinates, make them into integers instead of floats
 - TODO disable all traytip messages option
 - TODO increase hotkey control width option
 - TODO restore default hotkeys button
@@ -109,11 +114,11 @@ PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.ahk
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.exe
 DetectHiddenWindows, Off
 
-deleteFailingHotkey := true
+FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when config.ini doesn't exist
+
 enabledHotkeys := true
 enabledGameControls := true
 showWelcomeTray := true
-
 loadConfigIniLaunchMode()
 loadConfigIniLaunchMode() {
     global enabledHotkeys
@@ -130,24 +135,18 @@ loadConfigIniLaunchMode() {
     IniWrite, % false                , config.ini, LaunchMode, ControlsWindowIntoMain
     if openedFromControlsEditor {
         ; we recall the Input On/Off toggle state
-        IniRead, enabledGameControls, config.ini, LaunchMode, ControlsEnabledRecall
+        IniRead, enabledGameControls, config.ini, LaunchMode, EnabledControlsRecall
         showWelcomeTray := false
     }
     return
 }
 
-loadConfigIniUserSettings()
-loadConfigIniUserSettings() {
-    global deleteFailingHotkey
-    IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey
-    return
-}
+; load global UserSettings
+IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey
+IniRead, secondIPCleaning, config.ini, UserSettings, 2ipCleaning
 
-target := new targetCoordinateTree
+target := new targetCoordinateTreeWithCBinds ; upon using the __New() metafunction this evaluates as "" uh????
 target.loadCoordinates()
-target.formatCoordinates()
-; reads c-stick-angle-bindings.ini and assigns coordinates according to its contents
-target.bindAnglesToCStick()
 
 constructMainsTrayMenu() ; puts the custom menu items in the tray
 
@@ -165,7 +164,7 @@ initializeControls()
 vJoyInterface := new CvJoyInterface()
 
 ; Was vJoy installed and the DLL Loaded?
-if (!vJoyInterface.vJoyEnabled()) {
+if !vJoyInterface.vJoyEnabled() {
     ; Show log of what happened
     Msgbox % vJoyInterface.LoadLibraryLog
     ExitApp
@@ -173,47 +172,15 @@ if (!vJoyInterface.vJoyEnabled()) {
 
 myStick := vJoyInterface.Devices[1]
 
-; state variables
-; if true, keyboard key is pressed
-buttonUp := false
-buttonDown := false
-buttonLeft := false
-buttonRight := false
 
-buttonModX := false
-buttonModY := false
+; for 2ip and opposite horizontal mod lock
+mostRecentVerticalAnalog := ""
+mostRecentHorizontalAnalog := ""
 
-buttonA := false
-buttonB := false
-buttonL := false
-buttonR := false
-buttonX := false
-buttonY := false
-buttonZ := false
-
-buttonCUp := false
-buttonCDown := false
-buttonCLeft := false
-buttonCRight := false
-
-buttonLightShield := false
-buttonMidShield := false
-
-buttonStart := false
-
-buttonDPadUp := false
-buttonDPadDown := false
-buttonDPadLeft := false
-buttonDPadRight := false
-
-; strings for when press order matters
-mostRecentVertical := "" ; this pair of variables went unused because of neutral SOCD
-mostRecentHorizontal := ""
-
-mostRecentVerticalC := "" ; this pair of variables went unused because of neutral SOCD
+mostRecentVerticalC := "" 
 mostRecentHorizontalC := ""
 
-simultaneousHorizontalModifierLockout := false ; this variable went unused because of neutral SOCD
+opposingHorizontalsModLockout := false 
 
 /*  Debug info
     this is how you read its values:
@@ -251,76 +218,99 @@ return ; end of autoexecute
 */
 up() {
     global
-    return buttonUp and not buttonDown ; here is the neutral SOCD implementation
+    if secondIPCleaning {
+        return buttonUp and mostRecentVerticalAnalog = "U"
+    } ; else
+    return buttonUp and !buttonDown ; neutral SOCD
 }
 
 down() {
     global
-    return buttonDown and not buttonUp ; here
+    if secondIPCleaning {
+        return buttonDown and mostRecentVerticalAnalog = "D"
+    } ; else
+    return buttonDown and !buttonUp ; neutral SOCD
 }
 
 left() {
     global
-    return buttonLeft and not buttonRight ; here
+    if secondIPCleaning {
+        return buttonLeft and mostRecentHorizontalAnalog = "L"
+    } ; else
+    return buttonLeft and !buttonRight ; neutral SOCD
 }
 
 right() {
     global
-    return buttonRight and not buttonLeft ; here
+    if secondIPCleaning {
+        return buttonRight and mostRecentHorizontalAnalog = "R"
+    } ; else
+    return buttonRight and !buttonLeft ; neutral SOCD
 }
 
 cUp() {
     global
-    return buttonCUp and not buttonCDown and not bothMods() ; here...
+    if secondIPCleaning {
+        return buttonCUp and mostRecentVerticalC = "U" and !bothMods()
+    } ; else
+    return buttonCUp and !buttonCDown and !bothMods() ; neutral SOCD
 }
 
 cDown() {
     global
-    return buttonCDown and not buttonCUp and not bothMods()
+    if secondIPCleaning {
+        return buttonCDown and mostRecentVerticalC = "D" and !bothMods()
+    } ; else
+    return buttonCDown and !buttonCUp and !bothMods() ; neutral SOCD
 }
 
 cLeft() {
     global
-    return buttonCLeft and not buttonCRight and not bothMods()
+    if secondIPCleaning {
+        return buttonCLeft and mostRecentHorizontalC = "L" and !bothMods()
+    } ; else
+    return buttonCLeft and !buttonCRight and !bothMods() ; neutral SOCD
 }
 
 cRight() {
     global
-    return buttonCRight and not buttonCLeft and not bothMods() ; ... up to here
+    if secondIPCleaning {
+        return buttonCRight and mostRecentHorizontalC = "R" and !bothMods()
+    } ; else
+    return buttonCRight and !buttonCLeft and !bothMods() ; neutral SOCD
 }
 
 modX() {
     global
     /*  deactivate if either:
-        - modY is also held
-        - both left and right are held (and were pressed after modX) while neither up or down is active
-        this last bullet point won't carry into the new code because of NSOCD
+        - modY is also physically held
+        - opposingHorizontalsModLockout: both left and right are held (and were pressed after modX) 
+          while neither up or down is active
     */
-    return buttonModX and not buttonModY
+    if secondIPCleaning {
+        return buttonModX and !buttonModY and (!opposingHorizontalsModLockout or anyVert())
+    } ; else 
+    return buttonModX and !buttonModY ; the mod lockout is incompatible with NSOCD
 }
 
 modY() {
     global
-    return buttonModY and not buttonModX
+    return buttonModY and !buttonModX
 }
 
 anyVert() {
-    global
     return up() or down()
 }
 
 anyHoriz() {
-    global
     return left() or right()
 }
 
 anyQuadrant() {
-    global
     return anyVert() and anyHoriz()
 }
 
 anyMod() {
-    global
     return modX() or modY()
 }
 
@@ -335,171 +325,18 @@ anyShield() {
 }
 
 anyVertC() {
-    global
     return cUp() or cDown()
 }
 
 anyHorizC() {
-    global
     return cLeft() or cRight()
 }
 
 anyC() {
-    global
     return cUp() or cDown() or cLeft() or cRight()
 }
 
-; ///////////// Search for the analog stick coordinates that our controller asked for
-getAnalogCoords() {
-    global buttonB
-    if (anyShield()) {
-        quadrantICoords := getAnalogCoordsAirdodge()
-    } else if (anyMod() and anyQuadrant() and (anyC() or buttonB)) {
-        quadrantICoords := getAnalogCoordsFirefox()
-    } else {
-        quadrantICoords := getAnalogCoordsWithNoShield()
-    }
-
-    return reflectCoords(quadrantICoords)
-}
-
-getAnalogCoordsWithNoShield() {
-    global
-    if (!anyVert() and !anyHoriz()) {
-        lastCoordTrace := "N-O"
-        return new target.normal.origin
-    } else if (anyQuadrant()) {
-        if (modX()) {
-            lastCoordTrace := "N-Q-X"
-            return new target.normal.quadrantModX
-        } else if (modY()) {
-            lastCoordTrace := "N-Q-Y"
-            return new target.normal.quadrantModY
-        } else {
-            lastCoordTrace := "N-Q"
-            return new target.normal.quadrant
-        }
-    } else if (anyVert()) {
-        if (modX()) {
-            lastCoordTrace := "N-V-X"
-            return new target.normal.verticalModX
-        } else if (modY()) {
-            lastCoordTrace := "N-V-Y"
-            return new target.normal.verticalModY
-        } else {
-            lastCoordTrace := "N-V"
-            return new target.normal.vertical
-        }
-    } else { ; if (anyHoriz())
-        if (modX()) {
-            lastCoordTrace := "N-H-X"
-            return new target.normal.horizontalModX
-        } else if (modY()) {
-            lastCoordTrace := "N-H-Y"
-            return new target.normal.horizontalModY
-        } else {
-            lastCoordTrace := "N-H"
-            return new target.normal.horizontal
-        }
-    }
-}
-
-getAnalogCoordsAirdodge() {
-    global
-    if (!anyVert() and !anyHoriz()) {
-        lastCoordTrace := "L-O"
-        return new target.normal.origin
-    } else if (anyQuadrant()) {
-        if (modX()) {
-            lastCoordTrace := "L-Q-X"
-            return new target.airdodge.quadrantModX
-        } else if (modY()) {
-            lastCoordTrace := "L-Q-Y"
-            return up() ? new target.airdodge.quadrant12ModY : new target.airdodge.quadrant34ModY
-        } else {
-            lastCoordTrace := "L-Q"
-            return up() ? new target.airdodge.quadrant12 : new target.airdodge.quadrant34
-        }
-    } else if (anyVert()) {
-        if (modX()) {
-            lastCoordTrace := "L-V-X"
-            return new target.airdodge.verticalModX
-        } else if (modY()) {
-            lastCoordTrace := "L-V-Y"
-            return new target.airdodge.verticalModY
-        } else {
-            lastCoordTrace := "L-V"
-            return new target.airdodge.vertical
-        }
-    } else { ; if (anyHoriz())
-        if (modX()) {
-            lastCoordTrace := "L-H-X"
-            return new target.airdodge.horizontalModX
-        } else if (modY()) {
-            lastCoordTrace := "L-H-Y"
-            return new target.airdodge.horizontalModY
-        } else {
-            lastCoordTrace := "L-H"
-            return new target.airdodge.horizontal
-        }
-    }
-}
-
-getAnalogCoordsFirefox() {
-    global
-    if (modX()) {
-        if (cUp()) {
-            lastCoordTrace := "F-X-U"
-            return buttonB ? new target.extendedB.modXCUp : new target.fireFox.modXCUp
-        } else if (cDown()) {
-            lastCoordTrace := "F-X-D"
-            return buttonB ? new target.extendedB.modXCDown : new target.fireFox.modXCDown
-        } else if (cLeft()) {
-            lastCoordTrace := "F-X-L"
-            return buttonB ? new target.extendedB.modXCLeft : new target.fireFox.modXCLeft
-        } else if (cRight()) {
-            lastCoordTrace := "F-X-R"
-            return buttonB ? new target.extendedB.modXCRight : new target.fireFox.modXCRight
-        } else {
-            lastCoordTrace := "F-X"
-            ; if buttonB
-            return new target.extendedB.modX
-        }
-    } else if (modY()) {
-        if (cUp()) {
-            lastCoordTrace := "F-Y-U"
-            return buttonB ? new target.extendedB.modYCUp : new target.fireFox.modYCUp
-        } else if (cDown()) {
-            lastCoordTrace := "F-Y-D"
-            return buttonB ? new target.extendedB.modYCDown : new target.fireFox.modYCDown
-        } else if (cLeft()) {
-            lastCoordTrace := "F-Y-L"
-            return buttonB ? new target.extendedB.modYCLeft : new target.fireFox.modYCLeft
-        } else if (cRight()) {
-            lastCoordTrace := "F-Y-R"
-            return buttonB ? new target.extendedB.modYCRight : new target.fireFox.modYCRight
-        } else {
-            lastCoordTrace := "F-Y"
-            ; if buttonB
-            return new target.extendedB.modY
-        }
-    }
-}
-
-reflectCoords(quadrantICoords) {
-    global xComp, global yComp
-    x := quadrantICoords[xComp], y := quadrantICoords[yComp]
-    if (down()) {
-        y *= -1
-    }
-    if (left()) {
-        x *= -1
-    }
-    return [x, y]
-}
-
-/*  //////////////////////////////////////
-    This function is tasked to update the position on the analog stick
+/*  This function is tasked to update the position on the analog stick
     based on the currently seen cardinal directions and modifiers
 */
 updateAnalogStick() {
@@ -508,6 +345,31 @@ updateAnalogStick() {
     coords := getAnalogCoords()
     finalOutput := limitOutputs(coords[xComp], coords[yComp])
     setAnalogStick([finalOutput.x, finalOutput.y])
+    return
+}
+
+; Send VJoy-formatted coordinates to vjoy interface
+setAnalogStick(finalCoords) {
+    global xComp, global yComp, global myStick
+    convertedCoords := convertIntegerToVJoy(finalCoords)
+    myStick.SetAxisByIndex(convertedCoords[xComp], 1) ; control stick (leftstick, analog stick) X
+    myStick.SetAxisByIndex(convertedCoords[yComp], 2) ; same, Y
+    return
+}
+
+/*  This function is tasked to update the position on the c-stick
+    based on the currently seen cardinal directions and modifiers
+*/
+updateCStick() {
+    setCStick(getCStickCoords())
+    return
+}
+
+setCStick(cStickCoords) {
+    global xComp, global yComp, global myStick
+    convertedCoords := convertIntegerToVJoy(cStickCoords)
+    myStick.SetAxisByIndex(convertedCoords[xComp], 4) ; c-stick (rightstick) X
+    myStick.SetAxisByIndex(convertedCoords[yComp], 5) ; same, Y
     return
 }
 
@@ -523,77 +385,8 @@ convertIntegerToVJoy(finalCoords) {
     return convertedCoords
 }
 
-; Send VJoy-formatted coordinates to vjoy interface
-setAnalogStick(finalCoords) {
-    global xComp, global yComp, global myStick
-    convertedCoords := convertIntegerToVJoy(finalCoords)
-    myStick.SetAxisByIndex(convertedCoords[xComp], 1) ; control stick (leftstick, analog stick) X
-    myStick.SetAxisByIndex(convertedCoords[yComp], 2) ; same, Y
-    return
-}
-
-; //////////////// Get CStick coordinates. unit circle format
-getCStickCoords() {
-    global
-    if (!anyVertC() and !anyHorizC()) {
-        cStickCoords := [0, 0]
-    } else if (anyVertC() and anyHorizC()) {
-        cStickCoords := [0.525, 0.85]
-    } else if (anyVertC()) {
-        cStickCoords := [0, 1]
-    } else {
-        if (modX() and up()) {
-            cStickCoords := [0.9, 0.5]
-        } else if (modX() and down()) {
-            cStickCoords := [0.9, -0.5]
-        } else {
-            cStickCoords := [1, 0]
-        }
-    }
-    return reflectCStickCoords(cStickCoords)
-}
-
-reflectCStickCoords(cStickCoords) {
-    global xComp, global yComp
-    x := cStickCoords[xComp]
-    y := cStickCoords[yComp]
-    if (cDown()) {
-        y *= -1
-    }
-    if (cLeft()) {
-        x *= -1
-    }
-    return [x, y]
-}
-
-/*  //////////////////////////////////////
-    This function is tasked to update the position on the c-stick
-    based on the currently seen cardinal directions and modifiers
-*/
-updateCStick() {
-    setCStick(getCStickCoords())
-    return
-}
-
-setCStick(cStickCoords) {
-    global xComp, global yComp, global myStick
-    convertedCoords := convertCStickCoords(cStickCoords)
-    myStick.SetAxisByIndex(convertedCoords[xComp], 4) ; c-stick (rightstick) X
-    myStick.SetAxisByIndex(convertedCoords[yComp], 5) ; same, Y
-    return
-}
-
-convertCStickCoords(cStickCoords) { ; Converts coordinates from melee values (-1 to 1) to vJoy values (0 to 32767).
-    mx = 10271 ; Why this number? idk, I would have thought it should be 16384 * (80 / 128) = 10240, but this works
-    my = -10271
-    bx = 16448 ; 16384 + 64
-    by = 16320 ; 16384 - 64
-    return [ mx * cStickCoords[1] + bx
-        , my * cStickCoords[2] + by ]
-}
-
 setAnalogR(value) {
-    global
+    global myStick
     /*  vJoy/Dolphin does something strange with rounding analog shoulder presses. In general,
         it seems to want to round to odd values, so
             16384 => 0.00000 (0)   <-- actual value used for 0
@@ -605,9 +398,7 @@ setAnalogR(value) {
             22464 => 0.67143 (94)
         Which no sense and I can't reproduce.
     */
-    convertedValue := 16384 * (1 + (value / 255))
-    myStick.SetAxisByIndex(convertedValue, 3)
-    Return
+    Return myStick.SetAxisByIndex(16384 * (1 + value / 255), 3) ; 3 is the analog shoulder press axis
 }
 
 ; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
@@ -631,7 +422,7 @@ Return
 ; Analog Up
 Label1:
     Critical
-    buttonUp := true, updateAnalogStick(), updateCStick()
+    buttonUp := true, mostRecentVerticalAnalog := "U", updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
@@ -646,7 +437,7 @@ return
 ; Analog Down
 Label2:
     Critical
-    buttonDown := true, updateAnalogStick(), updateCStick()
+    buttonDown := true, mostRecentVerticalAnalog := "D", updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
@@ -661,14 +452,17 @@ return
 ; Analog Left
 Label3:
     Critical
-    buttonLeft := true, updateAnalogStick()
+    if (buttonRight and !buttonLeft){ ; !buttonLeft prevents keyboard resend
+        opposingHorizontalsModLockout := true
+    }
+    buttonLeft := true, mostRecentHorizontalAnalog := "L", updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
 Label3_UP:
     Critical
-    buttonLeft := false, updateAnalogStick()
+    buttonLeft := false, opposingHorizontalsModLockout := false, updateAnalogStick()
     Critical Off
     Sleep -1
 return
@@ -676,14 +470,17 @@ return
 ; Analog Right
 Label4:
     Critical
-    buttonRight := true, updateAnalogStick()
+    if (buttonLeft and !buttonRight) { ; !buttonRight prevents keyboard resend
+        opposingHorizontalsModLockout := true
+    }
+    buttonRight := true, mostRecentHorizontalAnalog := "R", updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
 Label4_UP:
     Critical
-    buttonRight := false, updateAnalogStick()
+    buttonRight := false, opposingHorizontalsModLockout := false, updateAnalogStick()
     Critical Off
     Sleep -1
 return
@@ -691,6 +488,12 @@ return
 ; ModX
 Label5:
     Critical
+    /*  opposingHorizontalsModLockout is order dependant,
+        it only applies if modifier isn't pressed after horizontals
+    */
+    if !buttonModX { ; !buttonModX prevents keyboard resend
+        opposingHorizontalsModLockout := false 
+    }
     buttonModX := true, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
@@ -698,7 +501,7 @@ return
 
 Label5_UP:
     Critical
-    buttonModX := false, updateAnalogStick(), updateCStick()
+    buttonModX := false , opposingHorizontalsModLockout := false, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
@@ -803,11 +606,11 @@ return
 Label14:
     Critical
     buttonCUp := true
-    if (bothMods()) {
+    if bothMods() {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 9)
     } else {
-        updateAnalogStick(), updateCStick()
+        mostRecentVerticalC := "U", updateAnalogStick(), updateCStick()
     }
     Critical Off
     Sleep -1
@@ -824,11 +627,11 @@ return
 Label15:
     Critical
     buttonCDown := true
-    if (bothMods()) {
+    if bothMods() {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 11)
     } else {
-        updateAnalogStick(), updateCStick()
+        mostRecentVerticalC := "D", updateAnalogStick(), updateCStick()
     }
     Critical Off
     Sleep -1
@@ -845,11 +648,11 @@ return
 Label16:
     Critical
     buttonCLeft := true
-    if (bothMods()) {
+    if bothMods() {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 10)
     } else {
-        updateAnalogStick(), updateCStick()
+        mostRecentHorizontalC := "L", updateAnalogStick(), updateCStick()
     }
     Critical Off
     Sleep -1
@@ -866,11 +669,11 @@ return
 Label17:
     Critical
     buttonCRight := true
-    if (bothMods()) {
+    if bothMods() {
         ; Pressing ModX and ModY simultaneously changes C buttons to D pad
         myStick.SetBtn(1, 12)
     } else {
-        updateAnalogStick(), updateCStick()
+        mostRecentHorizontalC := "R", updateAnalogStick(), updateCStick()
     }
     Critical Off
     Sleep -1
@@ -948,8 +751,7 @@ return
 
 ; Debug
 Label25:
-    debugString := getDebug()
-    Msgbox % debugString
+    Msgbox, % getDebug()
 return
 
 Label25_UP:
@@ -965,100 +767,4 @@ return
 
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
 #If
-
-; /////////////// Creates the Debug message. code not updated yet
-
-getDebug() {
-    global
-
-    activeArray := []
-    pressedArray := []
-    flagArray := []
-
-    appendButtonState(activeArray, pressedArray, up(), buttonUp, "Up")
-    appendButtonState(activeArray, pressedArray, down(), buttonDown, "Down")
-    appendButtonState(activeArray, pressedArray, left(), buttonLeft, "Left")
-    appendButtonState(activeArray, pressedArray, right(), buttonRight, "Right")
-
-    appendButtonState(activeArray, pressedArray, modX(), buttonModX, "ModX")
-    appendButtonState(activeArray, pressedArray, modY(), buttonModY, "ModY")
-
-    appendButtonState(activeArray, pressedArray, buttonA, false, "A")
-    appendButtonState(activeArray, pressedArray, buttonB, false, "B")
-    appendButtonState(activeArray, pressedArray, buttonL, false, "L")
-    appendButtonState(activeArray, pressedArray, buttonR, false, "R")
-    appendButtonState(activeArray, pressedArray, buttonX, false, "X")
-    appendButtonState(activeArray, pressedArray, buttonY, false, "Y")
-    appendButtonState(activeArray, pressedArray, buttonZ, false, "Z")
-
-    appendButtonState(activeArray, pressedArray, buttonLightShield, false, "LightShield")
-    appendButtonState(activeArray, pressedArray, buttonMidShield, false, "MidShield")
-
-    appendButtonState(activeArray, pressedArray, CUp(), buttonCUp, "C-Up")
-    appendButtonState(activeArray, pressedArray, CDown(), buttonCDown, "C-Down")
-    appendButtonState(activeArray, pressedArray, CLeft(), buttonCLeft, "C-Left")
-    appendButtonState(activeArray, pressedArray, CRight(), buttonCRight, "C-Right")
-
-    conditionalAppend(flagArray, simultaneousHorizontalModifierLockout, "SHML") ; unused in new code because of neutral SOCD
-
-    activeButtonList := stringJoin(", ", activeArray)
-    pressedButtonList := stringJoin(", ", pressedArray)
-    flagList := stringJoin(", ", flagArray)
-
-    trace1 := lastCoordTrace
-
-    analogCoordsDbg := getAnalogCoords()
-    cStickCoordsDbg := getCStickCoords()
-
-    trace2 := lastCoordTrace
-
-    trace := trace1 == trace2 ? trace1 : Format("{1}/{2}", trace1, trace2)
-
-    debugFormatString =
-    (
-
-        Analog Stick: [{1}, {2}]
-        C Stick: [{3}, {4}]
-
-        Active held buttons:
-        {5}
-
-        Disabled held buttons:
-        {6}
-
-        Flags:
-        {7}
-
-        Trace:
-    {8}
-    )
-
-    return Format(debugFormatString
-        , analogCoordsDbg[1], analogCoordsDbg[2]
-        , cStickCoordsDbg[1], cStickCoordsDbg[2]
-        , activeButtonList, pressedButtonList, flagList
-        , trace)
-}
-
-appendButtonState(activeArray, pressedArray, isActive, isPressed, name) {
-    if (isActive) {
-        activeArray.Push(name)
-    } else if (isPressed) {
-        pressedArray.Push(name)
-    }
-}
-
-conditionalAppend(array, condition, value) {
-    if (condition) {
-        array.Push(value)
-    }
-}
-
-; From https://www.autohotkey.com/boards/viewtopic.php?t=7124
-stringJoin(sep, params) {
-    str := ""
-    for index,param in params
-        str .= param . sep
-    return SubStr(str, 1, -StrLen(sep))
-}
 

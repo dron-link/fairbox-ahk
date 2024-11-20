@@ -2,7 +2,8 @@
 
 constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls menu
     global
-    descriptionWidth := 115 ; width of the hotkey control boxes of the Edit Controls Window
+    ; width of the hotkey control boxes of the Edit Controls Window
+    IniRead, descriptionWidth, config.ini, UserSettings, ControlsEditorKeyDisplayWidth
     
     for index, element in hotkeys {
         ; determine upper left position of each set of gui elements
