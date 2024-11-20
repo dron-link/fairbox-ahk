@@ -36,31 +36,72 @@ buttonDPadRight := false
 legacyDebugKey := false
 inputToggleKey := false
 
-; the script depends on the order of these: a remnant of the old design. don't alter it except to append
-; a new element.
-hotkeys := [ "Analog Up" ; 1
-    , "Analog Down" ; 2
-    , "Analog Left" ; 3
-    , "Analog Right" ; 4
-    , "ModX" ; 5
-    , "ModY" ; 6
-    , "A" ; 7
-    , "B" ; 8
-    , "L" ; 9
-    , "R" ; 10
-    , "X" ; 11
-    , "Y" ; 12
-    , "Z" ; 13
-    , "C-stick Up" ; 14
-    , "C-stick Down" ; 15
-    , "C-stick Left" ; 16
-    , "C-stick Right" ; 17
-    , "Light Shield" ; 18
-    , "Mid Shield" ; 19
-    , "Start" ; 20
-    , "D-pad Up" ; 21
-    , "D-pad Down" ; 22
-    , "D-pad Left" ; 23
-    , "D-pad Right" ; 24
-    , "Debug" ; 25
-    , "Input On/Off"] ; 26
+; %hotkeysList[index]% should resolve to the corresponding variable
+hotkeysList := ["buttonUp", "buttonDown", "buttonLeft", "buttonRight", "buttonModX", "buttonModY"
+    , "buttonA", "buttonB", "buttonL", "buttonR", "buttonX", "buttonY", "buttonZ"
+    , "buttonCUp", "buttonCDown", "buttonCLeft", "buttonCRight"
+    , "buttonLightShield", "buttonMidShield", "buttonStart"
+    , "buttonDPadUp", "buttonDPadDown", "buttonDPadLeft", "buttonDPadRight"
+    , "legacyDebugKey", "inputToggleKey"]
+;
+
+hotkeysDisplay := []
+Loop, % hotkeysList.Length() {
+    Switch hotkeysList[A_Index]
+    {
+        Case "buttonUp":
+            hotkeysDisplay[A_Index] := "Analog Up button"
+        Case "buttonDown":
+            hotkeysDisplay[A_Index] := "Analog Down button"
+        Case "buttonLeft":
+            hotkeysDisplay[A_Index] := "Analog Left button"
+        Case "buttonRight":
+            hotkeysDisplay[A_Index] := "Analog Right button"
+        Case "buttonModX":
+            hotkeysDisplay[A_Index] := "ModX button"
+        Case "buttonModY":
+            hotkeysDisplay[A_Index] := "ModY button"
+        Case "buttonA":
+            hotkeysDisplay[A_Index] := "A button"
+        Case "buttonB":
+            hotkeysDisplay[A_Index] := "B button"
+        Case "buttonL":
+            hotkeysDisplay[A_Index] := "L button"
+        Case "buttonR":
+            hotkeysDisplay[A_Index] := "R button"
+        Case "buttonX":
+            hotkeysDisplay[A_Index] := "X button"
+        Case "buttonY":
+            hotkeysDisplay[A_Index] := "Y button"
+        Case "buttonZ":
+            hotkeysDisplay[A_Index] := "Z button"
+        Case "buttonCUp":
+            hotkeysDisplay[A_Index] := "C-stick Up button"
+        Case "buttonCDown":
+            hotkeysDisplay[A_Index] := "C-stick Down button"
+        Case "buttonCLeft":
+            hotkeysDisplay[A_Index] := "C-stick Left button"
+        Case "buttonCRight":
+            hotkeysDisplay[A_Index] := "C-stick Right button"
+        Case "buttonLightShield":
+            hotkeysDisplay[A_Index] := "Light Shield button"
+        Case "buttonMidShield":
+            hotkeysDisplay[A_Index] := "Mid Shield button"
+        Case "buttonStart":
+            hotkeysDisplay[A_Index] := "Start button"
+        Case "buttonDPadUp":
+            hotkeysDisplay[A_Index] := "D-pad Up button"
+        Case "buttonDPadDown":
+            hotkeysDisplay[A_Index] := "D-pad Down button"
+        Case "buttonDPadLeft":
+            hotkeysDisplay[A_Index] := "D-pad Left button"
+        Case "buttonDPadRight":
+            hotkeysDisplay[A_Index] := "D-pad Right button"
+        Case "legacyDebugKey":
+            hotkeysDisplay[A_Index] := "Debug"
+        Case "inputToggleKey":
+            hotkeysDisplay[A_Index] := "Input On/Off"
+        Default:
+            hotkeysDisplay[A_Index] := ""
+    }
+}

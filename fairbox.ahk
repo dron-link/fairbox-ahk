@@ -22,7 +22,7 @@ currentTimeMS := 0
 #include, outOfDeadzone.ahk
 
 #include %A_ScriptDir%\controls
-#include, initializeControls.ahk
+#include, initializeHotkeys.ahk
 #include, loadHotkeysIni.ahk
 
 #include %A_ScriptDir%\coordinates\target
@@ -133,7 +133,9 @@ loadConfigIniLaunchMode() {
     ; do we come from Edit Controls?
     IniRead, openedFromControlsEditor, config.ini, LaunchMode, ControlsWindowIntoMain
     IniWrite, % false                , config.ini, LaunchMode, ControlsWindowIntoMain
-    if openedFromControlsEditor {
+    IniRead, controlsEditorWasOpenedFromHere, config.ini, LaunchMode, MainIntoControlsWindow
+    IniWrite, % false                       , config.ini, LaunchMode, MainIntoControlsWindow
+    if (openedFromControlsEditor and controlsEditorWasOpenedFromHere) {
         ; we recall the Input On/Off toggle state
         IniRead, enabledGameControls, config.ini, LaunchMode, EnabledControlsRecall
         showWelcomeTray := false
@@ -150,15 +152,9 @@ target.loadCoordinates()
 
 constructMainsTrayMenu() ; puts the custom menu items in the tray
 
-for i in hotkeys {
-    ; ### for hotkey activation keys, and gui hotkey controls. instantiate the global variables associated to:
-    ; the hotkey
-    savedHK%i% := ""
-}
-
 loadHotkeysIni()
 
-initializeControls()
+initializeHotkeys()
 
 ; Create an object from vJoy Interface Class.
 vJoyInterface := new CvJoyInterface()
@@ -203,9 +199,11 @@ if showWelcomeTray {
     TrayTip, % "fairbox", % "Script Started", 3, 0
 }
 
-; arbitrary vjoy initial status - bug fix: reset all buttons on startup
-for index in hotkeys {
-    gosub Label%index%_UP
+; initial undefined vjoy behavior - this could fix the bug: reset all buttons on startup
+Loop, % hotkeysList.Length() {
+    if (hotkeysList[A_Index] != "") {
+        gosub, % hotkeysList[A_Index] "Label_UP"
+    }
 }
 
 endOfLaunchThreadTests()
@@ -419,38 +417,36 @@ SetKeyDelay, 0
 Return
 */
 
-; Analog Up
-Label1:
+; Control Stick (Leftstick)
+buttonUpLabel:
     Critical
     buttonUp := true, mostRecentVerticalAnalog := "U", updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-Label1_UP:
+buttonUpLabel_UP:
     Critical
     buttonUp := false, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-; Analog Down
-Label2:
+buttonDownLabel:
     Critical
     buttonDown := true, mostRecentVerticalAnalog := "D", updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-Label2_UP:
+buttonDownLabel_UP:
     Critical
     buttonDown := false, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-; Analog Left
-Label3:
+buttonLeftLabel:
     Critical
     if (buttonRight and !buttonLeft){ ; !buttonLeft prevents keyboard resend
         opposingHorizontalsModLockout := true
@@ -460,15 +456,14 @@ Label3:
     Sleep -1
 return
 
-Label3_UP:
+buttonLeftLabel_UP:
     Critical
     buttonLeft := false, opposingHorizontalsModLockout := false, updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-; Analog Right
-Label4:
+buttonRightLabel:
     Critical
     if (buttonLeft and !buttonRight) { ; !buttonRight prevents keyboard resend
         opposingHorizontalsModLockout := true
@@ -478,15 +473,15 @@ Label4:
     Sleep -1
 return
 
-Label4_UP:
+buttonRightLabel_UP:
     Critical
     buttonRight := false, opposingHorizontalsModLockout := false, updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-; ModX
-Label5:
+; Dedicated modifiers
+buttonModXLabel:
     Critical
     /*  opposingHorizontalsModLockout is order dependant,
         it only applies if modifier isn't pressed after horizontals
@@ -499,111 +494,104 @@ Label5:
     Sleep -1
 return
 
-Label5_UP:
+buttonModXLabel_UP:
     Critical
     buttonModX := false , opposingHorizontalsModLockout := false, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-; ModY
-Label6:
+buttonModYLabel:
     Critical
     buttonModY := true, updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-Label6_UP:
+buttonModYLabel_UP:
     Critical
     buttonModY := false, updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-; A
-Label7:
+;
+buttonALabel:
     buttonA := true, myStick.SetBtn(1,5)
 return
 
-Label7_UP:
+buttonALabel_UP:
     buttonA := false, myStick.SetBtn(0,5)
 return
 
-; B
-Label8:
+buttonBLabel:
     Critical
     buttonB := true, myStick.SetBtn(1, 4), updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-Label8_UP:
+buttonBLabel_UP:
     Critical
     buttonB := false, myStick.SetBtn(0, 4), updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-; L
-Label9:
+buttonLLabel:
     Critical
     buttonL := true, myStick.SetBtn(1, 1), updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-Label9_UP:
+buttonLLabel_UP:
     Critical
     buttonL := false, myStick.SetBtn(0, 1), updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-; R
-Label10:
+buttonRLabel:
     Critical
     buttonR := true, myStick.SetBtn(1, 3), updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-Label10_UP:
+buttonRLabel_UP:
     Critical
     buttonR := false, myStick.SetBtn(0, 3), updateAnalogStick()
     Critical Off
     Sleep -1
 return
 
-; X
-Label11:
+buttonXLabel:
     buttonX := true, myStick.SetBtn(1, 6)
 return
 
-Label11_UP:
+buttonXLabel_UP:
     buttonX := false, myStick.SetBtn(0, 6)
 return
 
-; Y
-Label12:
+buttonYLabel:
     buttonY := true, myStick.SetBtn(1, 2)
 return
 
-Label12_UP:
+buttonYLabel_UP:
     buttonY := false, myStick.SetBtn(0, 2)
 return
 
-; Z
-Label13:
+buttonZLabel:
     buttonZ := true, myStick.SetBtn(1, 7)
 return
 
-Label13_UP:
+buttonZLabel_UP:
     buttonZ := false, myStick.SetBtn(0, 7)
 return
 
-; C Up
-Label14:
+; C-stick (Rightstick) buttons
+buttonCUpLabel:
     Critical
     buttonCUp := true
     if bothMods() {
@@ -616,15 +604,14 @@ Label14:
     Sleep -1
 return
 
-Label14_UP:
+buttonCUpLabel_UP:
     Critical
     buttonCUp := false, myStick.SetBtn(0, 9), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-; C Down
-Label15:
+buttonCDownLabel:
     Critical
     buttonCDown := true
     if bothMods() {
@@ -637,15 +624,14 @@ Label15:
     Sleep -1
 return
 
-Label15_UP:
+buttonCDownLabel_UP:
     Critical
     buttonCDown := false, myStick.SetBtn(0, 11), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-; C Left
-Label16:
+buttonCLeftLabel:
     Critical
     buttonCLeft := true
     if bothMods() {
@@ -658,15 +644,14 @@ Label16:
     Sleep -1
 return
 
-Label16_UP:
+buttonCLeftLabel_UP:
     Critical
     buttonCLeft := false, myStick.SetBtn(0, 10), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-; C Right
-Label17:
+buttonCRightLabel:
     Critical
     buttonCRight := true
     if bothMods() {
@@ -679,90 +664,86 @@ Label17:
     Sleep -1
 return
 
-Label17_UP:
+buttonCRightLabel_UP:
     Critical
     buttonCRight := false, myStick.SetBtn(0, 12), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
 return
 
-; Lightshield (Light)
-Label18:
+; Analog Shielding
+buttonLightShieldLabel:
     buttonLightShield := true, setAnalogR(49)
 return
 
-Label18_UP:
+buttonLightShieldLabel_UP:
     buttonLightShield := false, setAnalogR(0)
 return
 
-; Lightshield (Medium)
-Label19:
+buttonMidShieldLabel:
     buttonMidShield := true, setAnalogR(94)
 return
 
-Label19_UP:
+buttonMidShieldLabel_UP:
     buttonMidShield := false, setAnalogR(0)
-return
+Return
 
-; Start
-Label20:
+;
+buttonStartLabel:
     buttonStart := true, myStick.SetBtn(1, 8)
 return
 
-Label20_UP:
+buttonStartLabel_UP:
     buttonStart := false, myStick.SetBtn(0, 8)
 return
 
-; D Up
-Label21:
+; D-pad
+buttonDPadUpLabel:
     buttonDPadUp := true, myStick.SetBtn(1, 9)
 return
 
-Label21_UP:
+buttonDPadUpLabel_UP:
     buttonDPadUp := true, myStick.SetBtn(0, 9)
 return
 
-; D Down
-Label22:
+buttonDPadDownLabel:
     buttonDPadDown := true, myStick.SetBtn(1, 11)
 return
 
-Label22_UP:
+buttonDPadDownLabel_UP:
     buttonDPadDown := false, myStick.SetBtn(0, 11)
 return
 
-; D Left
-Label23:
+buttonDPadLeftLabel:
     buttonDPadLeft := true, myStick.SetBtn(1, 10)
 return
 
-Label23_UP:
+buttonDPadLeftLabel_UP:
     buttonDPadLeft := false, myStick.SetBtn(0, 10)
 return
 
-; D Right
-Label24:
+buttonDPadRightLabel:
     buttonDPadRight := true, myStick.SetBtn(1, 12)
 return
 
-Label24_UP:
+buttonDPadRightLabel_UP:
     buttonDPadRight := false, myStick.SetBtn(0, 12)
 return
 
-; Debug
-Label25:
+;
+legacyDebugKeyLabel:
     Msgbox, % getDebug()
 return
 
-Label25_UP:
+legacyDebugKeyLabel_UP:
 return
 
 ; Input On/Off
-Label26:
+inputToggleKeyLabel:
     enabledGameControls := !enabledGameControls
 return
 
-Label26_UP:
+inputToggleKeyLabel_UP:
 return
 
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls

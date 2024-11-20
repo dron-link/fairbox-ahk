@@ -10,8 +10,9 @@ validateModifiedControl(num) corruption prevention.
 `n
 `nThe num value encountered is: " num "
 `n
-`nError: This num value doesn't identify a hotkey.
-`nApp will exit. (Please report this error to the fairbox developers.)
+`nError: This num value doesn't identify a hotkey. 
+`nApp will exit. (Please report this error to the fairbox developers. 
+It probably indicates a mistake in the source code.)
 )"
         Gui, +OwnDialogs
         MsgBox, % collapseControlModificationMsg
@@ -35,7 +36,7 @@ validateModifiedControl(num) corruption prevention.
 
     checkDuplicateHK(num)
 
-    IniWrite, % HK%num%, hotkeys.ini, Hotkeys, % num
+    IniWrite, % HK%num%, hotkeys.ini, Hotkeys, % hotkeysList[num]
     savedHK%num% := HK%num%
     
     ; update hotkey control contents for the user to see
@@ -47,13 +48,15 @@ checkDuplicateHK(num) {
     global
     searchHK := strReplace(HK%num%, "~")
     if (searchHK != "") { ; if there's a hotkey
-        Loop,% hotkeys.Length() {
-            ; if hotkey is case-insensitive equal to a saved hotkey then it can be a duplicate
+        Loop, % hotkeysList.Length() {
+            if (hotkeysList[A_Index] = "") { ; We skip empty hotkey IDs if there are any
+                Continue
+            }
+            If (A_Index == num) { ; if the apparent "duplicated control" is actually itself
+                continue
+            }
+            ; if hotkey is case-insensitive equal to a saved hotkey then it is a duplicate
             If (searchHK = strReplace(savedHK%A_Index%, "~", "")) { 
-                If (num == A_Index) { ; if the apparent "duplicated control" is actually itself
-                    continue
-                }
-                
                 StringUpper, printDuplicateKey, searchHK, T ; HK%num% Title Case string for pretty message
     
                 GuiControl, controlsWindow:, HK%num% ; clear the control.
@@ -62,7 +65,7 @@ checkDuplicateHK(num) {
                 duplIndex := A_Index ; store index. we can't rely on A_Index because of the next inner loop
                 Gui, +OwnDialogs
                 MsgBox,, % "Controls Editor: Can't assign duplicate key", % "" 
-                . "Key ''" printDuplicateKey "'' already taken by ''" hotkeys[duplIndex]" button.''" 
+                . "Key ''" printDuplicateKey "'' already taken by ''" hotkeysDisplay[duplIndex]".''" 
     
                 /*  known Issue:
                     Keys Tab, Enter, Space and Backspace, do not flash. 
@@ -81,7 +84,8 @@ checkDuplicateHK(num) {
                     GuiControl, controlsWindow:Font, gameBtName%duplIndex%
                     Sleep,130
                 }
-                break ; a single found key duplicate is enough (also there should be only one)
+                break   ; break Loop, % hotkeysList.Length()
+                        ; because a single found key duplicate is enough (also there should be only one)
             }
         }
     }

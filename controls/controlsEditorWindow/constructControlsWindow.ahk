@@ -4,15 +4,14 @@ constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls m
     global
     ; width of the hotkey control boxes of the Edit Controls Window
     IniRead, descriptionWidth, config.ini, UserSettings, ControlsEditorKeyDisplayWidth
-    
-    for index, element in hotkeys {
-        ; determine upper left position of each set of gui elements
-        if (index == 1) {
-            yOff := 3
-        } else {
-            yOff += 22
+    ; determine upper left position of first row of gui elements
+    yOff := 3
+    Loop, % hotkeysList.Length() {
+        if (hotkeysList[A_Index] = "") { ; We skip empty hotkey IDs if there are any
+            Continue
         }
-        if (hotkeys[index] = "Debug") {
+        ; determine upper left position of each set of gui elements
+        if (hotkeysList[A_Index] = "legacyDebugKey") {
             yOff += 22 ; additional spacing
         }
     
@@ -24,33 +23,36 @@ constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls m
             If the hotkey lacks it, the key or key combination will only work as a controller input; 
             the key won't work outside of triggering its respective label subroutine
         */
-        If (strReplace(savedHK%index%, "~", "") = "") { ; hotkey doesn't exist
-            preventBehavior%index% := false ; empty slots will display as unmarked
+        If (strReplace(savedHK%A_Index%, "~", "") = "") { ; hotkey doesn't exist
+            preventBehavior%A_Index% := false ; empty slots will display as unmarked
         } 
-        else if InStr(savedHK%index%, "~") { ; hotkey is ~[modifiers+key]
-            preventBehavior%index% := false 
+        else if InStr(savedHK%A_Index%, "~") { ; hotkey is ~[modifiers+key]
+            preventBehavior%A_Index% := false 
         } else { ; hotkey is [modifiers+key]
-            preventBehavior%index% := true 
+            preventBehavior%A_Index% := true 
         }
         
         GuiFontDefault("controlsWindow")
         ; adds borderless text of the control name and associates it to variable gameBtName1, and so on
-        Gui, controlsWindow:Add, Text, xm ym+%yOff% vGameBtName%index%, % element 
-        . (hotkeys[index] = "Input On/Off" ? ":" : " button:") ; Case "[Any] button:" vs "Input On/Off:"
+        Gui, controlsWindow:Add, Text, xm ym+%yOff% vGameBtName%A_Index%, % hotkeysDisplay[A_Index] ":" 
         ;Add controls and show the saved key
-        Gui, controlsWindow:Add, Hotkey, xm+107 yp-3 w%descriptionWidth% vHK%index% gActivationKeyCheck, % getHotkeyControlFormat(savedHK%index%)
+        HK%A_Index% := savedHK%A_Index% ; each control is associated to their respective HK variable
+        Gui, controlsWindow:Add, Hotkey, xm+107 yp-3 w%descriptionWidth% vHK%A_Index% gActivationKeyCheck, % getHotkeyControlFormat(savedHK%A_Index%)
         ; add Prevent Default Behavior checkbox
-        ifPrevent := preventBehavior%index%
-        Gui, controlsWindow:Add, CheckBox, x+5 yp+3 vPreventBehavior%index% Checked%ifPrevent% gDefaultBehaviorChange, % "Prevent Default Behavior"
+        ifPrevent := preventBehavior%A_Index%
+        Gui, controlsWindow:Add, CheckBox, x+5 yp+3 vPreventBehavior%A_Index% Checked%ifPrevent% gDefaultBehaviorChange, % "Prevent Default Behavior"
         ; add Special Bind checkbox
-        isSpecialKey%index% := false
-        Gui, controlsWindow:Add, CheckBox, x+5 vIsSpecialKey%index% gSpecialKeyChange, % "Special Bind"    
+        isSpecialKey%A_Index% := false
+        Gui, controlsWindow:Add, CheckBox, x+5 vIsSpecialKey%A_Index% gSpecialKeyChange, % "Special Bind"   
+        
+        ; determine upper left position of next row of gui elements
+        yOff += 22
     }
     addControlsWindowInstructions(descriptionWidth)
 
     guiFontDefault("controlsWindow")
     Gui, controlsWindow:Add, Button, y+30 w70 h40 gLabelRefreshControlsWindow, % "Refresh"
-    Gui, controlsWindow:Add, Button, x+6 w70 h40 gLabelManualGoToMainFairbox, % "Play"
+    Gui, controlsWindow:Add, Button, x+6 w70 h40 gLabelOpenMain, % "Play"
 
     return
 }
