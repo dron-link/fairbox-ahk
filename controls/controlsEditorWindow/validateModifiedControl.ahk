@@ -3,7 +3,7 @@
 validateModifiedControl(num) { ; you came from activationKeyCheck() or #If Expression hotkeys
     global
 
-    If !hotkeys[num] {
+    If !hotkeysList[num] {
         collapseControlModificationMsg := "
 ( Join`s
 validateModifiedControl(num) corruption prevention.
