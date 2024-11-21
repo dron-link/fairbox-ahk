@@ -40,9 +40,9 @@ class dashZoneHistoryObject {
         return
     }
 
-    storeInfoBeforeMultipressEnds(aX, aY) {
+    storeInfoBeforeMultipressEnds(aX) {
         global currentTimeMS
-        dashZoneOfOutput := getDashZoneOf(aX, aY)
+        dashZoneOfOutput := getDashZoneOf(aX)
         if (dashZoneOfOutput == this.saved.zone) {
             this.unsaved := this.saved ; we haven't moved onto another zone, so the saved info still applies
         } else {

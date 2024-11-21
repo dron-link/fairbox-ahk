@@ -1,10 +1,10 @@
 #Requires AutoHotkey v1.1
 
-getDidPivot(aX, aY, dashZone) {
-    currentDashZoneInfo := getCurrentDashZoneInfo(aX, aY, dashZone)
+getDidPivot(aX, dashZone) {
+    currentDashZoneInfo := getCurrentDashZoneInfo(aX, dashZone.saved, dashZone.queue)
 
     direction := getAttemptedPivotDirection(currentDashZoneInfo.zone, dashZone.hist)
-    if direction {
+    if direction { ; if the timing is correct, we confirm that there was a pivot in the direction
         return pivotTimingCheck(currentDashZoneInfo.timestamp, dashZone.hist)? direction : false
     }
 

@@ -46,24 +46,24 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
 
     ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
     pivot.nerfSearch(output.limited.x, output.limited.y, dashZone, outOfDeadzone)
-    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone)
+    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone.saved.zone)
 
-    output.chooseLockout(pivot, uncrouch)
+    output.chooseLockout(pivot.wasNerfed, pivot.nerfedCoords, uncrouch.wasNerfed, uncrouch.nerfedCoords)
 
     ; fuzz the y when x is +1.00 or -1.00
     output.horizontalRimFuzz()
 
     ; ### record output to read it in next calls of this function
 
-    uncrouch.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, crouchZone)
-    pivot.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y, dashZone)
+    uncrouch.storeInfoBeforeMultipressEnds(getUncrouchDid(output.limited.y, crouchZone.saved.zone))
+    pivot.storeInfoBeforeMultipressEnds(getDidPivot(output.limited.x, dashZone))
 
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         ; store analog zones' info
         outOfDeadzone.up.storeInfoBeforeMultipressEnds(output.limited.y)
         outOfDeadzone.down.storeInfoBeforeMultipressEnds(output.limited.y)
-        crouchZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
-        dashZone.storeInfoBeforeMultipressEnds(output.limited.x, output.limited.y)
+        crouchZone.storeInfoBeforeMultipressEnds(output.limited.y)
+        dashZone.storeInfoBeforeMultipressEnds(output.limited.x)
 
         ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
         if output.hist[1].multipress.ended {

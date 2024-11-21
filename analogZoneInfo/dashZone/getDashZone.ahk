@@ -1,6 +1,6 @@
 #Requires AutoHotkey v1.1
 
-getDashZoneOf(aX, aY) {
+getDashZoneOf(aX) {
     global ANALOG_DASH_LEFT, global ANALOG_DASH_RIGHT, global ZONE_CENTER, global ZONE_L, global ZONE_R
     if (aX <= ANALOG_DASH_LEFT) {
         return ZONE_L
@@ -10,14 +10,14 @@ getDashZoneOf(aX, aY) {
     return ZONE_CENTER
 }
 
-getCurrentDashZoneInfo(aX, aY, dashZone) {
+getCurrentDashZoneInfo(aX, dashZoneSaved, dashZoneQueue) {
     global currentTimeMS
 
-    currentZone := getDashZoneOf(aX, aY)
-    if (currentZone == dashZone.saved.zone) {
-        return dashZone.saved
-    } else if IsObject(dashZone.queue[currentZone]) {
-        return dashZone.queue[currentZone]
+    currentZone := getDashZoneOf(aX)
+    if (currentZone == dashZoneSaved.zone) {
+        return dashZoneSaved
+    } else if IsObject(dashZoneQueue[currentZone]) {
+        return dashZoneQueue[currentZone]
     } ; else
     return new dashZoneHistoryEntry(currentZone, currentTimeMS, false)
 }

@@ -20,8 +20,8 @@ class pivotTrackAndNerfObject extends pivotHistoryObject {
         }
 
         ; this check is unnecessary but, if it failed, new empty pivot would be doomed anyways 
-        if (getDashZoneOf(aX, aY) != dashZone.saved.zone) {
-            currentPivotInfo := getCurrentPivotInfo(getDidPivot(aX, aY, dashZone), this)
+        if (getDashZoneOf(aX) != dashZone.saved.zone) {
+            currentPivotInfo := getCurrentPivotInfo(getDidPivot(aX, dashZone), this.saved, this.queue)
             ; if there's a current pivot atop the lockout pivot, take care to not nerf the coordinates again
             if (currentPivotInfo.did and !this.wasNerfed) {
                 this.generateNerfedCoords(aX, aY, outOfDeadzone, currentPivotInfo)
@@ -31,7 +31,7 @@ class pivotTrackAndNerfObject extends pivotHistoryObject {
     }
 
     generateNerfedCoords(aX, aY, outOfDeadzone, pivotInstance) {
-        this.nerfedCoords := getPivotLockoutNerfedCoords([aX, aY], outOfDeadzone, this, pivotInstance)
+        this.nerfedCoords := getPivotLockoutNerfedCoords([aX, aY], outOfDeadzone, pivotInstance)
         if this.nerfedCoords {
             this.wasNerfed := true
         } else {

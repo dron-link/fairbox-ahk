@@ -1,8 +1,8 @@
 #Requires AutoHotkey v1.1
 
 class limitedOutputsObject {
-    historyLength := 15
-    limited := {} ; this element is controlled by limitOutputs()
+    historyLength := 12
+    limited := {}
     latestMultipressBeginningTimestamp := -1000
 
     __New() { ; creates output.hist
@@ -19,14 +19,15 @@ class limitedOutputsObject {
         return
     }
 
-    chooseLockout(pivot, uncrouch) {
+    chooseLockout(pivotWasNerfed, pivotNerfedCoords, uncrouchWasNerfed, uncrouchNerfedCoords) {
         global xComp, global yComp
-        if pivot.wasNerfed { ;
-            this.limited.x := pivot.nerfedCoords[xComp]
-            this.limited.y := pivot.nerfedCoords[yComp]
-        } else if uncrouch.wasNerfed {
-            this.limited.x := uncrouch.nerfedCoords[xComp]
-            this.limited.y := uncrouch.nerfedCoords[yComp]
+        ; function for solving conflicts between nerf coordinates
+        if pivotWasNerfed {
+            this.limited.x := pivotNerfedCoords[xComp]
+            this.limited.y := pivotNerfedCoords[yComp]
+        } else if uncrouchWasNerfed {
+            this.limited.x := uncrouchNerfedCoords[xComp]
+            this.limited.y := uncrouchNerfedCoords[yComp]
         }
         return
     }

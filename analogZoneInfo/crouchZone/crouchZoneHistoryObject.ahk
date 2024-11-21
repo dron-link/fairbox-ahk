@@ -10,9 +10,9 @@ class crouchZoneHistoryObject {
         return
     }
 
-    storeInfoBeforeMultipressEnds(aX, aY) {
+    storeInfoBeforeMultipressEnds(aY) {
         global currentTimeMS
-        crouchZoneOfOutput := getCrouchZoneOf(aX, aY)
+        crouchZoneOfOutput := getCrouchZoneOf(aY)
         if (crouchZoneOfOutput == this.saved.zone) {
             this.unsaved := this.saved ; we haven't moved onto another zone, so the saved info still applies
         } else {

@@ -1,12 +1,12 @@
 #Requires AutoHotkey v1.1
 
-getCurrentPivotInfo(didPivotNow, pivot) {
+getCurrentPivotInfo(didPivotNow, pivotSaved, pivotQueue) {
     global currentTimeMS
 
-    if (didPivotNow == pivot.saved.did) {
-        return pivot.saved
-    } else if IsObject(pivot.queue[didPivotNow]) {
-        return pivot.queue[didPivotNow] 
+    if (didPivotNow == pivotSaved.did) {
+        return pivotSaved
+    } else if IsObject(pivotQueue[didPivotNow]) {
+        return pivotQueue[didPivotNow] 
     } ; else
     return new pivotInfo(didPivotNow, currentTimeMS)
 }

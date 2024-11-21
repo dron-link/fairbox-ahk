@@ -1,13 +1,13 @@
 #Requires AutoHotkey v1.1
 
-getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivot, pivotInstance) {
+getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivotInstance) {
     global ANALOG_STICK_MAX, global FORCE_FTILT
     global TIMELIMIT_TAPSHUTOFF, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
     global P_RIGHTLEFT, global P_LEFTRIGHT, global xComp, global yComp, global currentTimeMS
     aX := coords[xComp], aY := coords[yComp]
 
-    upYDeadzone := getCurrentOutOfDeadzoneInfo_up(aY, outOfDeadzone.up)
-    downYDeadzone := getCurrentOutOfDeadzoneInfo_down(aY, outOfDeadzone.down)
+    upYDeadzone := getCurrentOutOfDeadzoneInfo_up(aY, outOfDeadzone.up.saved, outOfDeadzone.up.queue)
+    downYDeadzone := getCurrentOutOfDeadzoneInfo_down(aY, outOfDeadzone.down.saved, outOfDeadzone.down.queue)
 
     if (currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT) {
         /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing

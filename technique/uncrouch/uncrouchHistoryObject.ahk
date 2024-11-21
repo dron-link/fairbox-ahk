@@ -17,23 +17,21 @@ class uncrouchHistoryObject {
     lockoutExpiryCheck() {
         global TIMELIMIT_DOWNUP, global currentTimeMS
         if (this.lockout.did and currentTimeMS - this.lockout.timestamp >= TIMELIMIT_DOWNUP) {
-            this.lockout := new uncrouchInfo(false, currentTimeMS)
+            this.lockout := new uncrouchInfo(false, currentTimeMS) ; the uncrouch nerf expired
         }
         return
     }
 
-    storeInfoBeforeMultipressEnds(aX, aY, crouchZone) {
+    storeInfoBeforeMultipressEnds(outputUncrouchDid) {
         global currentTimeMS
 
-        outputDidUncrouch := getUncrouchDid(aX, aY, crouchZone)
-
-        if (outputDidUncrouch == this.saved.did) {
+        if (outputUncrouchDid == this.saved.did) {
             this.unsaved := this.saved
         } else {
-            if !IsObject(this.queue[outputDidUncrouch]) {
-                this.queue[outputDidUncrouch] := new uncrouchInfo(outputDidUncrouch, currentTimeMS)
+            if !IsObject(this.queue[outputUncrouchDid]) {
+                this.queue[outputUncrouchDid] := new uncrouchInfo(outputUncrouchDid, currentTimeMS)
             }
-            this.unsaved := this.queue[outputDidUncrouch]
+            this.unsaved := this.queue[outputUncrouchDid]
         }
 
         return

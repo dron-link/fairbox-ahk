@@ -1,33 +1,32 @@
 #Requires AutoHotkey v1.1
 
-getUncrouchDid(aX, aY, crouchZone) {
+getUncrouchDid(aY, crouchZoneSavedZone) {
     global U_YES
-    if (!getCrouchZoneOf(aX, aY) and crouchZone.saved.zone) {
+    if (!getCrouchZoneOf(aY) and crouchZoneSavedZone) {
         return U_YES
-    } else {
-        return false
-    }
+    } ; else
+    return false
 }
 
-getUncrouchLockoutNerfedCoords(coords, uncrouch, uncrouchInstance) {
+getUncrouchLockoutNerfedCoords(coords, uncrouchTimestamp) {
     global ANALOG_DEAD_MAX, global ANALOG_STICK_MAX, global TIMELIMIT_DOWNUP
     global xComp, global yComp, global currentTimeMS
     aX := coords[xComp], aY := coords[yComp]
 
-    if (currentTimeMS - uncrouchInstance.timestamp < TIMELIMIT_DOWNUP and getIsOutOfDeadzone_up(aY)
+    if (currentTimeMS - uncrouchTimestamp < TIMELIMIT_DOWNUP and getIsOutOfDeadzone_up(aY)
         and Abs(aX) <= ANALOG_DEAD_MAX) {
         return [0, ANALOG_STICK_MAX]
     }
     return false ; if we reach this, conditions for applying nerfs weren't fulfilled
 }
 
-getCurrentUncrouchInfo(aX, aY, didUncrouchNow, uncrouch) {
+getCurrentUncrouchInfo(didUncrouchNow, uncrouchSaved, uncrouchQueue) {
     global currentTimeMS
 
-    if (didUncrouchNow == uncrouch.saved.did) {
-        return uncrouch.saved
-    } else if IsObject(uncrouch.queue[didUncrouchNow]) {
-        return uncrouch.queue[didUncrouchNow]
+    if (didUncrouchNow == uncrouchSaved.did) {
+        return uncrouchSaved
+    } else if IsObject(uncrouchQueue[didUncrouchNow]) {
+        return uncrouchQueue[didUncrouchNow]
     } else {
         return new uncrouchInfo(didUncrouchNow, currentTimeMS)
     }

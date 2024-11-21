@@ -19,16 +19,14 @@ class pivotHistoryObject {
     lockoutExpiryCheck() {
         global TIMELIMIT_PIVOTTILT, global currentTimeMS
         if (this.lockout.did and currentTimeMS - this.lockout.timestamp >= TIMELIMIT_PIVOTTILT) {
-            this.lockout := new pivotInfo(false, currentTimeMS)
+            this.lockout := new pivotInfo(false, currentTimeMS) ; the pivot nerf expired
         }
         return
     }
 
-    storeInfoBeforeMultipressEnds(aX, aY, dashZone) {
+    storeInfoBeforeMultipressEnds(outputDidPivot) {
         global currentTimeMS
 
-        outputDidPivot := getDidPivot(aX, aY, dashZone)
-    
         if (outputDidPivot == this.saved.did) {
             this.unsaved := this.saved
         } else {
