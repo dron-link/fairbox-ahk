@@ -62,8 +62,8 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
         ; store analog zones' info
         outOfDeadzone.up.storeInfoBeforeMultipressEnds(output.limited.y)
         outOfDeadzone.down.storeInfoBeforeMultipressEnds(output.limited.y)
-        crouchZone.storeInfoBeforeMultipressEnds(output.limited.y)
-        dashZone.storeInfoBeforeMultipressEnds(output.limited.x)
+        crouchZone.storeInfoBeforeMultipressEnds(getCrouchZoneOf(output.limited.y))
+        dashZone.storeInfoBeforeMultipressEnds(getDashZoneOf(output.limited.x))
 
         ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
         if output.hist[1].multipress.ended {

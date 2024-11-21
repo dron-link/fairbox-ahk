@@ -34,7 +34,8 @@ It probably indicates a mistake in the source code.)
         HK%num% := "~" HK%num% ;    add the (~) modifier. This prevents a key from being blocked.
     }
 
-    checkDuplicateHK(num)
+    ; if the key that the user wants to bind is duplicated, this clears it (HK%num%) and alerts the user
+    checkDuplicateHK(num) 
 
     IniWrite, % HK%num%, hotkeys.ini, Hotkeys, % hotkeysList[num]
     savedHK%num% := HK%num%
