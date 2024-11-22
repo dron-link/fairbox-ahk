@@ -86,7 +86,7 @@ everything is subject to modification and may not be present in the finalized ve
 
 rough list of remaining tasks
 - TODO write tests
-- TODO create a showControlsWindowOnFirstLaunch
+- TODO create a Setup Help for first launch
 - TODO disable all traytip messages option
 - TODO increase hotkey control width option
 - TODO restore default hotkeys button
@@ -147,7 +147,7 @@ loadConfigIniLaunchMode() {
 IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey
 IniRead, secondIPCleaning, config.ini, UserSettings, 2ipCleaning
 
-target := new targetCoordinateTreeWithCBinds ; upon using the __New() metafunction this evaluates as "" uh????
+target := new targetCoordinateTreeWithCBinds ; i can't use the __New() metafunction or else this evaluates as "" uh????
 target.loadCoordinates()
 
 constructMainsTrayMenu() ; puts the custom menu items in the tray

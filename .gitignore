@@ -30,6 +30,8 @@
 !imginstall
 !imginstall/button.png
 !imginstall/button_press.png
+!InputViewerCommunityCustomLayouts
+!InputViewerCommunityCustomLayouts/*
 !install
 !install/*
 !menu

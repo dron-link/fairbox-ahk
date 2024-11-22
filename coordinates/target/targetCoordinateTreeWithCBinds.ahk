@@ -10,15 +10,15 @@ class targetCoordinateTreeWithCBinds extends targetCoordinateTreeSkeleton {
 
     bindAnglesToCStick() { ; We are going to set personalized c-button angle bindings
         global keysModCAngleRole
-        ; if c-stick-angle-bindings.ini doesn't exist, create it
-        FileInstall, install\c-stick-angle-bindings.ini, % A_ScriptDir "\c-stick-angle-bindings.ini", 0
+        ; if config.ini doesn't exist, create it
+        FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0
 
         ; c-stick-angle-bindings ini completeness evaluation
         readModCAngleRole := {} ; stores values read from ini
         cIniCompleteness := 0 ; each bit set represents one of four cardinal c-stick directions read
 
         for index, roleKey in keysModCAngleRole {
-            IniRead, readBinding, c-stick-angle-bindings.ini, cStickAngling, % roleKey, %A_Space%
+            IniRead, readBinding, config.ini, cStickAngling, % roleKey, %A_Space%
             if (readBinding = "cDown" or readBinding = "c-down"
                 or readBinding = "c down") {
                 readModCAngleRole[roleKey] := "cDown"
