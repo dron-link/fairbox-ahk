@@ -5,6 +5,8 @@ Running: alreadyFuzzed
 End of alreadyFuzzed.
 Running: shouldFuzz
 End of shouldFuzz.
+Running: fuzzDisabled
+End of fuzzDisabled.
 Test finished.
 
 

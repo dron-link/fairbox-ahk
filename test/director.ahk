@@ -23,7 +23,7 @@ endOfLaunchThreadTests() {
     
     if !enabledHotkeys {
         TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
-
+        testGetFuzzyHorizontal100()
         ExitApp
     }   
     Critical Off

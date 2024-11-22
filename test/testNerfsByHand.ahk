@@ -1,6 +1,6 @@
 #Requires AutoHotkey v1.1
 
-testNerfsByHand(activation) {
+testNerfsByHand(activation) { ; to use this, put a testNerfsByHand(true) in the endOfLaunchThreadTests code block
     global
     if activation {
         nerfManualTestMode := 1

@@ -1,56 +1,31 @@
 #Requires AutoHotkey v1.1
 
-/*  ; This is how getFuzzyHorizontal100 should look like if you're going to test it.
-    ; As written, this passed the test I designed.
-
-getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {
-    global ANALOG_STICK_MAX, global ANALOG_STEP, global FUZZ_1_00_PROBABILITY
-
-    if (outputY == 0 and Abs(outputX) >= ANALOG_STICK_MAX) {
-        testGFH100NoFuzzConditions(outputX, outputY)
-        if (Abs(historyY) <= ANALOG_STEP and outputX == historyX) {
-            testGFH100ShouldFuzz(outputX, outputY, historyX, historyY)
-            return historyY
-        } else {
-            testGFH100AlreadyFuzzed(outputX, outputY, historyX, historyY)
-            Random, ran100, 0, 99 ; spans 100%
-            if (ran100 < FUZZ_1_00_PROBABILITY) {
-                Random, yesNo, 0, 1
-                return yesNo ? ANALOG_STEP : -ANALOG_STEP
-            } else {
-                return 0
-            }
-        }
-    } else {
-        testGFH100AlreadyFuzzed(outputX, outputY, historyX, historyY)
-        testGFH100ShouldFuzz(outputX, outputY, historyX, historyY)
-        return outputY
-    }
-}
-
-*/
-
 testGetFuzzyHorizontal100() {
-    global testStage, global ANALOG_STICK_MAX, global ANALOG_STICK_MIN
+    global FUZZ_1_00_PROBABILITY
     OutputDebug, % "testGetFuzzyHorizontal100()`n"
     logAppend("testGetFuzzyHorizontal100()")
+
+    original_FUZZ_1_00_PROBABILITY := FUZZ_1_00_PROBABILITY ; save this in case we need it later
+
+    FUZZ_1_00_PROBABILITY := 100 ; always change y if conditions are met
+
     ; if the |x| value is not 80 or more, and y isnt 0, we shouldnt consider fuzzing
     testStage := "noFuzzConditions"
     logAppend("Running: " testStage)
     x := -128
     Loop { 
-        y := -128
-        Loop, 300 {
+        y := -5
+        Loop {
             if ((x <= -80 or 80 <= x) and y == 0) {
                 ; should be fuzzed, really
             } else {
                 if (y != getFuzzyHorizontal100(x, y, 0, 0)) {
-                    logAppend("Failure report: x " x " y " y 
+                    logAppend("Failure report: x " x " y " y " testStage " testStage 
                     . ": value Y was changed when it shouldn't")
                 }
             }
             y += 1
-        } Until y > 128
+        } Until y > 5
         x += 1
     } Until x > 128
     logAppend("End of " testStage ".")
@@ -60,61 +35,85 @@ testGetFuzzyHorizontal100() {
     testStage := "alreadyFuzzed"
 
     logAppend("Running: " testStage)
-    x := -128
     y := 0
+    x := -128
     Loop {
         if (x <= -80 or 80 <= x) {
-            Random, randomHistoryY, -1, 1
-            if (randomHistoryY != getFuzzyHorizontal100(x, y, x, randomHistoryY)) {
-                logAppend("Failure report: x " x " y " y " randomHistoryY " randomHistoryY
-                . ": result Y wasn't the same as historyY.")
+            Random, randomHistoryY, -2, 2 ; writes -2 -1, 0, 1, or 2
+            if (randomHistoryY == -1 or randomHistoryY == 0 or randomHistoryY == 1) { ; properly fuzzed history 
+                if (randomHistoryY != getFuzzyHorizontal100(x, y, x, randomHistoryY)) {
+                    logAppend("Failure report: x " x " y " y " randomHistoryY " randomHistoryY
+                    . " testStage " testStage 
+                    . ": result Y wasn't the same as historyY.")
+                }
+            } else { ; non fuzzed history
+                if (randomHistoryY == getFuzzyHorizontal100(x, y, x, randomHistoryY)) {
+                    logAppend("Failure report: x " x " y " y " randomHistoryY " randomHistoryY
+                    . " testStage " testStage 
+                    . ": historyY, a value that doesn't correspond to a fuzzed cardinal, was used as result.")
+                }
             }
         }
         x += 1
     } Until x > 128
     logAppend("End of " testStage ".")
 
-    ; if outputX is different to historyX, and |x| >= 80, value should be fuzzed,
-    ; even if history y is 0adjacent
+
+    ; if outputX is different to historyX, and |x| >= 80, value should be randomly fuzzed according to 
+    ; FUZZ_1_00_PROBABILITY even if history y is adjacent to 0
     testStage := "shouldFuzz"
     logAppend("Running: " testStage)
     x := -128
     y := 0
+    historyY := 0
     Loop {
         if (x <= -80 or 80 <= x) {
-            Random, randomHistoryY, -1, 1
+            ; ensure x =/= historyX
             Random, yesNo, 0, 1
-            randomHistoryX := x + (yesNo? 1 : -1) ; ensure x =/= historyX
-            getFuzzyHorizontal100(x, y, randomHistoryX, randomHistoryY)            
+            if yesNo {
+                Random, yesNo, 0, 1
+                randomHistoryX := x + (yesNo? 1 : -1) ; off by 1
+            } else {
+                randomHistoryX := -x ; opposite sign
+            }
+
+            if (0 == getFuzzyHorizontal100(x, y, randomHistoryX, historyY)) {
+                logAppend("Failure report: x " x " y " y " randomHistoryY " randomHistoryY " testStage " testStage
+                . ": result wasn't fuzzed when it should be." )
+            }           
         }
         x += 1
     } Until x > 128
     logAppend("End of " testStage ".")
-    
+
+    ; if outputX is different to historyX, and |x| >= 80, value should be randomly fuzzed according to 
+    ; FUZZ_1_00_PROBABILITY.
+    testStage := "fuzzDisabled"
+    logAppend("Running: " testStage)
+    FUZZ_1_00_PROBABILITY := 0 ; 0% chance of fuzziness
+    x := -128
+    y := 0
+    historyY := 64 ; arbitrary number away from 0
+    Loop {
+        if (x <= -80 or 80 <= x) {
+            ; ensure x =/= historyX to make the program try fuzzing
+            Random, yesNo, 0, 1
+            if yesNo {
+                Random, yesNo, 0, 1
+                randomHistoryX := x + (yesNo? 1 : -1) ; off by 1
+            } else {
+                randomHistoryX := -x ; opposite sign, note that x is =/= 0
+            }
+
+            if (y != getFuzzyHorizontal100(x, y, randomHistoryX, historyY)) {
+                logAppend("Failure report: x " x " y " y " randomHistoryY " randomHistoryY " testStage " testStage
+                . ": result was fuzzed even when fuzz probability is set to 0" )
+            }           
+        }
+        x += 1
+    } Until x > 128
+    logAppend("End of " testStage ".")
+
+    FUZZ_1_00_PROBABILITY := original_FUZZ_1_00_PROBABILITY
     logAppend("Test finished.`n`n")
 }
-
-testGFH100NoFuzzConditions(x, y) {
-    global testStage
-    if (testStage = "noFuzzConditions") {
-        logAppend("Failure report: x " x " y " y 
-        . ": candidates for fuzzing, when they shouldn't be")
-    }
-}
-
-testGFH100AlreadyFuzzed(x, y, histX, histY) {
-    global testStage
-    if (testStage = "alreadyFuzzed") {
-        logAppend("Failure report: x " x " y " y " histX " histX " histY " histY
-        . ": were either fuzzed or not even candidates, and none of this should happen.")
-    }
-}
-
-testGFH100ShouldFuzz(x, y, histX, histY) {
-    global testStage
-    if (testStage = "shouldFuzz") {
-        logAppend("Failure report: x " x " y " y " histX " histX " histY " histY ":`n"
-        . "-> Output was copied from history or input was not even a candidate.")
-    }
-}
-

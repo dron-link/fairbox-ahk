@@ -4,16 +4,16 @@
     as [+/- 80, +/- 1] for as long as you hold the stick in the same place
 */
 getFuzzyHorizontal100(outputX, outputY, historyX, historyY) {    
-    global ANALOG_STICK_MAX, global ANALOG_STEP, global FUZZ_1_00_PROBABILITY
+    global ANALOG_STICK_MAX, global FUZZ_1_00_PROBABILITY
 
     if (outputY == 0 and Abs(outputX) >= ANALOG_STICK_MAX) {
-        if (Abs(historyY) <= ANALOG_STEP and outputX == historyX) {
+        if (Abs(historyY) <= 1 and outputX == historyX) {
             return historyY
         } else {
             Random, ran100, 0, 99 ; spans 100%
             if (ran100 < FUZZ_1_00_PROBABILITY) {
                 Random, yesNo, 0, 1
-                return yesNo ? ANALOG_STEP : -ANALOG_STEP
+                return yesNo ? 1 : -1
             } else {
                 return 0
             }
