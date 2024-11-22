@@ -22,7 +22,7 @@ class uncrouchHistoryObject {
         return
     }
 
-    storeInfoBeforeMultipressEnds(outputUncrouchDid) {
+    storeInfoBeforeMultipressEnds_uncrouch(outputUncrouchDid) {
         global currentTimeMS
 
         if (outputUncrouchDid == this.saved.did) {

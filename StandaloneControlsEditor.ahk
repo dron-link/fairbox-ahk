@@ -70,7 +70,7 @@ LabelOpenMain:
             MsgBox, % "Couldn't open fairbox. Path: " A_ScriptDir "\fairbox.*"
         }
     }
-    ; if fairbox launches, it will close this script now.
+    ; if fairbox runs, it will close this script now.
 return
 
 LabelRefreshControlsWindow:

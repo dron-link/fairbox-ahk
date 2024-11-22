@@ -5,7 +5,7 @@
 ;;; this
 #include, output.ahk
 
-limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
+limitOutputs(rawAX, rawAY) { ; ///////////// Get coordinates but now with nerfs
     global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
     global xComp, global yComp, global currentTimeMS
 
@@ -13,7 +13,7 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
 
     static output := new limitedOutputsObject
     ; objects that store the info of previous relevant areas the control stick was inside of
-    static outOfDeadzone := {up: new upDeadzoneHistoryObject, down: new downDeadzoneHistoryObject}
+    static outOfDeadzone := {up: new directionDeadzoneHistoryObject, down: new directionDeadzoneHistoryObject}
     static dashZone := new dashZoneHistoryObject
     static crouchZone := new crouchZoneHistoryObject
     ; objects that store the previously executed techniques that activate timing lockouts
@@ -22,7 +22,7 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
 
     ; ### update the variables
 
-    output.limited := new outputHistoryEntry(aX, aY, currentTimeMS)
+    output.limited := new outputHistoryEntry(rawAX, rawAY, currentTimeMS)
     /*  true if current input and those that follow can't be considered as part of the previous multipress;
         only runs once, after a multipress ends.
     */
@@ -45,8 +45,8 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
     output.reverseNeutralBNerf()
 
     ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
-    pivot.nerfSearch(output.limited.x, output.limited.y, dashZone, outOfDeadzone)
-    uncrouch.nerfSearch(output.limited.x, output.limited.y, crouchZone.saved.zone)
+    pivot.pivotNerfSearch(dashZone, outOfDeadzone, output.limited.x, output.limited.y)
+    uncrouch.uncrouchNerfSearch(crouchZone.saved.zone, output.limited.x, output.limited.y)
 
     output.chooseLockout(pivot.wasNerfed, pivot.nerfedCoords, uncrouch.wasNerfed, uncrouch.nerfedCoords)
 
@@ -55,13 +55,14 @@ limitOutputs(aX, aY) { ; ///////////// Get coordinates but now with nerfs
 
     ; ### record output to read it in next calls of this function
 
-    uncrouch.storeInfoBeforeMultipressEnds(getUncrouchDid(output.limited.y, crouchZone.saved.zone))
-    pivot.storeInfoBeforeMultipressEnds(getDidPivot(output.limited.x, dashZone))
+    ; why didn't i put this after the conditional? it's something to do with saved analog zones.
+    uncrouch.storeInfoBeforeMultipressEnds_uncrouch(getUncrouchDid(crouchZone.saved.zone, getCrouchZoneOf(output.limited.y)))
+    pivot.storeInfoBeforeMultipressEnds_pivot(getPivotDid(dashZone, getDashZoneOf(output.limited.x)))
 
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         ; store analog zones' info
-        outOfDeadzone.up.storeInfoBeforeMultipressEnds(output.limited.y)
-        outOfDeadzone.down.storeInfoBeforeMultipressEnds(output.limited.y)
+        outOfDeadzone.up.storeInfoBeforeMultipressEnds(getIsOutOfDeadzone_up(output.limited.y))
+        outOfDeadzone.down.storeInfoBeforeMultipressEnds(getIsOutOfDeadzone_down(output.limited.y))
         crouchZone.storeInfoBeforeMultipressEnds(getCrouchZoneOf(output.limited.y))
         dashZone.storeInfoBeforeMultipressEnds(getDashZoneOf(output.limited.x))
 

@@ -24,7 +24,7 @@ class pivotHistoryObject {
         return
     }
 
-    storeInfoBeforeMultipressEnds(outputDidPivot) {
+    storeInfoBeforeMultipressEnds_pivot(outputDidPivot) {
         global currentTimeMS
 
         if (outputDidPivot == this.saved.did) {

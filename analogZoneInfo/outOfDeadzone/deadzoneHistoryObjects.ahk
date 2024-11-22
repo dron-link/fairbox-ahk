@@ -9,32 +9,20 @@ class directionDeadzoneHistoryObject {
         this.saved := this.unsaved, this.queue := {}
     }
 
-    storeInfoBeforeMultipressEnds(aX_or_aY) {
+    storeInfoBeforeMultipressEnds(outputIsOutOfDeadzone) {
         global currentTimeMS
-        /*  depending on the class that extends this class, the following line calls:
-            getIsOutOfDeadzone_up(aY) or
-            getIsOutOfDeadzone_down(aY)
-        */
-        deadzoneStatus := this.getIsOutOfDeadzone_Func.Call(aX_or_aY)
-        if (deadzoneStatus == this.saved.out) {
+
+        if (outputIsOutOfDeadzone == this.saved.out) {
             ; if current zone is the same as the last saved zone then its info is still relevant
             this.unsaved := this.saved
         } else {
-            if !IsObject(this.queue[deadzoneStatus]) {
+            if !IsObject(this.queue[outputIsOutOfDeadzone]) {
                 ; if zone is a new zone and is not in the queue, we add a new entry for it
-                this.queue[deadzoneStatus] := new outOfDeadzoneInfo(deadzoneStatus, currentTimeMS)
+                this.queue[outputIsOutOfDeadzone] := new outOfDeadzoneInfo(outputIsOutOfDeadzone, currentTimeMS)
             }
-            this.unsaved := this.queue[deadzoneStatus]
+            this.unsaved := this.queue[outputIsOutOfDeadzone]
         }
         return
     }
-}
-
-class upDeadzoneHistoryObject extends directionDeadzoneHistoryObject {
-    getIsOutOfDeadzone_Func := Func("getIsOutOfDeadzone_up")
-}
-
-class downDeadzoneHistoryObject extends directionDeadzoneHistoryObject {
-    getIsOutOfDeadzone_Func := Func("getIsOutOfDeadzone_down")
 }
 

@@ -10,7 +10,7 @@ constructMainsTrayMenu() {
 mainIntoControlsWindow() {
     global enabledGameControls
     IniWrite, % True, config.ini, LaunchMode, MainIntoControlsWindow
-    IniWrite, % enabledGameControls, config.ini, LaunchMode, ControlsEnabledRecall
+    IniWrite, % enabledGameControls, config.ini, LaunchMode, EnabledControlsRecall
     Run, StandaloneControlsEditor.ahk, % A_ScriptDir, UseErrorLevel
     If (ErrorLevel = "ERROR") {
         Run, StandaloneControlsEditor.exe, % A_ScriptDir, UseErrorLevel
@@ -18,8 +18,7 @@ mainIntoControlsWindow() {
             MsgBox, % "Couldn't open the Controls Editor. " A_ScriptDir "\StandaloneControlsEditor.*"
         }
     } 
-
-    ; ExitApp
+    ; if the controls editor runs, it will close this script now.
 
     return
 }

@@ -2,16 +2,16 @@
 
 class pivotTrackAndNerfObject extends pivotHistoryObject {
     wasNerfed := false
-    nerfedCoords := false ; this is either a false or a 2 integers array
+    nerfedCoords := false ; at any point in time this will be either a false or a 2 integers array
 
-    nerfSearch(aX, aY, dashZone, outOfDeadzone) {
+    pivotNerfSearch(dashZone, outOfDeadzone, aX, aY) {
         global TIMELIMIT_SIMULTANEOUS, global xComp, global yComp, global currentTimeMS
 
         this.wasNerfed := false ; pivot hasn't been nerfed yet
 
         ; we nerf if the technique was completed in the near past
         if this.lockout.did {
-            this.generateNerfedCoords(aX, aY, outOfDeadzone, this.lockout)
+            this.generatePivotNerfedCoords(outOfDeadzone, aX, aY, this.lockout)
         }
 
         ; we are able to overwrite parameters aX and aY with nerfed values, just for the next steps
@@ -21,18 +21,21 @@ class pivotTrackAndNerfObject extends pivotHistoryObject {
 
         ; this check is unnecessary but, if it failed, new empty pivot would be doomed anyways 
         if (getDashZoneOf(aX) != dashZone.saved.zone) {
-            currentPivotInfo := getCurrentPivotInfo(getDidPivot(aX, dashZone), this.saved, this.queue)
+            ; check if there's a new pivot by the player
+            currentPivotInfo := getCurrentPivotInfo(this.saved, this.queue
+                , getPivotDid(dashZone, getDashZoneOf(aX)))
             ; if there's a current pivot atop the lockout pivot, take care to not nerf the coordinates again
             if (currentPivotInfo.did and !this.wasNerfed) {
-                this.generateNerfedCoords(aX, aY, outOfDeadzone, currentPivotInfo)
+                this.generatePivotNerfedCoords(outOfDeadzone, aX, aY, currentPivotInfo)
             }
         }
         return
     }
 
-    generateNerfedCoords(aX, aY, outOfDeadzone, pivotInstance) {
+    generatePivotNerfedCoords(outOfDeadzone, aX, aY, pivotInstance) {
+        ; special Get that returns false when the coordinates didn't need a nerf
         this.nerfedCoords := getPivotLockoutNerfedCoords([aX, aY], outOfDeadzone, pivotInstance)
-        if this.nerfedCoords {
+        if this.nerfedCoords { ; true if nerfedCoords is an array
             this.wasNerfed := true
         } else {
             this.wasNerfed := false

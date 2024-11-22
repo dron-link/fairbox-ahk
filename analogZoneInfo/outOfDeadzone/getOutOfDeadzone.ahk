@@ -10,27 +10,16 @@ getIsOutOfDeadzone_down(aY) {
     return (aY < ANALOG_DEAD_MIN)
 }
 
-getCurrentOutOfDeadzoneInfo_up(aY, upSaved, upQueue) {
+getCurrentOutOfDeadzoneInfo(saved, queueArray, deadzoneOutNow) {
     global currentTimeMS
+    ; early Returns ahead.
 
-    deadzoneUpStatus := getIsOutOfDeadzone_up(aY)
-    if (deadzoneUpStatus == upSaved.out) {
-        return upSaved
-    } else if IsObject(upQueue[deadzoneUpStatus]) {
-        return upQueue[deadzoneUpStatus]
-    } ; else
-    return new outOfDeadzoneInfo(deadzoneUpStatus, currentTimeMS)
+    if (deadzoneOutNow == saved.out) {
+        return saved
+    }
+    if IsObject(queueArray[deadzoneOutNow]) {
+        return queueArray[deadzoneOutNow]
+    } 
+    ; else
+    return new outOfDeadzoneInfo(deadzoneOutNow, currentTimeMS)
 }
-
-getCurrentOutOfDeadzoneInfo_down(aY, downSaved, downQueue) {
-    global currentTimeMS
-
-    deadzoneDownStatus := getIsOutOfDeadzone_down(aY)
-    if (deadzoneDownStatus == downSaved.out) {
-        return downSaved
-    } else if IsObject(downQueue[deadzoneDownStatus]) {
-        return downQueue[deadzoneDownStatus]
-    } ; else
-    return new outOfDeadzoneInfo(deadzoneDownStatus, currentTimeMS)
-}
-
