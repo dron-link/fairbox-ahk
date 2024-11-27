@@ -4,9 +4,8 @@
 #include, getDashZone.ahk
 
 class dashZoneHistoryEntry {
-    __New(zone, timestamp, stale) {
+    __New(zone, timestamp) {
         this.zone := zone
         this.timestamp := timestamp
-        this.stale := stale
     }
 }

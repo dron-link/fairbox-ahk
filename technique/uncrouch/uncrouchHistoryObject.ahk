@@ -17,7 +17,7 @@ class uncrouchHistoryObject {
     lockoutExpiryCheck() {
         global TIMELIMIT_DOWNUP, global currentTimeMS
         if (this.lockout.did and currentTimeMS - this.lockout.timestamp >= TIMELIMIT_DOWNUP) {
-            this.lockout := new uncrouchInfo(false, currentTimeMS) ; the uncrouch nerf expired
+            this.lockout := new uncrouchInfo(false, 0) ; the uncrouch nerf expired
         }
         return
     }

@@ -8,18 +8,16 @@ getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivotInstance) {
     
     aX := coords[xComp], aY := coords[yComp]
 
-    upYDeadzone := getCurrentOutOfDeadzoneInfo(outOfDeadzone.up.saved, outOfDeadzone.up.queue
-        , getIsOutOfDeadzone_up(aY))
-    downYDeadzone := getCurrentOutOfDeadzoneInfo(outOfDeadzone.down.saved, outOfDeadzone.down.queue
-        , getIsOutOfDeadzone_down(aY))
-
-    if (currentTimeMS - pivotInstance.timestamp >= TIMELIMIT_PIVOTTILT) {
+    if (currentTimeMS - pivotInstance.timestamp >= TIMELIMIT_PIVOTTILT or !pivotInstance.did) {
         return false ; All pivot nerfs expired.
     } 
     ; else, if we are within the nerf time window:
 
+    ; UP
+    upYDeadzone := getCurrentOutOfDeadzoneInfo(outOfDeadzone.up.saved, outOfDeadzone.up.queue
+        , getIsOutOfDeadzone_up(aY))
     /*  if upYDeadzone.out and the player has not shut off tap jump WITH actions done before completing
-        the pivot (such as upY dashes and downY dashes)
+        the pivot (such as upY dashes)
     */
     if (upYDeadzone.out and (currentTimeMS - upYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF
         or upYDeadzone.timestamp >= pivotInstance.timestamp)) {
@@ -32,12 +30,6 @@ getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivotInstance) {
         ; else
         return bringToCircleBorder(coords)
     }
-
-    ; if the player hasn't shut off tap downsmash
-    if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
-        return bringToCircleBorder(coords)
-    }
-
     ; if the player shut off the tap-jump or tap upsmash, by pivoting with upY dashes
     if (upYDeadzone.out and upYDeadzone.timestamp < pivotInstance.timestamp
         and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
@@ -49,11 +41,20 @@ getPivotLockoutNerfedCoords(coords, outOfDeadzone, pivotInstance) {
         return [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, FORCE_FTILT]
     }
 
+    ; DOWN
+    downYDeadzone := getCurrentOutOfDeadzoneInfo(outOfDeadzone.down.saved, outOfDeadzone.down.queue
+        , getIsOutOfDeadzone_down(aY))
+    ; if the player hasn't shut off tap downsmash
+    if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
+        return bringToCircleBorder(coords)
+    }
+
     ; if the player shut off tap downsmash, by pivoting with downY dashes
     if (downYDeadzone.out and downYDeadzone.timestamp < pivotInstance.timestamp
         and currentTimeMS - pivotInstance.timestamp < TIMELIMIT_PIVOTTILT_YDASH) {
         return [pivotInstance.did == P_RIGHTLEFT ? -FORCE_FTILT : FORCE_FTILT, -FORCE_FTILT]
     }
-    ; else
+    ; if the player shut off tap downsmash without pivoting with downY dashes we refrain from nerfing.
+
     return false ; if we reach this, no conditions for applying nerfs were fulfilled
 }

@@ -1,6 +1,5 @@
 #Requires AutoHotkey v1.1
 
-
 getPivotDid(dashZone, currentDashZone) {
     ; early Returns ahead.
     direction := getAttemptedPivotDirection(dashZone.hist, currentDashZone)
@@ -12,7 +11,6 @@ getPivotDid(dashZone, currentDashZone) {
     ; else
     return false ; the order of inputs is incorrect
 }
-
 
 getAttemptedPivotDirection(dashZoneHist, currentDashZone) {
     global ZONE_CENTER, global ZONE_L, global ZONE_R, global P_RIGHTLEFT, global P_LEFTRIGHT
@@ -43,16 +41,18 @@ getAttemptedPivotDirection(dashZoneHist, currentDashZone) {
 }
 
 pivotTimingCheck(dashZoneHist, currentDashTimestamp) {
-    global ZONE_CENTER, global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME
+    global ZONE_CENTER
+    global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME, global TIMESTALE_PIVOT_INPUTSEQUENCE
     ; early Returns ahead.
 
     ; //check for staleness (meaning that some inputs are too old for this to be a successful pivot)
-    if dashZoneHist[2].stale {
+    if (currentDashTimestamp - dashZoneHist[2].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
         return false
     }
 
     ; true if the following sequence is stale:  NOW center  1 oppositeCardinal  2 center  3 cardinal
-    if (dashZoneHist[2].zone == ZONE_CENTER and dashZoneHist[3].stale) {
+    if (dashZoneHist[2].zone == ZONE_CENTER 
+        and currentDashTimestamp - dashZoneHist[3].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
         return false
     } 
 
@@ -63,6 +63,6 @@ pivotTimingCheck(dashZoneHist, currentDashTimestamp) {
     if (latestDashDuration < TIMELIMIT_HALFFRAME or TIMELIMIT_FRAME + TIMELIMIT_HALFFRAME < latestDashDuration) {
         return false ; //less than 50% chance it was a successful pivot
     } 
-
+    ; else
     return TRUE
 }

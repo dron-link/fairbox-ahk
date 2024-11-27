@@ -22,7 +22,6 @@ limitOutputs(rawAX, rawAY) { ; ///////////// Get coordinates but now with nerfs
 
     ; ### update the variables
 
-    output.limited := new outputHistoryEntry(rawAX, rawAY, currentTimeMS)
     /*  true if current input and those that follow can't be considered as part of the previous multipress;
         only runs once, after a multipress ends.
     */
@@ -32,13 +31,17 @@ limitOutputs(rawAX, rawAY) { ; ///////////// Get coordinates but now with nerfs
         outOfDeadzone.up.saveHistory()
         outOfDeadzone.down.saveHistory()
         crouchZone.saveHistory()
-        uncrouch.saveHistory()
         dashZone.saveHistory()
+        uncrouch.saveHistory()
         pivot.saveHistory()
     }
     uncrouch.lockoutExpiryCheck()
-    dashZone.checkHistoryEntryStaleness() ; marks some entries as stale for pivot execution
     pivot.lockoutExpiryCheck()
+
+    ; ### create an object that stores the current output info
+    
+    output.limited := new outputHistoryEntry(rawAX, rawAY, currentTimeMS, output.hist[1].multipress.ended)
+    
 
     ; ### processes the player input and converts it into legal output
 
@@ -66,9 +69,10 @@ limitOutputs(rawAX, rawAY) { ; ///////////// Get coordinates but now with nerfs
         crouchZone.storeInfoBeforeMultipressEnds(getCrouchZoneOf(output.limited.y))
         dashZone.storeInfoBeforeMultipressEnds(getDashZoneOf(output.limited.x))
 
-        ; if true, next input to be stored is potentially the beginning of a simultaneous multiple key press (aka multipress)
-        if output.hist[1].multipress.ended {
-            output.limited.multipress.began := true
+        /*  if true, the input to be stored will be either a lone key press/lift or the beginning of a
+            simultaneous multiple keypress event (aka multipress)
+        */
+        if output.limited.multipress.began {
             output.latestMultipressBeginningTimestamp := output.limited.timestamp ; obviously, currentTimeMS
         }
         ; registers even the shortest-lasting leftstick coordinates passed to vjoy

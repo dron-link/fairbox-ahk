@@ -14,18 +14,16 @@ class pivotTrackAndNerfObject extends pivotHistoryObject {
             this.generatePivotNerfedCoords(outOfDeadzone, aX, aY, this.lockout)
         }
 
-        ; we are able to overwrite parameters aX and aY with nerfed values, just for the next steps
-        if this.wasNerfed {
-            aX := this.nerfedCoords[xComp], aY := this.nerfedCoords[yComp]
-        }
+        /*  !this.wasNerfed we take care to not nerf the coordinates again.
 
-        ; this check is unnecessary but, if it failed, new empty pivot would be doomed anyways 
-        if (getDashZoneOf(aX) != dashZone.saved.zone) {
+            getDashZoneOf(aX) != dashZone.saved.zone is an inoffensive check that can save
+            us cpu instructions. ignore this when analyzing.
+        */
+        if (!this.wasNerfed and getDashZoneOf(aX) != dashZone.saved.zone) {
             ; check if there's a new pivot by the player
             currentPivotInfo := getCurrentPivotInfo(this.saved, this.queue
                 , getPivotDid(dashZone, getDashZoneOf(aX)))
-            ; if there's a current pivot atop the lockout pivot, take care to not nerf the coordinates again
-            if (currentPivotInfo.did and !this.wasNerfed) {
+            if currentPivotInfo.did {
                 this.generatePivotNerfedCoords(outOfDeadzone, aX, aY, currentPivotInfo)
             }
         }

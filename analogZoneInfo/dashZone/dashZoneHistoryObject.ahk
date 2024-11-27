@@ -3,7 +3,7 @@
 class dashZoneHistoryObject {
     historyLength := 6
 
-    unsaved := new dashZoneHistoryEntry(false, -1000, true)
+    unsaved := new dashZoneHistoryEntry(false, -1000)
     queue := {}
     saved[] ; as of now, dashZone.saved can't be set, but we can get it this way:
     {
@@ -16,7 +16,7 @@ class dashZoneHistoryObject {
         this.historyLength := Max(3, this.historyLength) ; at minimum this should be 3
         this.hist := []
         Loop, % this.historyLength {
-            this.hist.Push(new dashZoneHistoryEntry(false, -1000, true))
+            this.hist.Push(new dashZoneHistoryEntry(false, -1000))
         }
     }
 
@@ -29,17 +29,6 @@ class dashZoneHistoryObject {
         return
     }
 
-    checkHistoryEntryStaleness() {
-        global TIMESTALE_PIVOT_INPUTSEQUENCE, global currentTimeMS
-        ; check if a dash entry (and subsequent ones) are stale, and flag them
-        Loop, % this.historyLength {
-            if (currentTimeMS - this.hist[A_Index].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
-                this.hist[A_Index].stale := true
-            }
-        }
-        return
-    }
-
     storeInfoBeforeMultipressEnds(dashZoneOfOutput) {
         global currentTimeMS
         
@@ -48,7 +37,7 @@ class dashZoneHistoryObject {
         } else {
             if !IsObject(this.queue[dashZoneOfOutput]) { ; if it's not in queue
                 ; add a new entry to the queue
-                this.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS, false)
+                this.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS)
             }
             this.unsaved := this.queue[dashZoneOfOutput]
         }

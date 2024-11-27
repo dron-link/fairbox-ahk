@@ -26,5 +26,5 @@ getCurrentDashZoneInfo(dashZoneSaved, dashZoneQueue, currentZone) {
         return dashZoneQueue[currentZone]
     } 
     ; else
-    return new dashZoneHistoryEntry(currentZone, currentTimeMS, false)
+    return new dashZoneHistoryEntry(currentZone, currentTimeMS)
 }

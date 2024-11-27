@@ -116,7 +116,7 @@ DetectHiddenWindows, Off
 
 FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when config.ini doesn't exist
 
-enabledHotkeys := false
+enabledHotkeys := true
 enabledGameControls := true
 showWelcomeTray := true
 loadConfigIniLaunchMode()

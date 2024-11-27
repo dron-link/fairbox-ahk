@@ -14,19 +14,16 @@ class uncrouchTrackAndNerfObject extends uncrouchHistoryObject {
             this.generateUncrouchNerfedCoords(aX, aY, this.lockout.timestamp)
         }
 
-        ; we are able to overwrite aX and aY with nerfed values, just for the next steps
-        if this.wasNerfed {
-            aX := this.nerfedCoords[xComp], aY := this.nerfedCoords[yComp]
-        }
+        /*  !this.wasNerfed: we take care to not nerf the coordinates again.
 
-        /*  this check is unnecessary but, if it failed, a new uncrouch would be logically impossible
-            and this saves us cpu instructions
+            getCrouchZoneOf(aY) != crouchZoneSavedZone is an inoffensive check that can save
+            us cpu instructions. ignore this when analyzing.
         */
-        if (getCrouchZoneOf(aY) != crouchZoneSavedZone) {
+        if (!this.wasNerfed and getCrouchZoneOf(aY) != crouchZoneSavedZone) {
+            ; check if there's a new uncrouch by the player
             currentUncrouchInfo := getCurrentUncrouchInfo(this.saved, this.queue
                 , getUncrouchDid(crouchZoneSavedZone, getCrouchZoneOf(aY)))
-            ; if there's a current uncrouch atop the lockout one, take care to not nerf the coordinates again
-            if (currentUncrouchInfo.did and !this.wasNerfed) {
+            if currentUncrouchInfo.did {
                 this.generateUncrouchNerfedCoords(aX, aY, currentUncrouchInfo.timestamp)
             }
         }

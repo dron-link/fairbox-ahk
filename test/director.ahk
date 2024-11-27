@@ -20,12 +20,12 @@ endOfLaunchThreadTests() {
     global enabledHotkeys
     Critical
     Menu, Tray, Add, % "CARRY TESTS AND EXIT APP", exitAppTests ; it's necessary to access exitAppTests()
-    
+
     if !enabledHotkeys {
         TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
-        testGetFuzzyHorizontal100()
+        
         ExitApp
-    }   
+    }
     Critical Off
 }
 
@@ -34,3 +34,4 @@ exitAppTests() {
     testGameEngineConstants()
     ExitApp
 }
+

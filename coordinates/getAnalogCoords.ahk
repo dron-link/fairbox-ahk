@@ -2,7 +2,7 @@
 
 getAnalogCoords() {
     global buttonB
-    if (anyShield()) {
+    if anyShield() {
         quadrantIMirrorCoords := getAnalogCoordsAirdodge()
     } else if (anyMod() and anyQuadrant() and (anyC() or buttonB)) {
         quadrantIMirrorCoords := getAnalogCoordsFirefox()

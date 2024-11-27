@@ -19,7 +19,7 @@ class pivotHistoryObject {
     lockoutExpiryCheck() {
         global TIMELIMIT_PIVOTTILT, global currentTimeMS
         if (this.lockout.did and currentTimeMS - this.lockout.timestamp >= TIMELIMIT_PIVOTTILT) {
-            this.lockout := new pivotInfo(false, currentTimeMS) ; the pivot nerf expired
+            this.lockout := new pivotInfo(false, 0) ; the pivot nerf expired
         }
         return
     }

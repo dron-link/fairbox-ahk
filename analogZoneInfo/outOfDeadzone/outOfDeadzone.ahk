@@ -1,6 +1,6 @@
 #Requires Autohotkey v1.1
 
-#include, deadzoneHistoryObjects.ahk
+#include, directiondeadzoneHistoryObject.ahk
 #include, getOutOfDeadzone.ahk
 ;;; this
 

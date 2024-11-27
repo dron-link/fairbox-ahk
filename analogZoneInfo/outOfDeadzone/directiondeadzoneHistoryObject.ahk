@@ -6,6 +6,10 @@ class directionDeadzoneHistoryObject {
     saved := new outOfDeadzoneInfo(false, -1000)
 
     saveHistory() { ; we call this once we mark previous multipress as "ended"
+        /*  We can't be saving an object with the same boolOut as the currently saved one 
+            but with a different timestamp, because the storeInfo function called last time has retrieved
+            the same saved object when realizing that the zone of the coordinates is the same as the saved zone 
+        */
         this.saved := this.unsaved, this.queue := {}
     }
 
