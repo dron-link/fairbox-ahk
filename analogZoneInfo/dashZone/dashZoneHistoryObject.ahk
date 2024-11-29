@@ -3,8 +3,8 @@
 class dashZoneHistoryObject {
     historyLength := 6
 
-    unsaved := new dashZoneHistoryEntry(false, -1000)
-    queue := {}
+    unsaved := new dashZoneHistoryEntry(false, -1000, false)
+    queue := {} ; associative array
     saved[] ; as of now, dashZone.saved can't be set, but we can get it this way:
     {
         get {
@@ -16,16 +16,19 @@ class dashZoneHistoryObject {
         this.historyLength := Max(3, this.historyLength) ; at minimum this should be 3
         this.hist := []
         Loop, % this.historyLength {
-            this.hist.Push(new dashZoneHistoryEntry(false, -1000))
+            this.hist.Push(new dashZoneHistoryEntry(false, -1000, false))
         }
     }
 
-    saveHistory() {
+    saveHistory() { ; called every time a multipress has ended
         ; we compare addresses to avoid inserting the same old object consecutively
         if (this.unsaved != this.saved) { 
             this.hist.Pop(), this.hist.InsertAt(1, this.unsaved)
         }
         this.queue := {}
+        if this.saved.pivot {
+            this.pivotLockoutEntry := this.saved
+        }
         return
     }
 
@@ -36,9 +39,11 @@ class dashZoneHistoryObject {
             this.unsaved := this.saved ; we haven't moved onto another zone, so the saved info still applies
         } else {
             if !IsObject(this.queue[dashZoneOfOutput]) { ; if it's not in queue
-                ; add a new entry to the queue
-                this.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS)
+                ; add a new entry to the queue. stores whether this program outputted a pivot or not
+                this.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS
+                    , getPivotDid(this.hist, dashZoneOfOutput, currentTimeMS))
             }
+
             this.unsaved := this.queue[dashZoneOfOutput]
         }
         return

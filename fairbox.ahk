@@ -54,6 +54,7 @@ currentTimeMS := 0
 #include %A_ScriptDir%\technique
 #include, getReverseNeutralBNerf.ahk
 #include, timingBasedTechniqueHistoryEntry.ahk
+
 ; always save for last.
 #include %A_ScriptDir%\test
 #include, director.ahk
@@ -85,6 +86,7 @@ everything is subject to modification and may not be present in the finalized ve
 +++ i'm considering helping to make a faithful b0xx v4.1-like for keyboards in the future.
 
 rough list of remaining tasks
+- TODO better all buttons reset. + reset all buttons on input on/off toggle
 - TODO write tests
 - TODO create a Setup Help for first launch
 - TODO disable all traytip messages option
@@ -147,7 +149,10 @@ loadConfigIniLaunchMode() {
 IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey
 IniRead, secondIPCleaning, config.ini, UserSettings, 2ipCleaning
 
-target := new targetCoordinateTreeWithCBinds ; i can't use the __New() metafunction or else this evaluates as "" uh????
+/*  i can't use the __New() metafunction or else this evaluates as "" uh????
+    ps: now i reflected on my mistake: exiting __New() with a return. shoulda left it without that line
+*/
+target := new targetCoordinateTreeWithCBinds
 target.loadCoordinates()
 
 constructMainsTrayMenu() ; puts the custom menu items in the tray
@@ -169,7 +174,7 @@ if !vJoyInterface.vJoyEnabled() {
 myStick := vJoyInterface.Devices[1]
 
 
-; for 2ip and opposite horizontal mod lock
+; for 2ip and opposing horizontals modifier lockout
 mostRecentVerticalAnalog := ""
 mostRecentHorizontalAnalog := ""
 
@@ -341,7 +346,7 @@ updateAnalogStick() {
     global xComp, global yComp, global currentTimeMS
     currentTimeMS := A_TickCount
     coords := getAnalogCoords()
-    finalOutput := limitOutputs(coords[xComp], coords[yComp])
+    finalOutput := getOutputLimited(coords[xComp], coords[yComp])
     setAnalogStick([finalOutput.x, finalOutput.y])
     return
 }

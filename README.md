@@ -16,7 +16,7 @@ This program shares its design with b0xx-ahk, so reading [b0xx-ahk's guide](http
 
 ## Requirements
 
-1. Install Autohotkey from https://autohotkey.com/.
+1. Install Autohotkey V1.1 from https://autohotkey.com/.
 2. Install AHK-CvJoyInterface, a library for linking Autohotkey and vJoy. Download CvJoyInterface.ahk from https://github.com/evilC/AHK-CvJoyInterface and place it inside Autohotkey's Lib folder (for me this was located at C:\Program Files\AutoHotkey\Lib). Create the Lib folder if it does not already exist.
 
 ## Setup

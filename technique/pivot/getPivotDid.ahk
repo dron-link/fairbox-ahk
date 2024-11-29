@@ -1,18 +1,17 @@
 #Requires AutoHotkey v1.1
 
-getPivotDid(dashZone, currentDashZone) {
+getPivotDid(dashZoneHist, currentDashZoneZone, currentDashTimestamp) {
     ; early Returns ahead.
-    direction := getAttemptedPivotDirection(dashZone.hist, currentDashZone)
+    direction := getAttemptedPivotDirection(dashZoneHist, currentDashZoneZone)
     if direction { 
-        currentDashZoneInfo := getCurrentDashZoneInfo(dashZone.saved, dashZone.queue, currentDashZone)
         ; if the timing is correct, we confirm that there was a pivot in the direction
-        return pivotTimingCheck(dashZone.hist, currentDashZoneInfo.timestamp)? direction : false
+        return pivotTimingCheck(dashZoneHist, currentDashTimestamp)? direction : false
     } 
     ; else
     return false ; the order of inputs is incorrect
 }
 
-getAttemptedPivotDirection(dashZoneHist, currentDashZone) {
+getAttemptedPivotDirection(dashZoneHist, currentZone) {
     global ZONE_CENTER, global ZONE_L, global ZONE_R, global P_RIGHTLEFT, global P_LEFTRIGHT
     ; early Returns ahead.
 
@@ -26,7 +25,7 @@ getAttemptedPivotDirection(dashZoneHist, currentDashZone) {
         L   -   R   N       p leftright   (L N R N)
         (in this comment, N means center)
     */
-    if (currentDashZone == ZONE_CENTER) {
+    if (currentZone == ZONE_CENTER) {
         if (dashZoneHist[1].zone == ZONE_L 
             and (dashZoneHist[2].zone == ZONE_R or dashZoneHist[3].zone == ZONE_R)) {
             return P_RIGHTLEFT

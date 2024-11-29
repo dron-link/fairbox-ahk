@@ -5,7 +5,8 @@
 ;#include, testTrimToCircle.ahk
 
 #include %A_ScriptDir%\test\limitOutputs
-#include, testGetFuzzyHorizontal100.ahk
+;#include, inputsOvertake.ahk
+;#include, testGetFuzzyHorizontal100.ahk
 
 #include %A_ScriptDir%\test\system
 #include, testFairboxConstants.ahk
@@ -13,6 +14,7 @@
 
 #include %A_ScriptDir%\test
 #include, logAppend.ahk
+;#include, testNerfsByHand.ahk
 
 testStage := ""
 
@@ -23,8 +25,10 @@ endOfLaunchThreadTests() {
 
     if !enabledHotkeys {
         TrayTip, % "FAIRBOX", % "TEST MODE", 3, 0
-        
         ExitApp
+    }
+    else {
+        ;
     }
     Critical Off
 }
