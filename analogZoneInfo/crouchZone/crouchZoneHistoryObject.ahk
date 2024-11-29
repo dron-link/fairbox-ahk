@@ -23,7 +23,7 @@ class crouchZoneHistoryObject {
             if !IsObject(this.queue[crouchZoneOfOutput]) { ; if it's not in queue
                 ; add a new entry to the queue. stores whether the script outputted an "uncrouch" or not
                 this.queue[crouchZoneOfOutput] := new crouchZoneHistoryEntry(crouchZoneOfOutput
-                    , currentTimeMS, getUncrouchDid(this.saved.zone, crouchZoneOfOutput))
+                , currentTimeMS, getUncrouchDid(this.saved.zone, crouchZoneOfOutput))
             }
             
             this.unsaved := this.queue[crouchZoneOfOutput]

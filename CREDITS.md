@@ -1,6 +1,6 @@
 dron-link - de-facto-developer for this project
 
-[agirardeau](https://github.com/agirardeau) - this project is a fork of b0xx-ahk and agirardeaudale is its developer
+[agirardeau](https://github.com/agirardeau) - this project is a fork of b0xx-ahk and agirardeau is its developer
 
 [tlandegger](https://github.com/tlandegger) - developer of smashbox-ahk, from where b0xx-ahk was initially forked
 

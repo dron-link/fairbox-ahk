@@ -10,8 +10,6 @@ SetWorkingDir, %A_ScriptDir%
 
 #include <CvJoyInterface>
 
-currentTimeMS := 0
-
 #include %A_ScriptDir%\analogZoneInfo\crouchZone
 #include, crouchZone.ahk
 
@@ -53,7 +51,6 @@ currentTimeMS := 0
 
 #include %A_ScriptDir%\technique
 #include, getReverseNeutralBNerf.ahk
-#include, timingBasedTechniqueHistoryEntry.ahk
 
 ; always save for last.
 #include %A_ScriptDir%\test
@@ -86,7 +83,6 @@ everything is subject to modification and may not be present in the finalized ve
 +++ i'm considering helping to make a faithful b0xx v4.1-like for keyboards in the future.
 
 rough list of remaining tasks
-- TODO better all buttons reset. + reset all buttons on input on/off toggle
 - TODO write tests
 - TODO create a Setup Help for first launch
 - TODO disable all traytip messages option
@@ -109,6 +105,7 @@ setTimer firing rate is apparently 15.6ms, don't expect much precision from it
 Maybe we can improve the script by increasing the polling frequency? solution using WinMM dll
 
 */
+currentTimeMS := 0
 
 ; exit an active controls editor
 DetectHiddenWindows, On
@@ -335,6 +332,8 @@ anyC() {
     return cUp() or cDown() or cLeft() or cRight()
 }
 
+; /// update analog axes
+
 /*  This function is tasked to update the position on the analog stick
     based on the currently seen cardinal directions and modifiers
 */
@@ -400,7 +399,7 @@ setAnalogR(value) {
     Return myStick.SetAxisByIndex(16384 * (1 + value / 255), 3) ; 3 is the analog shoulder press axis
 }
 
-; /////////////////////// hotkeys, and the functions and subroutines that handle hotkeys
+; /// hotkeys, and the subroutines that handle hotkeys
 
 ;-------macros
 
@@ -748,6 +747,9 @@ return
 inputToggleKeyLabel_UP:
 return
 
+#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
+#If
+
 resetAllButtons() {
     global myStick, global hotkeysList
     ; method #1
@@ -763,7 +765,3 @@ resetAllButtons() {
     setAnalogR(0)
     return
 }
-
-#If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
-#If
-

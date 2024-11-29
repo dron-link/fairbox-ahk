@@ -43,7 +43,7 @@ class dashZoneHistoryObject {
             if !IsObject(this.queue[dashZoneOfOutput]) { ; if it's not in queue
                 ; add a new entry to the queue. stores whether this program outputted a pivot or not
                 this.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS
-                    , getPivotDid(this.hist, dashZoneOfOutput, currentTimeMS))
+                , getPivotDid(this.hist, dashZoneOfOutput, currentTimeMS))
             }
 
             this.unsaved := this.queue[dashZoneOfOutput]

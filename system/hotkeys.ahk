@@ -38,12 +38,11 @@ inputToggleKey := false
 
 ; %hotkeysList[index]% should resolve to the corresponding variable
 hotkeysList := ["buttonUp", "buttonDown", "buttonLeft", "buttonRight", "buttonModX", "buttonModY"
-    , "buttonA", "buttonB", "buttonL", "buttonR", "buttonX", "buttonY", "buttonZ"
-    , "buttonCUp", "buttonCDown", "buttonCLeft", "buttonCRight"
-    , "buttonLightShield", "buttonMidShield", "buttonStart"
-    , "buttonDPadUp", "buttonDPadDown", "buttonDPadLeft", "buttonDPadRight"
-    , "legacyDebugKey", "inputToggleKey"]
-;
+, "buttonA", "buttonB", "buttonL", "buttonR", "buttonX", "buttonY", "buttonZ"
+, "buttonCUp", "buttonCDown", "buttonCLeft", "buttonCRight"
+, "buttonLightShield", "buttonMidShield", "buttonStart"
+, "buttonDPadUp", "buttonDPadDown", "buttonDPadLeft", "buttonDPadRight"
+, "legacyDebugKey", "inputToggleKey"]
 
 hotkeysDisplay := []
 Loop, % hotkeysList.Length() {

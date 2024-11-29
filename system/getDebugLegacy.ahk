@@ -71,10 +71,10 @@ getDebug() {
     )
 
     return Format(debugFormatString
-        , analogCoordsDbg[1], analogCoordsDbg[2]
-        , cStickCoordsDbg[1], cStickCoordsDbg[2]
-        , activeButtonList, pressedButtonList, flagList
-        , trace)
+    , analogCoordsDbg[1], analogCoordsDbg[2]
+    , cStickCoordsDbg[1], cStickCoordsDbg[2]
+    , activeButtonList, pressedButtonList, flagList
+    , trace)
 }
 
 appendButtonState(activeArray, pressedArray, isActive, isPressed, name) {

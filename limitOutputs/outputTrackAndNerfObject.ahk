@@ -15,7 +15,7 @@ class outputTrackAndNerfObject extends outputHistoryObject {
 
         ; we nerf if the technique was completed in the near past
         this.limited.pivotNerfedCoords := getPivotNerfedCoords([aX, aY], outOfDeadzone
-            , dashZone.pivotLockoutEntry)
+        , dashZone.pivotLockoutEntry)
 
         if this.limited.pivotNerfedCoords { ; if this is anything other than false (it is coordinates)
             this.limited.pivotWasNerfed := true
@@ -34,11 +34,11 @@ class outputTrackAndNerfObject extends outputHistoryObject {
             else {
                 ; we need to detect if a new pivot was inputted
                 currentDashZoneInfo := new dashZoneHistoryEntry(currentZone, currentTimeMS
-                    , getPivotDid(dashZone.hist, currentZone, currentTimeMS))
+                , getPivotDid(dashZone.hist, currentZone, currentTimeMS))
             }
 
             this.limited.pivotNerfedCoords := getPivotNerfedCoords([aX, aY], outOfDeadzone
-                , currentDashZoneInfo)
+            , currentDashZoneInfo)
             if this.limited.pivotNerfedCoords { ; if this is anything other than false (it is coordinates)
                 this.limited.pivotWasNerfed := true
             }
@@ -52,7 +52,7 @@ class outputTrackAndNerfObject extends outputHistoryObject {
         this.limited.uncrouchWasNerfed := false ; uncrouch hasn't been nerfed yet
         ; we nerf if the technique was completed in the near past
         this.limited.uncrouchNerfedCoords := getUncrouchNerfedCoords([aX, aY]
-            , crouchZone.uncrouchLockoutEntry)
+        , crouchZone.uncrouchLockoutEntry)
 
         if this.limited.uncrouchNerfedCoords { ; if this is anything other than false (it is coordinates)
             this.limited.uncrouchWasNerfed := true
@@ -71,11 +71,11 @@ class outputTrackAndNerfObject extends outputHistoryObject {
             else {
                 ; we need to detect if a new "uncrouch" was inputted
                 currentCrouchZoneInfo := new crouchZoneHistoryEntry(currentZone, currentTimeMS
-                    , getUncrouchDid(crouchZone.saved.zone, currentZone))
+                , getUncrouchDid(crouchZone.saved.zone, currentZone))
             }
 
             this.limited.uncrouchNerfedCoords := getUncrouchNerfedCoords([aX, aY]
-                , currentCrouchZoneInfo)
+            , currentCrouchZoneInfo)
             ; if this is anything other than false (it is coordinates)
             if this.limited.uncrouchNerfedCoords { 
                 this.limited.uncrouchWasNerfed := true
