@@ -199,16 +199,12 @@ opposingHorizontalsModLockout := false
 ; Debug info
 lastCoordTrace := ""
 
+; initial undefined vjoy behavior - this could fix the bug: reset all buttons on startup
+resetAllButtons()
+
 if showWelcomeTray {
     ; Alert User that script has started
     TrayTip, % "fairbox", % "Script Started", 3, 0
-}
-
-; initial undefined vjoy behavior - this could fix the bug: reset all buttons on startup
-Loop, % hotkeysList.Length() {
-    if (hotkeysList[A_Index] != "") {
-        gosub, % hotkeysList[A_Index] "Label_UP"
-    }
 }
 
 endOfLaunchThreadTests()
@@ -745,11 +741,28 @@ return
 
 ; Input On/Off
 inputToggleKeyLabel:
+    resetAllButtons()
     enabledGameControls := !enabledGameControls
 return
 
 inputToggleKeyLabel_UP:
 return
+
+resetAllButtons() {
+    global myStick, global hotkeysList
+    ; method #1
+    Loop, % hotkeysList.Length() {
+        Gosub, % hotkeysList[A_Index] "Label_UP"
+    }
+    ; method #2, why not be extra sure
+    Loop, 12 {
+        myStick.setBtn(0, A_Index)
+    }
+    setAnalogStick([0, 0])
+    setCStick([0, 0])
+    setAnalogR(0)
+    return
+}
 
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
 #If

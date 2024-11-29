@@ -12,6 +12,8 @@ class dashZoneHistoryObject {
         }
     }
 
+    pivotLockoutEntry := new dashZoneHistoryEntry(false, -1000, false)
+    
     __New() { ; generates dashZone.hist
         this.historyLength := Max(3, this.historyLength) ; at minimum this should be 3
         this.hist := []
