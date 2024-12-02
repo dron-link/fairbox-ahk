@@ -1,8 +1,8 @@
 #Requires AutoHotkey v1.1
 
 getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
-    global TIMELIMIT_SIMULTANEOUS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_DOWNUP, global ZONE_CENTER
-    global xComp, global yComp, global currentTimeMS
+    global TIMELIMIT_SIMULTANEOUS
+    global xComp, global yComp, global currentTimeMS, global getOutputLimitedReturnAllObjects
 
     ; ### first call setup
 
@@ -65,5 +65,9 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
         output.hist.Pop(), output.hist.InsertAt(1, output.limited)
     }
 
+    if getOutputLimitedReturnAllObjects {
+        return {output: output, outOfDeadzone: outOfDeadzone, crouchZone: crouchZone, dashZone: dashZone}
+    }
+    ; else
     return output.limited
 }

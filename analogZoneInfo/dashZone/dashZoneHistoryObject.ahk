@@ -4,7 +4,7 @@ class dashZoneHistoryObject {
     historyLength := 6
 
     unsaved := new dashZoneHistoryEntry(false, -1000, false)
-    queue := {} ; associative array
+    candidates := {} ; associative array
     saved[] ; as of now, dashZone.saved can't be set, but we can get it this way:
     {
         get {
@@ -27,7 +27,7 @@ class dashZoneHistoryObject {
         if (this.unsaved != this.saved) { 
             this.hist.Pop(), this.hist.InsertAt(1, this.unsaved)
         }
-        this.queue := {}
+        this.candidates := {}
         if this.saved.pivot {
             this.pivotLockoutEntry := this.saved
         }
@@ -40,13 +40,13 @@ class dashZoneHistoryObject {
         if (dashZoneOfOutput == this.saved.zone) {
             this.unsaved := this.saved ; we haven't moved onto another zone, so the saved info still applies
         } else {
-            if !IsObject(this.queue[dashZoneOfOutput]) { ; if it's not in queue
-                ; add a new entry to the queue. stores whether this program outputted a pivot or not
-                this.queue[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS
+            if !IsObject(this.candidates[dashZoneOfOutput]) { ; if it's not in the candidates array
+                ; add a new entry to candidates. stores whether this program outputted a pivot or not
+                this.candidates[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS
                 , getPivotDid(this.hist, dashZoneOfOutput, currentTimeMS))
             }
 
-            this.unsaved := this.queue[dashZoneOfOutput]
+            this.unsaved := this.candidates[dashZoneOfOutput]
         }
         return
     }

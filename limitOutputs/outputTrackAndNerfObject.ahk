@@ -28,8 +28,8 @@ class outputTrackAndNerfObject extends outputHistoryObject {
             if (currentZone == dashZone.saved.zone) {
                 currentDashZoneInfo := dashZone.saved
             }
-            else if IsObject(dashZone.queue[currentZone]) {
-                currentDashZoneInfo := dashZone.queue[currentZone]
+            else if IsObject(dashZone.candidates[currentZone]) {
+                currentDashZoneInfo := dashZone.candidates[currentZone]
             }
             else {
                 ; we need to detect if a new pivot was inputted
@@ -65,8 +65,8 @@ class outputTrackAndNerfObject extends outputHistoryObject {
             if (currentZone == crouchZone.saved.zone) {
                 currentCrouchZoneInfo := crouchZone.saved
             }
-            else if IsObject(crouchZone.queue[currentZone]) {
-                currentCrouchZoneInfo := crouchZone.queue[currentZone]
+            else if IsObject(crouchZone.candidates[currentZone]) {
+                currentCrouchZoneInfo := crouchZone.candidates[currentZone]
             }
             else {
                 ; we need to detect if a new "uncrouch" was inputted

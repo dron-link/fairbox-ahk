@@ -52,6 +52,8 @@
 !test/coordinates/*
 !test/limitOutputs
 !test/limitOutputs/*
+!test/limitOutputs/closing
+!test/limitOutputs/closing/*
 !test/savedLogs
 !test/savedLogs/*
 !test/system

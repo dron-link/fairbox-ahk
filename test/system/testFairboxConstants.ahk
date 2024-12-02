@@ -5,7 +5,6 @@ testFairboxConstants() {
     if (P_RIGHTLEFT == 1 ; id: right to left empty pivot
         and P_LEFTRIGHT == 2 ; id: left to right pivot
         and U_YES == 1 ; id: uncrouch
-        and ZONE_CENTER == 0 ; id: in the zone of analog stick neutral
         and ZONE_U == 1 ; 0b0000'0001
         and ZONE_D == 1<<1 ; 0b0000'0010
         and ZONE_L == 1<<2 ; 0b0000'0100

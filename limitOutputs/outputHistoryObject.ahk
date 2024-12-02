@@ -1,7 +1,7 @@
 #Requires AutoHotkey v1.1
 
 class outputHistoryObject {
-    historyLength := 8
+    historyLength := 7
     limited := {}
     latestMultipressBeginningTimestamp := -1000
 

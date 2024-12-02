@@ -8,7 +8,7 @@
 P_RIGHTLEFT := 1 ; id: right to left empty pivot
 P_LEFTRIGHT := 2 ; id: left to right pivot
 U_YES := 1 ; id: uncrouch
-ZONE_CENTER := 0 ; id: in the zone of analog stick neutral
+;ZONE_CENTER := 0 ; id: in the zone of analog stick neutral
 ZONE_U := 1 ; 0b0000'0001
 ZONE_D := 1<<1 ; 0b0000'0010
 ZONE_L := 1<<2 ; 0b0000'0100

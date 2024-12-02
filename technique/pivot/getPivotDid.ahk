@@ -12,7 +12,7 @@ getPivotDid(dashZoneHist, currentDashZoneZone, currentDashTimestamp) {
 }
 
 getAttemptedPivotDirection(dashZoneHist, currentZone) {
-    global ZONE_CENTER, global ZONE_L, global ZONE_R, global P_RIGHTLEFT, global P_LEFTRIGHT
+    global ZONE_L, global ZONE_R, global P_RIGHTLEFT, global P_LEFTRIGHT
     ; early Returns ahead.
 
     /*  ignoring timing, has the player inputted the correct sequence?
@@ -25,7 +25,7 @@ getAttemptedPivotDirection(dashZoneHist, currentZone) {
         L   -   R   N       p leftright   (L N R N)
         (in this comment, N means center)
     */
-    if (currentZone == ZONE_CENTER) {
+    if !currentZone {
         if (dashZoneHist[1].zone == ZONE_L 
             and (dashZoneHist[2].zone == ZONE_R or dashZoneHist[3].zone == ZONE_R)) {
             return P_RIGHTLEFT
@@ -40,7 +40,6 @@ getAttemptedPivotDirection(dashZoneHist, currentZone) {
 }
 
 pivotTimingCheck(dashZoneHist, currentDashTimestamp) {
-    global ZONE_CENTER
     global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME, global TIMESTALE_PIVOT_INPUTSEQUENCE
     ; early Returns ahead.
 
@@ -50,7 +49,7 @@ pivotTimingCheck(dashZoneHist, currentDashTimestamp) {
     }
 
     ; true if the following sequence is stale:  NOW center  1 oppositeCardinal  2 center  3 cardinal
-    if (dashZoneHist[2].zone == ZONE_CENTER 
+    if (!dashZoneHist[2].zone 
         and currentDashTimestamp - dashZoneHist[3].timestamp > TIMESTALE_PIVOT_INPUTSEQUENCE) {
         return false
     } 

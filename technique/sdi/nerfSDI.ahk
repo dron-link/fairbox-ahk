@@ -2,13 +2,13 @@
 
 ; // for sdi nerfs, we want to record only movement between sdi zones, ignoring movement within zones
 class sdiZoneHistoryEntry {
-    timestamp := -1000, stale := true, zone := ZONE_CENTER, popcount := 0
+    timestamp := -1000, stale := true, zone := 0, popcount := 0
 }
 sdiZoneHist := []
 Loop, % SDI_HISTORY_LENGTH {
     sdiZoneHist.Push(new sdiZoneHistoryEntry)
 }
-sdiSimultZone := ZONE_CENTER
+sdiSimultZone := 0
 sdiSimultTimestamp := -1000
 
 countPopulation(bitsIn) { ; //not a general purpose popcount, this is specifically for sdi zones
@@ -64,7 +64,7 @@ isBurstSDI1Button(outputIn) {
         ;//We want to nerf it if there is more than one press every TIMELIMIT_BURSTSDI ms,
         ;//but not if the previous release duration is less than 1 frame
         if (sdiZoneHist[4].stale == false and timePressToPress < TIMELIMIT_BURSTSDI and timePressToPress > TIMELIMIT_DEBOUNCE) {
-            if (sdiZoneHist[1].zone == ZONE_CENTER or sdiZoneHist[2].zone == ZONE_CENTER) {
+            if (sdiZoneHist[1].zone == 0 or sdiZoneHist[2].zone == 0) {
                 output |= BITS_SDI_TAP_CARD ;//if one of the pairs of zones is zero, it's tapping a cardinal (or tapping a diagonal modifier)
             } else if (sdiZoneHist[1].popcount + sdiZoneHist[2].popcount == POP_DIAG + POP_CARD
                 and (sdiZoneHist[1].zone & sdiZoneHist[2].zone)) {
@@ -148,7 +148,7 @@ isBurstSDIQuarterCircle(outputIn) {
     ;//check the bit count of diagonal matching
     adjacentDiag := countPopulation(diagZone) == 1 and (cardZone & diagZone)
     shortTime := sdiZoneHist[1].timestamp - sdiZoneHist[4].timestamp < TIMELIMIT_BURSTSDI
-        and not (sdiZoneHist[3].stale or (sdiZoneHist[4].stale and sdiZoneHist[4].zone != ZONE_CENTER))
+        and not (sdiZoneHist[3].stale or (sdiZoneHist[4].stale and sdiZoneHist[4].zone != 0))
     ;//if it hit two different diagonals
     ;//                  hit origin, at least one cardinal, and two diagonals
     ;//                                                                within the time limit

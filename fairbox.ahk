@@ -106,6 +106,7 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 */
 currentTimeMS := 0
+getOutputLimitedReturnAllObjects := false
 
 ; exit an active controls editor
 DetectHiddenWindows, On
@@ -115,7 +116,7 @@ DetectHiddenWindows, Off
 
 FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when config.ini doesn't exist
 
-enabledHotkeys := true
+enabledHotkeys := false
 enabledGameControls := true
 showWelcomeTray := true
 loadConfigIniLaunchMode()
@@ -196,8 +197,11 @@ opposingHorizontalsModLockout := false
 ; Debug info
 lastCoordTrace := ""
 
-; initial undefined vjoy behavior - this could fix the bug: reset all buttons on startup
-resetAllButtons()
+if enabledHotkeys {
+    ; initial undefined vjoy behavior - this could fix the bug: reset all buttons on startup
+    resetAllButtons()
+}
+
 
 if showWelcomeTray {
     ; Alert User that script has started
@@ -208,9 +212,8 @@ endOfLaunchThreadTests()
 
 return ; end of autoexecute
 
-/*  ////////////////////////////////
-    check what directions, modifiers and buttons we should listen to,
-    based on things like opposite cardinal direction modes, D-Pad mode etc
+/*  check what directions, modifiers and buttons we should listen to,
+    based on things like opposite cardinal buttons presses, D-Pad mode etc
 */
 up() {
     global
@@ -294,6 +297,7 @@ modY() {
     return buttonModY and !buttonModX
 }
 
+; The following are some helpers
 anyVert() {
     return up() or down()
 }

@@ -1,7 +1,51 @@
 #Requires AutoHotkey v1.1
 
-calibrationTest() {
-    ; helps checking that the coordinates show up correctly in the game
+/*  findings:
+        FASTER MELEE / SLIPPI
+        ahk controller config
+            ; To get an x coordinate ingame, the vjoy axis must be in the interval [axisMin, axisMax]
+            if x <= -80
+                axis <= 128*(-80) + 63
+            if x in [-80 ... -1]
+                axisMax = 128x + 63
+            if x in [-79 ... 0]
+                axisMin = 128x - 64
+            if x in [0 ... 62]
+                axisMax = 129x + 65
+            if x in [1 ... 63]
+                axisMin = 129x - 63
+            if x in [63 ... 79]
+                axisMax = 129x + 64
+            if x in [64 ... 80]
+                axisMin = 129x - 64
+            if x >= 80
+                axis >= 129*(80) - 64
+            ; To get a y coordinate ingame, the vjoy axis must be in the interval [axisMin, axisMax]
+            if y <= -80
+                axis >= -129(-80) - 193
+            if y in [-80 ... -65]
+                axisMin = -129y - 193
+            if y in [-79 ... -64]
+                axisMax = -129y - 65
+            if y in [-64 ... -2]
+                axisMin = -129y - 192
+            if y in [-63 ... -1]
+                axisMax = -129y - 64
+            if y = -1
+                axisMin = 1
+            if y = 0
+                axisMax = 0
+            if y in [0 ... 79]
+                axisMin = -128y - 192
+            if y in [1 ... 80]
+                axisMax = -128y - 65
+            if y >= 80
+                axis <= -128*(80) - 65
+        the convertIntegerToVJoy() return has to be kept fitted in these boundaries for
+        fairbox-ahk to be precise in slippi
+*/
+
+calibrationTest() { ; helps checking that the coordinates show up correctly in the game
     global
 
     stickResetCoords := convertIntegerToVJoy([0, 0])
@@ -51,53 +95,6 @@ calibrationTest() {
     myStick.SetAxisByIndex(stickResetCoords[1], 1)
     myStick.SetAxisByIndex(stickResetCoords[2], 2)
     OutputDebug, % "stick reset`n"
-    ExitApp
-
-    /*  findings:
-        FASTER MELEE / SLIPPI
-        b0xx-ahk controller config
-            ; To get an x coordinate ingame, the vjoy axis must be in the interval [axisMin, axisMax]
-            if x <= -80
-                axis <= 128*(-80) + 63
-            if x in [-80 ... -1]
-                axisMax = 128x + 63
-            if x in [-79 ... 0]
-                axisMin = 128x - 64
-            if x in [0 ... 62]
-                axisMax = 129x + 65
-            if x in [1 ... 63]
-                axisMin = 129x - 63
-            if x in [63 ... 79]
-                axisMax = 129x + 64
-            if x in [64 ... 80]
-                axisMin = 129x - 64
-            if x >= 80
-                axis >= 129*(80) - 64
-            ; To get a y coordinate ingame, the vjoy axis must be in the interval [axisMin, axisMax]
-            if y <= -80
-                axis >= -129(-80) - 193
-            if y in [-80 ... -65]
-                axisMin = -129y - 193
-            if y in [-79 ... -64]
-                axisMax = -129y - 65
-            if y in [-64 ... -2]
-                axisMin = -129y - 192
-            if y in [-63 ... -1]
-                axisMax = -129y - 64
-            if y = -1
-                axisMin = 1
-            if y = 0
-                axisMax = 0
-            if y in [0 ... 79]
-                axisMin = -128y - 192
-            if y in [1 ... 80]
-                axisMax = -128y - 65
-            if y >= 80
-                axis <= -128*(80) - 65
-        the convertIntegerToVJoy() return have to be kept fitted in these boundaries for
-        fairbox-ahk to be precise in slippi
-    */
-
     return
 }
 
@@ -130,7 +127,7 @@ rangeStepper(axisIndex, startStep, endStep, sleepTime) {
 
 rangeCrawler(axisIndex, startAxis, endAxis, sleepTime) {
     /*  advances from a axis position (relative to center) to another axis position,
-        stopping in every possible value
+        briefly stopping by every possible value
     */
     global
     OutputDebug, % "rangeCrawler`n"

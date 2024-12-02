@@ -5,5 +5,5 @@ runDate := A_Now
 
 logAppend(textOut) {
     global runDate
-    FileAppend, % textOut "`n", % "fairboxLog\fairbox_log_" runDate ".log"
+    FileAppend, % textOut "`n", % "fairbox_log\fairbox_log_" runDate ".log"
 }

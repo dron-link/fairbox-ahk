@@ -2,8 +2,8 @@
 
 detectNonIntegers(aX, aY) {
     if aX is not Integer
-        OutputDebug, detectNonIntegers() problem . coordinate x type is not integer`n
+        OutputDebug, % "detectNonIntegers() problem . coordinate x type is not integer`n"
     if aY is not Integer
-        OutputDebug, detectNonIntegers() problem . coordinate y type is not integer`n
+        OutputDebug, % "detectNonIntegers() problem . coordinate y type is not integer`n"
     return
 }
