@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1.37.02
+#Requires AutoHotkey v1.1
 #SingleInstance force
 #NoEnv
 SetBatchLines, -1
@@ -90,12 +90,15 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 */
 currentTimeMS := 0
-getOutputLimitedReturnAllObjects := false
 
-; exit an active controls editor
+; close the controls editor
 DetectHiddenWindows, On
+        ;    0x111 = WN_COMMAND code
+        ;           65307 = exit code
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.ahk
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.exe
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditorDebug.ahk
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditorDebug.exe
 DetectHiddenWindows, Off
 
 FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when config.ini doesn't exist

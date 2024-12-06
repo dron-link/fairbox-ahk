@@ -1,7 +1,9 @@
-#Requires AutoHotkey v1.1.37.02
+#Requires AutoHotkey v1.1
 #SingleInstance force
 #NoEnv
 #MenuMaskKey vke8
+
+SetWorkingDir, %A_ScriptDir%
 
 #include %A_LineFile%\..\controls\controlsEditorWindow\controlsEditorWindow.ahk
 
@@ -17,8 +19,12 @@
 
 ; close fairbox
 DetectHiddenWindows, On
-PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk ; 0x111 = WN_COMMAND code, 65307 = exit code
+        ;    0x111 = WN_COMMAND code
+        ;           65307 = exit code
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.ahk
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairbox.exe
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairboxDebug.ahk
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairboxDebug.exe
 DetectHiddenWindows, Off
 
 FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when config.ini doesn't exist

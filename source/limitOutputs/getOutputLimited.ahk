@@ -2,7 +2,7 @@
 
 getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
     global TIMELIMIT_SIMULTANEOUS
-    global xComp, global yComp, global currentTimeMS, global getOutputLimitedReturnAllObjects
+    global xComp, global yComp, global currentTimeMS
 
     ; ### first call setup
 
