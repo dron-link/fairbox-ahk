@@ -22,11 +22,12 @@ class dashZoneHistoryObject {
         }
     }
 
-    saveHistory() { ; called every time a multipress has ended
-        ; we compare addresses to avoid inserting the same old object consecutively
+    saveHistory() { ; called every time a simultaneous multiple keypress event has ended
+        ; we compare addresses here to avoid inserting the same old object consecutively
         if (this.unsaved != this.saved) { 
             this.hist.Pop(), this.hist.InsertAt(1, this.unsaved)
         }
+
         this.candidates := {}
         if this.saved.pivot {
             this.pivotLockoutEntry := this.saved
@@ -34,7 +35,7 @@ class dashZoneHistoryObject {
         return
     }
 
-    storeInfoBeforeMultipressEnds(dashZoneOfOutput) {
+    recordDashOutput(dashZoneOfOutput) {
         global currentTimeMS
         
         if (dashZoneOfOutput == this.saved.zone) {

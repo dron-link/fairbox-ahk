@@ -14,7 +14,7 @@ class crouchZoneHistoryObject {
         return
     }
 
-    storeInfoBeforeMultipressEnds(crouchZoneOfOutput) {
+    recordCrouchOutput(crouchZoneOfOutput) {
         global currentTimeMS
         
         if (crouchZoneOfOutput == this.saved.zone) {

@@ -52,10 +52,6 @@ SetWorkingDir, %A_ScriptDir%
 #include %A_ScriptDir%\technique
 #include, getReverseNeutralBNerf.ahk
 
-; always save for last.
-#include %A_ScriptDir%\test
-#include, director.ahk
-
 /*
 
 DISCLAIMER
@@ -116,7 +112,7 @@ DetectHiddenWindows, Off
 
 FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when config.ini doesn't exist
 
-enabledHotkeys := false
+enabledHotkeys := true
 enabledGameControls := true
 showWelcomeTray := true
 loadConfigIniLaunchMode()
@@ -208,7 +204,9 @@ if showWelcomeTray {
     TrayTip, % "fairbox", % "Script Started", 3, 0
 }
 
-endOfLaunchThreadTests()
+if !enabledHotkeys {
+    TrayTip, % "fairbox", % "ATTENTION. enabledHotkeys: " . (enabledHotkeys? "true" : "false"), 3, 0
+}
 
 return ; end of autoexecute
 

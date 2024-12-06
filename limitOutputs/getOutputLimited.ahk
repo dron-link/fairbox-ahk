@@ -14,7 +14,8 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
 
     ; ### update the variables
 
-    /*  true if current input and those that follow can't be considered as part of the previous multipress;
+    /*  true if current input and those that follow can't be considered as part of the previous 
+        simultaneous multiple key presses event;
         only runs once, after a multipress ends.
     */
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS
@@ -44,16 +45,12 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
 
     ; ### record output to read it in next calls of this function
 
-    ; why didn't i put this after the conditional? it's something to do with saved analog zones.
-    ;uncrouch.storeInfoBeforeMultipressEnds_uncrouch(getUncrouchDid(crouchZone.saved.zone, getCrouchZoneOf(output.limited.y)))
-    ;pivot.storeInfoBeforeMultipressEnds_pivot(getPivotDid(dashZone, getDashZoneOf(output.limited.x)))
-
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         ; store analog zones' info
-        outOfDeadzone.up.storeInfoBeforeMultipressEnds(getIsOutOfDeadzone_up(output.limited.y))
-        outOfDeadzone.down.storeInfoBeforeMultipressEnds(getIsOutOfDeadzone_down(output.limited.y))
-        crouchZone.storeInfoBeforeMultipressEnds(getCrouchZoneOf(output.limited.y))
-        dashZone.storeInfoBeforeMultipressEnds(getDashZoneOf(output.limited.x))
+        outOfDeadzone.up.recordDeadzoneOutput(getIsOutOfDeadzone_up(output.limited.y))
+        outOfDeadzone.down.recordDeadzoneOutput(getIsOutOfDeadzone_down(output.limited.y))
+        crouchZone.recordCrouchOutput(getCrouchZoneOf(output.limited.y))
+        dashZone.recordDashOutput(getDashZoneOf(output.limited.x))
 
         /*  if true, the input to be stored will be either a lone key press/lift or the beginning of a
             simultaneous multiple keypress event (aka multipress)
@@ -65,9 +62,5 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
         output.hist.Pop(), output.hist.InsertAt(1, output.limited)
     }
 
-    if getOutputLimitedReturnAllObjects {
-        return {output: output, outOfDeadzone: outOfDeadzone, crouchZone: crouchZone, dashZone: dashZone}
-    }
-    ; else
     return output.limited
 }

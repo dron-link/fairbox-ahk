@@ -9,7 +9,7 @@ class directionDeadzoneHistoryObject {
         this.saved := this.unsaved, this.candidates := {}
     }
 
-    storeInfoBeforeMultipressEnds(outputIsOutOfDeadzone) {
+    recordDeadzoneOutput(outputIsOutOfDeadzone) {
         global currentTimeMS
 
         if (outputIsOutOfDeadzone == this.saved.out) {
