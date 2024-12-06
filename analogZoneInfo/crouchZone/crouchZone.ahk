@@ -1,5 +1,5 @@
 #Requires AutoHotkey v1.1
 
-#include, crouchZoneHistoryEntry.ahk
-#include, crouchZoneHistoryObject.ahk
-#include, getCrouchZoneOf.ahk
+#include %A_LineFile%\..\crouchZoneHistoryEntry.ahk
+#include %A_LineFile%\..\crouchZoneHistoryObject.ahk
+#include %A_LineFile%\..\getCrouchZoneOf.ahk

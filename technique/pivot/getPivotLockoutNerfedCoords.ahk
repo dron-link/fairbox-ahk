@@ -15,7 +15,7 @@ getPivotNerfedCoords(coords, outOfDeadzone, pivotCompletionInfo) {
 
     ; ### UP
     upYDeadzone := getCurrentOutOfDeadzoneInfo(outOfDeadzone.up.saved, outOfDeadzone.up.candidates
-    , getIsOutOfDeadzone_up(aY))
+    , getIsOutOfDeadzoneUp(aY))
     /*  if we are in the up region
         and the player has not shut off tap jump
         or the player has shut off tap jump but not with actions done before
@@ -46,7 +46,7 @@ getPivotNerfedCoords(coords, outOfDeadzone, pivotCompletionInfo) {
 
     ; ### DOWN
     downYDeadzone := getCurrentOutOfDeadzoneInfo(outOfDeadzone.down.saved, outOfDeadzone.down.candidates
-    , getIsOutOfDeadzone_down(aY))
+    , getIsOutOfDeadzoneDown(aY))
     ; if the player hasn't shut off tap downsmash
     if (downYDeadzone.out and currentTimeMS - downYDeadzone.timestamp < TIMELIMIT_TAPSHUTOFF) {
         return bringToCircleBorder(coords)

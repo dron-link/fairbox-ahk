@@ -4,38 +4,29 @@
 #NoEnv
 SetBatchLines, -1
 ListLines Off
-
 #MenuMaskKey vke8
-SetWorkingDir, %A_ScriptDir%
-
 #include <CvJoyInterface>
 
-#include %A_ScriptDir%\analogZoneInfo\crouchZone
-#include, crouchZone.ahk
+SetWorkingDir, %A_ScriptDir%
 
-#include %A_ScriptDir%\analogZoneInfo\dashZone
-#include, dashZone.ahk
+#include %A_LineFile%\..\analogZoneInfo\crouchZone\crouchZone.ahk
 
-#include %A_ScriptDir%\analogZoneInfo\outOfDeadzone
-#include, outOfDeadzone.ahk
+#include %A_LineFile%\..\analogZoneInfo\dashZone\dashZone.ahk
 
-#include %A_ScriptDir%\controls
+#include %A_LineFile%\..\analogZoneInfo\outOfDeadzone\outOfDeadzone.ahk
+
+#include %A_LineFile%\..\controls
 #include, initializeHotkeys.ahk
 #include, loadHotkeysIni.ahk
 
-#include %A_ScriptDir%\coordinates\target
-#include, target.ahk
+#include %A_LineFile%\..\coordinates\coordinates.ahk
 
-#include %A_ScriptDir%\coordinates
-#include, coordinates.ahk
+#include %A_LineFile%\..\limitOutputs\limitOutputs.ahk
 
-#include %A_ScriptDir%\limitOutputs
-#include, limitOutputs.ahk
-
-#include %A_ScriptDir%\menu
+#include %A_LineFile%\..\menu
 #include, mainsTrayMenu.ahk
 
-#include %A_ScriptDir%\system
+#include %A_LineFile%\..\system
 #include, fairboxConstants.ahk ; globals
 #include, gameEngineConstants.ahk ; globals
 #include, getDebugLegacy.ahk
@@ -43,13 +34,11 @@ SetWorkingDir, %A_ScriptDir%
 #include, hotkeys.ahk ; globals
 #include, keysModCAngleRole.ahk ; globals
 
-#include %A_ScriptDir%\technique\pivot
-#include, pivot.ahk
+#include %A_LineFile%\..\technique\pivot\pivot.ahk
 
-#include %A_ScriptDir%\technique\uncrouch
-#include, uncrouch.ahk
+#include %A_LineFile%\..\technique\uncrouch\uncrouch.ahk
 
-#include %A_ScriptDir%\technique
+#include %A_LineFile%\..\technique
 #include, getReverseNeutralBNerf.ahk
 
 /*

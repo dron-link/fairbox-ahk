@@ -1,5 +1,5 @@
 #Requires AutoHotkey v1.1
 
-#include, dashZoneHistoryEntry.ahk
-#include, dashZoneHistoryObject.ahk
-#include, getDashZoneOf.ahk
+#include %A_LineFile%\..\dashZoneHistoryEntry.ahk
+#include %A_LineFile%\..\dashZoneHistoryObject.ahk
+#include %A_LineFile%\..\getDashZoneOf.ahk

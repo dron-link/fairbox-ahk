@@ -4,22 +4,15 @@
 #NoEnv
 #MenuMaskKey vke8
 
-#include %A_ScriptDir%\controls\controlsEditorWindow
-#include, addControlsWindowInstructions.ahk
-#include, constructControlsWindow.ahk
-#include, goToFunctionsUponGuiInteraction.ahk
-#include, hotkeyControlHasFocus.ahk
-#include, hotkeyHelpers.ahk
-#include, showControlsWindow.ahk
-#include, validateModifiedControl.ahk
+#include %A_LineFile%\..\controls\controlsEditorWindow\controlsEditorWindow.ahk
 
-#include %A_ScriptDir%\controls
+#include %A_LineFile%\..\controls
 #include, loadHotkeysIni.ahk
 
-#include %A_ScriptDir%\menu
+#include %A_LineFile%\..\menu
 #include, controlsEditorTrayMenu.ahk
 
-#include %A_ScriptDir%\system
+#include %A_LineFile%\..\system
 #include, guiFont.ahk
 #include, hotkeys.ahk ; globals
 
@@ -171,7 +164,7 @@ return
     return
 #If ; end of conditional hotkeys
 
-/*  stuffs: there is a graphical glitch
+/*  stuffs: there is a graphical glitch aand you can replicate it by:
     click on a control
     hold alt
     press backspace
@@ -179,5 +172,5 @@ return
 
     The display shows ALT+
 
-    is there a way to fix this
+    is there a way to fix this?
 */

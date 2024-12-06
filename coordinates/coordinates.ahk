@@ -1,11 +1,11 @@
 #Requires AutoHotkey v1.1
 
-; DIRECTORY:
-#include, bringToCircleBorder.ahk
-#include, bringToOctagonGate.ahk
-;;; this file
-#include, getAnalogCoords.ahk
-#include, getCStickCoords.ahk
-#include, trimToCircle.ahk
-#include, trimToOctagonGate.ahk
+#include, %A_LineFile%\..\target\target.ahk
 
+#include %A_LineFile%\..\bringToCircleBorder.ahk
+#include %A_LineFile%\..\bringToOctagonGate.ahk
+; ... this file is here
+#include %A_LineFile%\..\getAnalogCoords.ahk
+#include %A_LineFile%\..\getCStickCoords.ahk
+#include %A_LineFile%\..\trimToCircle.ahk
+#include %A_LineFile%\..\trimToOctagonGate.ahk

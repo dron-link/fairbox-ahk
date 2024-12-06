@@ -1,7 +1,8 @@
 #Requires Autohotkey v1.1
 
-#include, directiondeadzoneHistoryObject.ahk
-#include, getCurrentOutOfDeadzoneInfo.ahk
-#include, getIsOutOfDeadzone.ahk
-;;; this
-#include, outOfDeadzoneInfo.ahk
+#include %A_LineFile%\..\directiondeadzoneHistoryObject.ahk
+#include %A_LineFile%\..\getCurrentOutOfDeadzoneInfo.ahk
+#include %A_LineFile%\..\getIsOutOfDeadzoneDown.ahk
+#include %A_LineFile%\..\getIsOutOfDeadzoneUp.ahk
+; ... this file is here
+#include %A_LineFile%\..\outOfDeadzoneInfo.ahk

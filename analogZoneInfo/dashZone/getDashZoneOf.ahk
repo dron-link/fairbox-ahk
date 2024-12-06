@@ -10,5 +10,5 @@ getDashZoneOf(aX) {
         return ZONE_R
     } 
     ; else
-    return 0
+    return false
 }

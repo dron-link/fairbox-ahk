@@ -11,7 +11,7 @@ getUncrouchNerfedCoords(coords, uncrouchCompletionInfo) {
     }
 
     aX := coords[xComp], aY := coords[yComp]
-    if (getIsOutOfDeadzone_up(aY) and Abs(aX) <= ANALOG_DEAD_MAX) {
+    if (getIsOutOfDeadzoneUp(aY) and Abs(aX) <= ANALOG_DEAD_MAX) {
         return [0, ANALOG_STICK_MAX]
     }
     ; else

@@ -47,8 +47,8 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
 
     if (output.limited.x != output.hist[1].x or output.limited.y != output.hist[1].y) {
         ; store analog zones' info
-        outOfDeadzone.up.recordDeadzoneOutput(getIsOutOfDeadzone_up(output.limited.y))
-        outOfDeadzone.down.recordDeadzoneOutput(getIsOutOfDeadzone_down(output.limited.y))
+        outOfDeadzone.up.recordDeadzoneOutput(getIsOutOfDeadzoneUp(output.limited.y))
+        outOfDeadzone.down.recordDeadzoneOutput(getIsOutOfDeadzoneDown(output.limited.y))
         crouchZone.recordCrouchOutput(getCrouchZoneOf(output.limited.y))
         dashZone.recordDashOutput(getDashZoneOf(output.limited.x))
 

@@ -1,8 +1,8 @@
 #Requires AutoHotkey v1.1
 
-#include, getFuzzyHorizontal100.ahk
-#include, getOutputLimited.ahk
-;;; this
-#include, outputHistoryEntry.ahk
-#include, outputHistoryObject.ahk
-#include, outputTrackAndNerfObject.ahk
+#include %A_LineFile%\..\getFuzzyHorizontal100.ahk
+#include %A_LineFile%\..\getOutputLimited.ahk
+; ... this file is here
+#include %A_LineFile%\..\outputHistoryEntry.ahk
+#include %A_LineFile%\..\outputHistoryObject.ahk
+#include %A_LineFile%\..\outputTrackAndNerfObject.ahk
