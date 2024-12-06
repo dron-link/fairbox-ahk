@@ -8,7 +8,7 @@ ListLines Off
 
 SetWorkingDir, %A_ScriptDir%
 
-#include %A_LineFile%\..\analogZoneInfo\crouchZone\crouchZone.ahk
+#include %A_LineFile%\..\analogZoneInfo\crouchRange\crouchRange.ahk
 
 #include %A_LineFile%\..\analogZoneInfo\dashZone\dashZone.ahk
 

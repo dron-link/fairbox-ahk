@@ -46,13 +46,13 @@ class outputTrackAndNerfObject extends outputHistoryObject {
         return
     }
 
-    crouchTechniqueNerfSearch(crouchZone, aX, aY) {
+    crouchTechniqueNerfSearch(crouchRange, aX, aY) {
         global currentTimeMS
 
         this.limited.uncrouchWasNerfed := false ; uncrouch hasn't been nerfed yet
         ; we nerf if the technique was completed in the near past
         this.limited.uncrouchNerfedCoords := getUncrouchNerfedCoords([aX, aY]
-        , crouchZone.uncrouchLockoutEntry)
+        , crouchRange.uncrouchLockoutEntry)
 
         if this.limited.uncrouchNerfedCoords { ; if this is anything other than false (it is coordinates)
             this.limited.uncrouchWasNerfed := true
@@ -61,21 +61,21 @@ class outputTrackAndNerfObject extends outputHistoryObject {
         ; we take care not to get the same coordinates twice
         if !this.limited.uncrouchWasNerfed {
             ; we get the current crouch zone info
-            currentZone := getCrouchZoneOf(aY)
-            if (currentZone == crouchZone.saved.zone) {
-                currentCrouchZoneInfo := crouchZone.saved
+            currentRangeIn := getIsInCrouchRange(aY)
+            if (currentRangeIn == crouchRange.saved.in) {
+                currentCrouchRangeInfo := crouchRange.saved
             }
-            else if IsObject(crouchZone.candidates[currentZone]) {
-                currentCrouchZoneInfo := crouchZone.candidates[currentZone]
+            else if IsObject(crouchRange.candidate) {
+                currentCrouchRangeInfo := crouchRange.candidate
             }
             else {
                 ; we need to detect if a new "uncrouch" was inputted
-                currentCrouchZoneInfo := new crouchZoneHistoryEntry(currentZone, currentTimeMS
-                , getUncrouchDid(crouchZone.saved.zone, currentZone))
+                currentCrouchRangeInfo := new crouchRangeHistoryEntry(currentRangeIn, currentTimeMS
+                , getUncrouchDid(crouchRange.saved.in, currentRangeIn))
             }
 
             this.limited.uncrouchNerfedCoords := getUncrouchNerfedCoords([aX, aY]
-            , currentCrouchZoneInfo)
+            , currentCrouchRangeInfo)
             ; if this is anything other than false (it is coordinates)
             if this.limited.uncrouchNerfedCoords { 
                 this.limited.uncrouchWasNerfed := true

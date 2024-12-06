@@ -2,11 +2,11 @@
 
 class directionDeadzoneHistoryObject {
     unsaved := new outOfDeadzoneInfo(false, -1000)
-    candidates := {}
+    candidate := ""
     saved := new outOfDeadzoneInfo(false, -1000)
 
     saveHistory() { ; we call this once we mark previous multipress as "ended"
-        this.saved := this.unsaved, this.candidates := {}
+        this.saved := this.unsaved, this.candidate := ""
     }
 
     recordDeadzoneOutput(outputIsOutOfDeadzone) {
@@ -16,11 +16,11 @@ class directionDeadzoneHistoryObject {
             ; if current zone is the same as the last saved zone then its info is still relevant
             this.unsaved := this.saved
         } else {
-            if !IsObject(this.candidates[outputIsOutOfDeadzone]) {
+            if !IsObject(this.candidate) {
                 ; if zone is a new zone and is not a candidate, we add a new entry for it
-                this.candidates[outputIsOutOfDeadzone] := new outOfDeadzoneInfo(outputIsOutOfDeadzone, currentTimeMS)
+                this.candidate := new outOfDeadzoneInfo(outputIsOutOfDeadzone, currentTimeMS)
             }
-            this.unsaved := this.candidates[outputIsOutOfDeadzone]
+            this.unsaved := this.candidate
         }
         return
     }

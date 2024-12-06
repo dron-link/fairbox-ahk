@@ -10,7 +10,7 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
     ; objects that store the info of previous relevant areas the control stick was inside of
     static outOfDeadzone := {up: new directionDeadzoneHistoryObject, down: new directionDeadzoneHistoryObject}
     static dashZone := new dashZoneHistoryObject
-    static crouchZone := new crouchZoneHistoryObject
+    static crouchRange := new crouchRangeHistoryObject
 
     ; ### update the variables
 
@@ -23,7 +23,7 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
         output.hist[1].multipress.ended := true
         outOfDeadzone.up.saveHistory()
         outOfDeadzone.down.saveHistory()
-        crouchZone.saveHistory()
+        crouchRange.saveHistory()
         dashZone.saveHistory()   
     }
 
@@ -36,7 +36,7 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
 
     ; if technique needs to be nerfed, this writes the nerfed coordinates in nerfedCoords
     output.dashTechniqueNerfSearch(dashZone, outOfDeadzone, output.limited.x, output.limited.y)
-    output.crouchTechniqueNerfSearch(crouchZone, output.limited.x, output.limited.y)
+    output.crouchTechniqueNerfSearch(crouchRange, output.limited.x, output.limited.y)
 
     output.chooseLockout()
 
@@ -49,7 +49,7 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
         ; store analog zones' info
         outOfDeadzone.up.recordDeadzoneOutput(getIsOutOfDeadzoneUp(output.limited.y))
         outOfDeadzone.down.recordDeadzoneOutput(getIsOutOfDeadzoneDown(output.limited.y))
-        crouchZone.recordCrouchOutput(getCrouchZoneOf(output.limited.y))
+        crouchRange.recordCrouchOutput(getIsInCrouchRange(output.limited.y))
         dashZone.recordDashOutput(getDashZoneOf(output.limited.x))
 
         /*  if true, the input to be stored will be either a lone key press/lift or the beginning of a

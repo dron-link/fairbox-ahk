@@ -1,8 +1,8 @@
 #Requires AutoHotkey v1.1
 
-class crouchZoneHistoryEntry {
-    __New(zone, timestamp, uncrouch) {
-        this.zone := zone
+class crouchRangeHistoryEntry {
+    __New(INside, timestamp, uncrouch) {
+        this.in := INside
         this.timestamp := timestamp
         this.uncrouch := uncrouch
     }
