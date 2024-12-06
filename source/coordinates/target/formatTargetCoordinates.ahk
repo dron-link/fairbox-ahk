@@ -58,7 +58,7 @@ formatTargetCoordinates(ByRef target) {
     if (suggestedUnitCircleMode != "") {
         warningMsg := "Warning. It was detected that target.format.unitCircle likely needs to be edited to "
             . suggestedUnitCircleMode
-            . " inside the source file " A_ScriptDir "\coordinates\target\loadCoordinateValues.ahk !"
+            . " inside the source file " A_ScriptDir "\source\coordinates\target\loadCoordinateValues.ahk !"
         OutputDebug, % warningMsg 
         . "`nvar countCoordinatesOutsideUnitCircle evaluates to " countCoordinatesOutsideUnitCircle "`n"
         MsgBox % warningMsg
