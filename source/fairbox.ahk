@@ -8,19 +8,11 @@ ListLines Off
 
 SetWorkingDir, %A_ScriptDir%
 
-#include %A_LineFile%\..\analogZoneInfo\crouchRange\crouchRange.ahk
-
-#include %A_LineFile%\..\analogZoneInfo\dashZone\dashZone.ahk
-
-#include %A_LineFile%\..\analogZoneInfo\outOfDeadzone\outOfDeadzone.ahk
-
 #include %A_LineFile%\..\controls
 #include, initializeHotkeys.ahk
 #include, loadHotkeysIni.ahk
 
 #include %A_LineFile%\..\coordinates\coordinates.ahk
-
-#include %A_LineFile%\..\limitOutputs\limitOutputs.ahk
 
 #include %A_LineFile%\..\menu
 #include, mainsTrayMenu.ahk
@@ -32,13 +24,6 @@ SetWorkingDir, %A_ScriptDir%
 #include, guiFont.ahk
 #include, hotkeys.ahk ; globals
 #include, keysModCAngleRole.ahk ; globals
-
-#include %A_LineFile%\..\technique\pivot\pivot.ahk
-
-#include %A_LineFile%\..\technique\uncrouch\uncrouch.ahk
-
-#include %A_LineFile%\..\technique
-#include, getReverseNeutralBNerf.ahk
 
 /*
 
@@ -55,41 +40,7 @@ Discord
 GitHub
     https://github.com/dron-link
 
-sdi, uncrouch, and pivot nerfs, and history saving adapted from CarVac 's work
-https://github.com/CarVac/HayBox/blob/master/src/modes/MeleeLimits.cpp
-
-  ---------------------
-
-this project started as a proof of concept of how can we implement a variety of analog stick nerfs
-in Autohotkey. since then it has evolved into something of an improvement over the finalized b0xx-ahk
-
-everything is subject to modification and may not be present in the finalized version.
-+++ i'm considering helping to make a faithful b0xx v4.1-like for keyboards in the future.
-
-rough list of remaining tasks
-- TODO write tests
-- TODO create a Setup Help for first launch
-- TODO disable all traytip messages option
-- TODO increase hotkey control width option
-- TODO restore default hotkeys button
-- TODO somehow ensure that displayed hotkeys always reflect the real ones. i suggest a test
-- TODO primitive input viewer, or graphic input viewer, possibly as a separate .exe app
-- TODO b0xx example layout picture window? maybe not necessary if i do the graphic input viewer
-- TODO add cx and cy entries to the output history, but for what specifically?
-- TODO consider outputting 1.0 cardinals and 45° large diagonals past the analog circle?
-- TODO implement SDI nerfs
-- TODO use setTimer to lift nerfs without waiting for player input
-    ¬ call updateAnalogStick and possibly lift pivot nerfs after 4 frames, 5 frames and 8 frames
-    ¬ use setTimer to lift a 2f jump nerf 2 frames after it was forced (idea origin: CarVac HayBox)
-- TODO implement coordinate target inconditional bans
-- TODO make some in-game debug display by taking control of the c-stick and d-pad (idea taken from: CarVac/Haybox)
-
-setTimer firing rate is apparently 15.6ms, don't expect much precision from it
-(at least it's shorter than a game cube input polling interval), but I expect that most nerf lifts will be one frame late sometimes.
-Maybe we can improve the script by increasing the polling frequency? solution using WinMM dll
-
 */
-currentTimeMS := 0
 
 ; close the controls editor
 DetectHiddenWindows, On
@@ -331,11 +282,9 @@ anyC() {
     based on the currently seen cardinal directions and modifiers
 */
 updateAnalogStick() {
-    global xComp, global yComp, global currentTimeMS
-    currentTimeMS := A_TickCount
+    global xComp, global yComp
     coords := getAnalogCoords()
-    finalOutput := getOutputLimited(coords[xComp], coords[yComp])
-    setAnalogStick([finalOutput.x, finalOutput.y])
+    setAnalogStick(coords)
     return
 }
 
