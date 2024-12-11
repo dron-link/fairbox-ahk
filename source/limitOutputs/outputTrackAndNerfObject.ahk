@@ -11,38 +11,25 @@ class outputTrackAndNerfObject extends outputHistoryObject {
     dashTechniqueNerfSearch(dashZone, outOfDeadzone, aX, aY) {
         global currentTimeMS
 
-        this.limited.pivotWasNerfed := false ; pivot hasn't been nerfed yet
-
         ; we nerf if the technique was completed in the near past
-        this.limited.pivotNerfedCoords := getPivotNerfedCoords([aX, aY], outOfDeadzone
-        , dashZone.pivotLockoutEntry)
-
-        if this.limited.pivotNerfedCoords { ; if this is anything other than false (it is coordinates)
-            this.limited.pivotWasNerfed := true
+        oldCondition := getPivotNerfCondition(aX, aY, outOfDeadzone, dashZone.pivotLockoutEntry)
+        
+        if oldCondition {
+            this.limited.pivotNerfedCoords := getPivotNerfedCoords(oldCondition, [aX, aY])
+            this.limited.pivotWasNerfed := oldCondition
+        }
+        else {
+            /*  we scan for nerfs based on a saved, candidate or new dashzoneinfo
+            */
+            newCondition := getPivotNerfCondition(aX, aY, outOfDeadzone
+            , getCurrentDashZoneInfo(dashZone.hist, dashZone.candidates, getDashZoneOf(aX)))
+        
+            this.limited.pivotWasNerfed := newCondition
+            if newCondition {
+                this.limited.pivotNerfedCoords := getPivotNerfedCoords(newCondition, [aX, aY])
+            }
         }
 
-        ; we take care not to get the same coordinates twice
-        if !this.limited.pivotWasNerfed {
-            ; get current dash zone info
-            currentZone := getDashZoneOf(aX)
-            if (currentZone == dashZone.saved.zone) {
-                currentDashZoneInfo := dashZone.saved
-            }
-            else if IsObject(dashZone.candidates[currentZone]) {
-                currentDashZoneInfo := dashZone.candidates[currentZone]
-            }
-            else {
-                ; we need to detect if a new pivot was inputted
-                currentDashZoneInfo := new dashZoneHistoryEntry(currentZone, currentTimeMS
-                , getPivotDid(dashZone.hist, currentZone, currentTimeMS))
-            }
-
-            this.limited.pivotNerfedCoords := getPivotNerfedCoords([aX, aY], outOfDeadzone
-            , currentDashZoneInfo)
-            if this.limited.pivotNerfedCoords { ; if this is anything other than false (it is coordinates)
-                this.limited.pivotWasNerfed := true
-            }
-        }
         return
     }
 
