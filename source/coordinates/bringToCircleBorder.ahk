@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 bringToCircleBorder(coords) {
     global ANALOG_STICK_MAX, global xComp, global yComp

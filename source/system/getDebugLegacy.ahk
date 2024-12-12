@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 ; /////////////// Creates the Debug message. (Troubleshooting)
 getDebug() {

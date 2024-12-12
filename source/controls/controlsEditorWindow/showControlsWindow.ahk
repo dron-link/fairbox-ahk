@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 showControlsWindow() {
     Gui, controlsWindow:Show,, % "Controls Editor - fairbox"

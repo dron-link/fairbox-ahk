@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 getHotkeyControlFormat(activationKey) {
     /*  Removes tilde (~) and Win (#) modifiers from hotkey control box content...

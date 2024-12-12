@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 class crouchRangeHistoryObject {
     unsaved := new crouchRangeHistoryEntry(false, -1000, false)

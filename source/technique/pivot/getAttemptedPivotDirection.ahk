@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 getAttemptedPivotDirection(dashZoneHist, currentZone) {
     global ZONE_L, global ZONE_R, global P_RIGHTLEFT, global P_LEFTRIGHT

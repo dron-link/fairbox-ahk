@@ -1,10 +1,11 @@
 #Requires AutoHotkey v1
+#Warn All, MsgBox
 
 #include %A_WorkingDir%\source\system\gameEngineConstants.ahk
 
 #include %A_WorkingDir%\source\limitOutputs\getFuzzyHorizontal100.ahk
 
-#include %A_WorkingDir%\test\logAppend.ahk
+#include %A_WorkingDir%\logAppend.ahk
 
 logAppend("testGetFuzzyHorizontal100")
 logAppend(A_LineFile "`n")

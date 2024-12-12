@@ -1,4 +1,5 @@
 #Requires AutoHotkey v1
+#Warn All, MsgBox
 
 #include %A_WorkingDir%\source\analogZoneInfo\crouchRange\getIsInCrouchRange.ahk
 #include %A_WorkingDir%\source\analogZoneInfo\dashZone\getDashZoneOf.ahk
@@ -7,9 +8,9 @@
 
 #include %A_WorkingDir%\source\system\gameEngineConstants.ahk
 
-#include %A_WorkingDir%\test\logAppend.ahk
+#include %A_WorkingDir%\logAppend.ahk
 
-logAppend("zzRange")
+logAppend("coordinatesRangeAndZone")
 logAppend(A_LineFile "`n")
 
 if getIsOutOfDeadzoneUp(22) {
@@ -36,7 +37,7 @@ if !getIsInCrouchRange(-50) {
 
 itemL := {}
 itemR := {}
-ZONE_L := itemL
+ZONE_L := itemL ; getDashZoneOf(aX) uses these two globals...
 ZONE_R := itemR
 
 if getDashZoneOf(-63) {
@@ -53,4 +54,4 @@ if (itemR != getDashZoneOf(64)) {
     logAppend("itemR != getDashZoneOf(64) at line " A_LineNumber)
 }
 
-logAppend("zzRange finish`n")
+logAppend("coordinatesRangeAndZone finish`n")

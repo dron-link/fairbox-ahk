@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 class directionDeadzoneHistoryObject {
     unsaved := new outOfDeadzoneInfo(false, -1000)

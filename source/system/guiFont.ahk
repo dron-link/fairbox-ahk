@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 guiFontDefault(windowName) { ; next Gui,Add or GuiControl,Font commands will have this font in their text when called
     Gui, % windowName ":Font", s8 cDefault norm, Tahoma

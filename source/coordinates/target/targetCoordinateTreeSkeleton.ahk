@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 class targetCoordinateTreeSkeleton {
     format := {unitCircle : false, centerOffsetBy128 : false}

@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 validateModifiedControl(num) { ; you came from activationKeyCheck() or #If Expression hotkeys
     global

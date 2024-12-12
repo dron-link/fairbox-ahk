@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 activationKeyCheck() { ; thread launched by controlsWindow GUI / hotkey control box
     global

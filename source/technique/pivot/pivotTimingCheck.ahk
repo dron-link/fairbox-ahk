@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 pivotTimingCheck(dashZoneHist, currentDashTimestamp) {
     global TIMELIMIT_HALFFRAME, global TIMELIMIT_FRAME, global TIMESTALE_PIVOT_INPUTSEQUENCE

@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 formatTargetCoordinates(ByRef target) {
     global UNITCIRC_TO_INT

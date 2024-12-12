@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 loadCoordinateValues(ByRef target) {
     /*  true if components are in form: 

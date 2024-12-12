@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 ; state variables
 ; usage: if true, the hotkey is pressed

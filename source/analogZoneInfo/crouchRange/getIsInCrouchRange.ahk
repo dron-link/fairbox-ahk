@@ -1,5 +1,4 @@
-#Requires AutoHotkey v1.1
-
+#Requires AutoHotkey v1
 
 getIsInCrouchRange(aY) {
     global ANALOG_CROUCH

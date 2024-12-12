@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 trimToCircle(coords) {
     /*  the game considers coordinates outside the circle as coordinates on the rim of the circle,

@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls menu
     global

@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 getReverseNeutralBNerf(coords) {
     global ANALOG_DEAD_MIN, ANALOG_DEAD_MAX, global ANALOG_STICK_MIN, global ANALOG_STICK_MAX, 

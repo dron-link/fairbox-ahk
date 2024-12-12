@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 class targetCoordinateTreeWithCBinds extends targetCoordinateTreeSkeleton {
     loadCoordinates() {

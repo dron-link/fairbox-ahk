@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1.37
+#Requires AutoHotkey v1.1.37.02
 
 #SingleInstance force
 #NoEnv

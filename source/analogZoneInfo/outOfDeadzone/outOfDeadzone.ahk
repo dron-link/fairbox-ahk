@@ -1,4 +1,4 @@
-#Requires Autohotkey v1.1
+#Requires AutoHotkey v1
 
 #include %A_LineFile%\..\directiondeadzoneHistoryObject.ahk
 #include %A_LineFile%\..\getCurrentOutOfDeadzoneTimestamp.ahk

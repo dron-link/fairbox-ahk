@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 /*  constants... extracted from the game engine, and other sources of information.
     the idea and comments behind these constants is copied from CarVac/HayBox.
     I sourced most from CarVac/HayBox, Altimor's Stickmap and the Melee Analog Reference Project discord

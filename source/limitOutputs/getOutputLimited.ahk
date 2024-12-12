@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
     global TIMELIMIT_SIMULTANEOUS

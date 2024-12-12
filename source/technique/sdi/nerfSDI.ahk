@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 ; // for sdi nerfs, we want to record only movement between sdi zones, ignoring movement within zones
 class sdiZoneHistoryEntry {

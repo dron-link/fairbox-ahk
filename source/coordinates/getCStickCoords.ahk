@@ -1,4 +1,4 @@
-#Requires AutoHotkey v1.1
+#Requires AutoHotkey v1
 
 ; //////////////// Get CStick coordinates. unit circle format
 getCStickCoords() {
