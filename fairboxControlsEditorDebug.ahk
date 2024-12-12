@@ -6,8 +6,8 @@
 DetectHiddenWindows, On
         ;    0x111 = WN_COMMAND code
         ;           65307 = exit code
-PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.ahk
-PostMessage, 0x111, 65307,,, %A_ScriptDir%\StandaloneControlsEditor.exe
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairboxControlsEditor.ahk
+PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairboxControlsEditor.exe
 DetectHiddenWindows, Off
 
-#include %A_ScriptDir%\source\StandaloneControlsEditor.ahk
+#include %A_ScriptDir%\source\fairboxControlsEditor.ahk

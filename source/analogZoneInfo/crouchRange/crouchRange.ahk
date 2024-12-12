@@ -2,4 +2,5 @@
 
 #include %A_LineFile%\..\crouchRangeHistoryEntry.ahk
 #include %A_LineFile%\..\crouchRangeHistoryObject.ahk
+#include %A_LineFile%\..\getCurrentCrouchRangeInfo.ahk
 #include %A_LineFile%\..\getIsInCrouchRange.ahk

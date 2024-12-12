@@ -38,7 +38,7 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
     output.dashTechniqueNerfSearch(dashZone, outOfDeadzone, output.limited.x, output.limited.y)
     output.crouchTechniqueNerfSearch(crouchRange, output.limited.x, output.limited.y)
 
-    output.chooseLockout()
+    output.applyLockout()
 
     ; fuzz the y when x is +1.00 or -1.00
     output.horizontalRimFuzz()

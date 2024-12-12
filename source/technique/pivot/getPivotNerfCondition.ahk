@@ -7,6 +7,7 @@ getPivotNerfCondition(aX, aY, outOfDeadzone, relevantDashZoneInfo) {
     global PNERF_YDASH_RIGHTLEFT, global PNERF_YDASH_LEFTRIGHT
     global currentTimeMS
 
+    ; guard clause
     if (!relevantDashZoneInfo.pivot
         or currentTimeMS - relevantDashZoneInfo.timestamp >= TIMELIMIT_PIVOTTILT) {
         return false ; No pivot or all pivot nerfs expired.

@@ -11,24 +11,14 @@ class outputTrackAndNerfObject extends outputHistoryObject {
     dashTechniqueNerfSearch(dashZone, outOfDeadzone, aX, aY) {
         global currentTimeMS
 
-        ; we nerf if the technique was completed in the near past
+        ; search for nerf conditions based on the last saved technique completion info
         oldCondition := getPivotNerfCondition(aX, aY, outOfDeadzone, dashZone.pivotLockoutEntry)
         
-        if oldCondition {
-            this.limited.pivotNerfedCoords := getPivotNerfedCoords(oldCondition, [aX, aY])
-            this.limited.pivotWasNerfed := oldCondition
-        }
-        else {
-            /*  we scan for nerfs based on a saved, candidate or new dashzoneinfo
-            */
-            newCondition := getPivotNerfCondition(aX, aY, outOfDeadzone
-            , getCurrentDashZoneInfo(dashZone.hist, dashZone.candidates, getDashZoneOf(aX)))
-        
-            this.limited.pivotWasNerfed := newCondition
-            if newCondition {
-                this.limited.pivotNerfedCoords := getPivotNerfedCoords(newCondition, [aX, aY])
-            }
-        }
+        ; if there is oldCondition we assign it to pivotNerfCondition
+        ; if there's not, we check for nerfs on the basis of completed techniques not yet saved
+        this.limited.pivotNerfCondition := oldCondition 
+        ? oldCondition : getPivotNerfCondition(aX, aY, outOfDeadzone
+        , getCurrentDashZoneInfo(dashZone.hist, dashZone.candidates, getDashZoneOf(aX)))
 
         return
     }
@@ -36,50 +26,29 @@ class outputTrackAndNerfObject extends outputHistoryObject {
     crouchTechniqueNerfSearch(crouchRange, aX, aY) {
         global currentTimeMS
 
-        this.limited.uncrouchWasNerfed := false ; uncrouch hasn't been nerfed yet
-        ; we nerf if the technique was completed in the near past
-        this.limited.uncrouchNerfedCoords := getUncrouchNerfedCoords([aX, aY]
-        , crouchRange.uncrouchLockoutEntry)
+        ; search for nerf conditions based on the last saved technique completion info
+        oldCondition := getUncrouchNerfCondition(aX, aY, crouchRange.uncrouchLockoutEntry)
 
-        if this.limited.uncrouchNerfedCoords { ; if this is anything other than false (it is coordinates)
-            this.limited.uncrouchWasNerfed := true
-        }
-
-        ; we take care not to get the same coordinates twice
-        if !this.limited.uncrouchWasNerfed {
-            ; we get the current crouch zone info
-            currentRangeIn := getIsInCrouchRange(aY)
-            if (currentRangeIn == crouchRange.saved.in) {
-                currentCrouchRangeInfo := crouchRange.saved
-            }
-            else if IsObject(crouchRange.candidate) {
-                currentCrouchRangeInfo := crouchRange.candidate
-            }
-            else {
-                ; we need to detect if a new "uncrouch" was inputted
-                currentCrouchRangeInfo := new crouchRangeHistoryEntry(currentRangeIn, currentTimeMS
-                , getUncrouchDid(crouchRange.saved.in, currentRangeIn))
-            }
-
-            this.limited.uncrouchNerfedCoords := getUncrouchNerfedCoords([aX, aY]
-            , currentCrouchRangeInfo)
-            ; if this is anything other than false (it is coordinates)
-            if this.limited.uncrouchNerfedCoords { 
-                this.limited.uncrouchWasNerfed := true
-            }
-        }
+        ; if there is oldCondition we assign it to uncrouchNerfCondition
+        ; if there's not, we check for nerfs on the basis of completed techniques not yet saved
+        this.limited.uncrouchNerfCondition := oldCondition
+        ? oldCondition : getUncrouchNerfCondition(aX, aY
+        , getCurrentCrouchRangeInfo(crouchRange.saved, crouchRange.candidate, getIsInCrouchRange(aY)))
+        
         return
     }
 
-    chooseLockout() {
+    applyLockout() {
         global xComp, global yComp
-        ; function for solving conflicts between lockouts
-        if this.limited.pivotWasNerfed {
-            this.limited.x := this.limited.pivotNerfedCoords[xComp]
-            this.limited.y := this.limited.pivotNerfedCoords[yComp]
-        } else if this.limited.uncrouchWasNerfed {
-            this.limited.x := this.limited.uncrouchNerfedCoords[xComp]
-            this.limited.y := this.limited.uncrouchNerfedCoords[yComp]
+        
+        ; choose one of the lockouts and apply it to the outputs
+        if this.limited.pivotNerfCondition {
+            nerfedCoords := getPivotNerfedCoords(this.limited.pivotNerfCondition
+            , [this.limited.x, this.limited.y])
+            this.limited.x := nerfedCoords[xComp], this.limited.y := nerfedCoords[yComp]
+        } else if this.limited.uncrouchNerfCondition {
+            nerfedCoords := getUncrouchNerfedCoords()
+            this.limited.x := nerfedCoords[xComp], this.limited.y := nerfedCoords[yComp]
         }
         return
     }

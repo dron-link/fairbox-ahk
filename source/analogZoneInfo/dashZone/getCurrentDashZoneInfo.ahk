@@ -6,7 +6,7 @@ getCurrentDashZoneInfo(historyArray, candidates, currentZone) {
     if (currentZone == historyArray[1].zone) { ; saved.zone
         return historyArray[1] ; saved
     }
-    else if IsObject(candidates[currentZone]) {
+    if IsObject(candidates[currentZone]) {
         return candidates[currentZone]
     }
     ; else

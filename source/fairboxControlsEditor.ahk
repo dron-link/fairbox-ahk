@@ -73,7 +73,7 @@ return
 
 LabelRefreshControlsWindow:
     ; we save this so we don't forget to go back to main automatically
-    IniWrite, % openedFromMain, config.ini, LaunchMode, ControlsWindowIntoMain 
+    IniWrite, % openedFromMain, config.ini, LaunchMode, MainIntoControlsWindow 
     Reload
 return
 

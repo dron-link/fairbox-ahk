@@ -19,8 +19,10 @@ getPivotNerfedCoords(condition, coords) {
         Case PNERF_YDASH_LEFTRIGHT:
             aY := coords[yComp]
             Return [FORCE_FTILT, aY > 0 ? FORCE_FTILT : -FORCE_FTILT]
+        Case false:
+            Return coords
     }
     ; else
-    OutputDebug, % "getPivotNerfedCoords() Nonexistent Case. Please check!`n"
+    OutputDebug, % "getPivotNerfedCoords() Case not accounted for. Please check the cause of this!`n"
     return
 }
