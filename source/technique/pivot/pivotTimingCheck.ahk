@@ -15,7 +15,7 @@ pivotTimingCheck(dashZoneHist, currentDashTimestamp) {
         return false
     } 
 
-    /*  has the player only held the latest dash for around 1
+    /*  has the player only held the latest dash (dashZoneHist[1]) for around 1
         frame in duration? that's necessary for pivoting
     */
     latestDashDuration := currentDashTimestamp - dashZoneHist[1].timestamp

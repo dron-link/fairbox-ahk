@@ -14,15 +14,13 @@ getAttemptedPivotDirection(dashZoneHist, currentZone) {
         L   -   R   N       p leftright   (L N R N)
         (in this comment, N means center)
     */
-    if !currentZone {
-        if (dashZoneHist[1].zone == ZONE_L 
-            and (dashZoneHist[2].zone == ZONE_R or dashZoneHist[3].zone == ZONE_R)) {
-            return P_RIGHTLEFT
-        }
-        if (dashZoneHist[1].zone == ZONE_R 
-            and (dashZoneHist[2].zone == ZONE_L or dashZoneHist[3].zone == ZONE_L)) {
-            return P_LEFTRIGHT
-        }
+    if (!currentZone and dashZoneHist[1].zone == ZONE_L 
+        and (dashZoneHist[2].zone == ZONE_R or dashZoneHist[3].zone == ZONE_R)) {
+        return P_RIGHTLEFT
+    }
+    if (!currentZone and dashZoneHist[1].zone == ZONE_R 
+        and (dashZoneHist[2].zone == ZONE_L or dashZoneHist[3].zone == ZONE_L)) {
+        return P_LEFTRIGHT
     }
     ; else
     return false ; the sequence is incorrect

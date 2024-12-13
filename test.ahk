@@ -6,8 +6,7 @@
 
 logDate() {
     ;https://www.autohotkey.com/boards/viewtopic.php?t=23276
-    FormatTime, datestring, %A_Now% L0009 
-    
+    FormatTime, datestring, %A_Now% L0009     
     logAppend(datestring "`n")
 }
 logDate()
@@ -15,6 +14,7 @@ logDate()
 SetWorkingDir, %A_ScriptDir%
 
 ; RunWait commands here
+RunWait, test\pivotDetection.ahk
 
 logAppend("all tests finish")
 
