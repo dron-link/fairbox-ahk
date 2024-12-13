@@ -6,8 +6,9 @@ class crouchRangeHistoryObject {
     saved := new crouchRangeHistoryEntry(false, -1000, false)
     uncrouchLockoutEntry := new crouchRangeHistoryEntry(false, -1000, false)
 
-    saveHistory() { ; called every time a multipress has ended
-        this.saved := this.unsaved, this.candidate := ""
+    saveFilteredHistory() { ; called every time a multipress has ended
+        this.saved := this.unsaved
+        this.candidate := "" ; we want IsObject("") = false
         if this.saved.uncrouch {
             this.uncrouchLockoutEntry := this.saved
         }

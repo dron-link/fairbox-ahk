@@ -1,3 +1,5 @@
+# Credits
+
 dron-link - de-facto-developer for this project
 
 [agirardeau](https://github.com/agirardeau) - this project is a fork of b0xx-ahk and agirardeau is its developer
@@ -7,16 +9,19 @@ dron-link - de-facto-developer for this project
 parts of this program are based on CarVac's work on his [HayBox fork](https://github.com/CarVac/HayBox/blob/master/src/modes/MeleeLimits.cpp "MeleeLimits.cpp")
 
 B0XX: Credits
+
 - designed by Aziz “Hax$” Al-Yami
 - produced & engineered by Kyle “simple” McDowell
 
 Helpful people (thank you!):
+
 - 7excess : b0xx-ahk testing
-- CarVac : advice
+- CarVac : advice, help with research
 - Practical_TAS : advice
 - JonnyHaystack : advice 
 
 Tools and resources
+
 - Dolphin - FasterMelee - Slippi
 - [Altimor's Stickmap](https://marp-e3fcf.web.app/)
 - [SmashScope](https://goomwave.com/2020/06/28/smashscope-guide/)

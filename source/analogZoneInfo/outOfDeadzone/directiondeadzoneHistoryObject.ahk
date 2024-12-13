@@ -5,8 +5,9 @@ class directionDeadzoneHistoryObject {
     candidate := ""
     saved := new outOfDeadzoneInfo(false, -1000)
 
-    saveHistory() { ; we call this once we mark previous multipress as "ended"
-        this.saved := this.unsaved, this.candidate := ""
+    saveFilteredHistory() { ; we call this once we mark previous multipress as "ended"
+        this.saved := this.unsaved
+        this.candidate := "" ; we want IsObject("") = false
     }
 
     recordDeadzoneOutput(outputIsOutOfDeadzone) {

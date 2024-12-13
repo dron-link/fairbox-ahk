@@ -5,7 +5,7 @@
 #include %A_ScriptDir%\logAppend.ahk
 
 logDate() {
-    ;https://www.autohotkey.com/boards/viewtopic.php?t=23276
+    ; https://www.autohotkey.com/boards/viewtopic.php?t=23276
     FormatTime, datestring, %A_Now% L0009     
     logAppend(datestring "`n")
 }
@@ -14,7 +14,9 @@ logDate()
 SetWorkingDir, %A_ScriptDir%
 
 ; RunWait commands here
-RunWait, test\pivotDetection.ahk
+RunWait, test\testBringToCircleBorder.ahk
+RunWait, test\testTrimToCircle.ahk
+
 
 logAppend("all tests finish")
 

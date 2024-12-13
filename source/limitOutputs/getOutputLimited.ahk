@@ -21,10 +21,10 @@ getOutputLimited(rawAX, rawAY) { ; Get coordinates but now with nerfs
     if (currentTimeMS - output.latestMultipressBeginningTimestamp >= TIMELIMIT_SIMULTANEOUS
         and !output.hist[1].multipress.ended) {
         output.hist[1].multipress.ended := true
-        outOfDeadzone.up.saveHistory()
-        outOfDeadzone.down.saveHistory()
-        crouchRange.saveHistory()
-        dashZone.saveHistory()   
+        outOfDeadzone.up.saveFilteredHistory()
+        outOfDeadzone.down.saveFilteredHistory()
+        crouchRange.saveFilteredHistory()
+        dashZone.saveFilteredHistory()   
     }
 
     ; create an object that stores the current output info
