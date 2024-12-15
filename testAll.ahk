@@ -14,9 +14,18 @@ logDate()
 SetWorkingDir, %A_ScriptDir%
 
 ; RunWait commands here
+RunWait, test\coordinatesRangeAndZone.ahk
+RunWait, test\pivotDetection.ahk
+
+RunWait, test\testBringToCircleBorder.ahk
+RunWait, test\testTrimToCircle.ahk
+
+RunWait, test\testGetFuzzyHorizontal100.ahk
+
 RunWait, test\slowTargeting.ahk
-RunWait, test\pivotLockouts.ahk
 RunWait, test\crouchUptiltLockouts.ahk
+RunWait, test\pivotLockouts.ahk
+
 
 logAppend("")
 logAppend("all tests finish")

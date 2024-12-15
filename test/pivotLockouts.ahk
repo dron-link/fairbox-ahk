@@ -36,8 +36,6 @@ getOutputLimited(0, 0)
 
 currentTimeMS += 1000 ; clear actions recency
 
-; pivot ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 /*
 
 ; test FORCE_FTILT... both dashup and dashdown, p_rightleft and p_leftright, what nerfs appear in the y directions?
@@ -287,11 +285,41 @@ logExpect(getOutputLimited(40, -25), [FORCE_FTILT, -FORCE_FTILT]
 , "down dash pivot. ftilt right+down --> force right left+down")
 
 
+
+getOutputLimited(0, 0)
+currentTimeMS += 1000 ; clear actions recency
+
+getOutputLimited(0, 25)
+currentTimeMS += TIMELIMIT_TAPSHUTOFF ; shut off tapjump
+
+; test overwriting a pivot with another
+; pivot with up dashes
+getOutputLimited(ANALOG_DASH_LEFT-2, 25)
+currentTimeMS += TIMELIMIT_FRAME
+getOutputLimited(ANALOG_DASH_RIGHT+2, 25)
+currentTimeMS += TIMELIMIT_FRAME ; if dash stop: pivot left right
+logExpect(getOutputLimited(0, 25), [FORCE_FTILT, FORCE_FTILT]
+, "pivot priority test. up dash pivot facing right (#1)") ; dash stop
+currentTimeMS += TIMELIMIT_SIMULTANEOUS ; save pivot
+logExpect(getOutputLimited(ANALOG_DASH_LEFT-2, 25), [FORCE_FTILT, FORCE_FTILT]
+, "pivot priority test. up dash pivot facing left (#1, saved). dash up -> ftilt")
+
+getOutputLimited(0, -25)
+currentTimeMS += TIMELIMIT_TAPSHUTOFF ; shut off downsmash
+
+; pivot with down dashes
+getOutputLimited(ANALOG_DASH_LEFT-2, -25)
+currentTimeMS += TIMELIMIT_FRAME ; if dash stop: pivot right left
+logExpect(getOutputLimited(0, -25), [-FORCE_FTILT, -FORCE_FTILT]
+, "pivot priority test. up dash pivot facing left (#2)") ; dash stop
+currentTimeMS += TIMELIMIT_SIMULTANEOUS ; save pivot
+
+logExpect(getOutputLimited(ANALOG_DASH_RIGHT+2, -25), [-FORCE_FTILT, -FORCE_FTILT]
+, "pivot priority test. up dash pivot facing left (#2, saved). dash down -> ftilt")
+
 /*
 
-timing mix
-
-
+timing on edge cases
 
 */
 

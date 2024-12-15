@@ -71,10 +71,10 @@ historyY := 0
 Loop {
     if (x <= -80 or 80 <= x) {
         ; ensure x =/= historyX
-        Random, yesNo, 0, 1
-        if yesNo {
-            Random, yesNo, 0, 1
-            randomHistoryX := x + (yesNo? 1 : -1) ; off by 1
+        Random, yesNoGlobal, 0, 1
+        if yesNoGlobal {
+            Random, yesNoGlobal, 0, 1
+            randomHistoryX := x + (yesNoGlobal? 1 : -1) ; off by 1
         } else {
             randomHistoryX := -x ; opposite sign
         }
@@ -99,10 +99,10 @@ historyY := 64 ; arbitrary number away from 0
 Loop {
     if (x <= -80 or 80 <= x) {
         ; ensure x =/= historyX to make the program try fuzzing
-        Random, yesNo, 0, 1
-        if yesNo {
-            Random, yesNo, 0, 1
-            randomHistoryX := x + (yesNo? 1 : -1) ; off by 1
+        Random, yesNoGlobal, 0, 1
+        if yesNoGlobal {
+            Random, yesNoGlobal, 0, 1
+            randomHistoryX := x + (yesNoGlobal? 1 : -1) ; off by 1
         } else {
             randomHistoryX := -x ; opposite sign, note that x is =/= 0
         }
