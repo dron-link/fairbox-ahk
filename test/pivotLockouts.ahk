@@ -434,3 +434,14 @@ logExpect(getOutputLimited(0, 25), [0, 25]
 
 
 logAppend("pivotLockouts finish`n")
+
+Return
+
+uncrouchNerfLiftLabel:
+return
+
+pivotYDashNerfLiftLabel:
+return
+
+pivotNerfLiftLabel:
+return

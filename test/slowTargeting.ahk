@@ -44,3 +44,15 @@ Loop, 10 {
 }
 
 logAppend("slowTargeting finish`n")
+
+
+Return
+
+uncrouchNerfLiftLabel:
+return
+
+pivotYDashNerfLiftLabel:
+return
+
+pivotNerfLiftLabel:
+return

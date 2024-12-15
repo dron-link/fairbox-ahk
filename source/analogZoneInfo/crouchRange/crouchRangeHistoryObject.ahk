@@ -7,11 +7,18 @@ class crouchRangeHistoryObject {
     uncrouchLockoutEntry := new crouchRangeHistoryEntry(false, -1000, false)
 
     saveFilteredHistory() { ; called every time a multipress has ended
-        this.saved := this.unsaved
-        this.candidate := "" ; we want IsObject("") = false
-        if this.saved.uncrouch {
-            this.uncrouchLockoutEntry := this.saved
+        global TIMELIMIT_DOWNUP, global currentTimeMS
+        if (this.saved != this.unsaved) {
+            this.saved := this.unsaved
+            if this.saved.uncrouch {
+                this.uncrouchLockoutEntry := this.saved
+                if (currentTimeMS - this.uncrouchLockoutEntry.timestamp <= TIMELIMIT_DOWNUP) {
+                    SetTimer, uncrouchNerfLiftLabel, % - (1 + TIMELIMIT_DOWNUP - currentTimeMS + this.uncrouchLockoutEntry.timestamp), -1
+                }
+            }
         }
+        this.candidate := "" ; we want IsObject("") = false
+        
         return
     }
 

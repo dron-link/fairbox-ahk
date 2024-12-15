@@ -731,6 +731,13 @@ return
 inputToggleKeyLabel_UP:
 return
 
+; timer labels
+uncrouchNerfLiftLabel:
+pivotYDashNerfLiftLabel:
+pivotNerfLiftLabel:
+    updateAnalogStick()
+return
+
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
 #If
 

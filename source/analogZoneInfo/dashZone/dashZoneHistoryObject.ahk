@@ -23,15 +23,24 @@ class dashZoneHistoryObject {
     }
 
     saveFilteredHistory() { ; called every time a simultaneous multiple keypress event has ended
+        global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH, global currentTimeMS
         ; we compare addresses here to avoid inserting the same old object consecutively
         if (this.unsaved != this.saved) { 
             this.hist.Pop(), this.hist.InsertAt(1, this.unsaved)
+
+            if this.saved.pivot {
+                this.pivotLockoutEntry := this.saved
+                if (currentTimeMS - this.pivotLockoutEntry.timestamp <= TIMELIMIT_PIVOTTILT) {
+                    SetTimer, pivotNerfLiftLabel, % - (1 + TIMELIMIT_PIVOTTILT - currentTimeMS + this.pivotLockoutEntry.timestamp), -3
+                    if (currentTimeMS - this.pivotLockoutEntry.timestamp <= TIMELIMIT_PIVOTTILT_YDASH) {
+                        SetTimer, pivotYDashNerfLiftLabel, % - (1 + TIMELIMIT_PIVOTTILT_YDASH - currentTimeMS + this.pivotLockoutEntry.timestamp), -2
+                    }
+                }
+            }
         }
 
         this.candidates := {}
-        if this.saved.pivot {
-            this.pivotLockoutEntry := this.saved
-        }
+        
         return
     }
 
