@@ -6,17 +6,17 @@
 
 logDate() {
     ; https://www.autohotkey.com/boards/viewtopic.php?t=23276
-    FormatTime, datestring, %A_Now% L0009     
-    logAppend(datestring "`n")
+    FormatTime, dateString, %A_Now% L0009     
+    logAppend(dateString "`n")
 }
 logDate()
 
 SetWorkingDir, %A_ScriptDir%
 
 ; RunWait commands here
-RunWait, test\testBringToCircleBorder.ahk
-RunWait, test\testTrimToCircle.ahk
-
+RunWait, test\slowTargeting.ahk
+RunWait, test\pivotLockouts.ahk
+RunWait, test\crouchUptiltLockouts.ahk
 
 logAppend("all tests finish")
 

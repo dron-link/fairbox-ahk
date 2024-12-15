@@ -38,8 +38,7 @@ getPivotNerfCondition(aX, aY, outOfDeadzone, relevantDashZoneInfo) {
     else if getIsOutOfDeadzoneUp(aY) {
         upYTimestamp := getCurrentOutOfDeadzoneTimestamp(outOfDeadzone.up.saved
         , outOfDeadzone.up.candidate, TRUE)
-        /*  if we are in the up region
-            and the player has not shut off tap jump
+        /*  if the player has not shut off tap jump
             or the player has shut off tap jump but not with actions done before
             completing the pivot (upY dashes)
         */

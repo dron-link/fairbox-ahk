@@ -8,11 +8,7 @@ ListLines Off
 
 SetWorkingDir, %A_ScriptDir%
 
-#include %A_LineFile%\..\analogZoneInfo\crouchRange\crouchRange.ahk
-
-#include %A_LineFile%\..\analogZoneInfo\dashZone\dashZone.ahk
-
-#include %A_LineFile%\..\analogZoneInfo\outOfDeadzone\outOfDeadzone.ahk
+#include %A_LineFile%\..\analogZoneInfo\analogZoneInfo.ahk
 
 #include %A_LineFile%\..\controls
 #include, initializeHotkeys.ahk
@@ -33,12 +29,7 @@ SetWorkingDir, %A_ScriptDir%
 #include, hotkeys.ahk ; globals
 #include, keysModCAngleRole.ahk ; globals
 
-#include %A_LineFile%\..\technique\pivot\pivot.ahk
-
-#include %A_LineFile%\..\technique\uncrouch\uncrouch.ahk
-
-#include %A_LineFile%\..\technique
-#include, getReverseNeutralBNerf.ahk
+#include %A_LineFile%\..\technique\technique.ahk
 
 /*
 

@@ -15,9 +15,9 @@ logAppend(A_LineFile "`n")
 */
 BORDER_MIN_SQUARED := 59**2 + 52**2
 
-x := -80
+x := -128
 Loop {
-    y := -80
+    y := -128
     Loop {
         borderCoords := bringToCircleBorder([x, y])
         borderX := borderCoords[xComp], borderY := borderCoords[yComp]
@@ -50,8 +50,8 @@ Loop {
         }
 
         y += 1
-    } Until y > 80
+    } Until y > 128
     x += 1
-} Until x > 80
+} Until x > 128
 
 logAppend("testBringToCircleBorder finish`n")
