@@ -12,9 +12,6 @@ class crouchRangeHistoryObject {
             this.saved := this.unsaved
             if this.saved.uncrouch {
                 this.uncrouchLockoutEntry := this.saved
-                if (currentTimeMS - this.uncrouchLockoutEntry.timestamp <= TIMELIMIT_DOWNUP) {
-                    SetTimer, uncrouchNerfLiftLabel, % - (1 + TIMELIMIT_DOWNUP - currentTimeMS + this.uncrouchLockoutEntry.timestamp), -1
-                }
             }
         }
         this.candidate := "" ; we want IsObject("") = false
@@ -23,7 +20,7 @@ class crouchRangeHistoryObject {
     }
 
     recordCrouchOutput(crouchRangeOfOutput) {
-        global currentTimeMS
+        global currentTimeMS, global TIMELIMIT_DOWNUP
         
         if (crouchRangeOfOutput == this.saved.in) {
             this.unsaved := this.saved ; we haven't moved onto another range, so the saved info still applies
@@ -32,6 +29,9 @@ class crouchRangeHistoryObject {
                 ; store a new entry as candidate. store whether the script outputted an "uncrouch" or not
                 this.candidate := new crouchRangeHistoryEntry(crouchRangeOfOutput
                 , currentTimeMS, getUncrouchDid(this.saved.in, crouchRangeOfOutput))
+                if this.candidate.uncrouch {
+                    SetTimer, uncrouchNerfLiftLabel, % - TIMELIMIT_DOWNUP
+                }
             }
             
             this.unsaved := this.candidate

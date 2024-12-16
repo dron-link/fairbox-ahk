@@ -735,7 +735,10 @@ return
 uncrouchNerfLiftLabel:
 pivotYDashNerfLiftLabel:
 pivotNerfLiftLabel:
+    Critical
     updateAnalogStick()
+    Critical, Off
+    Sleep, -1
 return
 
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls

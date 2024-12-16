@@ -27,25 +27,17 @@ class dashZoneHistoryObject {
         ; we compare addresses here to avoid inserting the same old object consecutively
         if (this.unsaved != this.saved) { 
             this.hist.Pop(), this.hist.InsertAt(1, this.unsaved)
-
             if this.saved.pivot {
                 this.pivotLockoutEntry := this.saved
-                if (currentTimeMS - this.pivotLockoutEntry.timestamp <= TIMELIMIT_PIVOTTILT) {
-                    SetTimer, pivotNerfLiftLabel, % - (1 + TIMELIMIT_PIVOTTILT - currentTimeMS + this.pivotLockoutEntry.timestamp), -3
-                    if (currentTimeMS - this.pivotLockoutEntry.timestamp <= TIMELIMIT_PIVOTTILT_YDASH) {
-                        SetTimer, pivotYDashNerfLiftLabel, % - (1 + TIMELIMIT_PIVOTTILT_YDASH - currentTimeMS + this.pivotLockoutEntry.timestamp), -2
-                    }
-                }
             }
         }
-
         this.candidates := {}
         
         return
     }
 
     recordDashOutput(dashZoneOfOutput) {
-        global currentTimeMS
+        global currentTimeMS, global TIMELIMIT_PIVOTTILT, global TIMELIMIT_PIVOTTILT_YDASH
         
         if (dashZoneOfOutput == this.saved.zone) {
             this.unsaved := this.saved ; we haven't moved onto another zone, so the saved info still applies
@@ -54,6 +46,10 @@ class dashZoneHistoryObject {
                 ; add a new entry to candidates. stores whether this program outputted a pivot or not
                 this.candidates[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS
                 , getPivotDid(this.hist, dashZoneOfOutput, currentTimeMS))
+                if this.candidates[dashZoneOfOutput].pivot {
+                    SetTimer, pivotNerfLiftLabel, % -TIMELIMIT_PIVOTTILT
+                    SetTimer, pivotYDashNerfLiftLabel, % -TIMELIMIT_PIVOTTILT_YDASH
+                }
             }
 
             this.unsaved := this.candidates[dashZoneOfOutput]
