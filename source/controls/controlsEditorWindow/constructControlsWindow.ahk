@@ -52,8 +52,9 @@ constructControlsWindow() { ; adopt saved hotkeys and initialize Edit Controls m
 
     guiFontDefault("controlsWindow")
     Gui, controlsWindow:Add, Button, y+30 w70 h40 gLabelRefreshControlsWindow, % "Refresh"
-    Gui, controlsWindow:Add, Button, x+6 w70 h40 gLabelOpenMain, % "Play"
-
+    Gui, controlsWindow:Add, Button, x+170 w70 h40 gLabelOpenInputViewer, % "Go to Input Viewer"
+    Gui, controlsWindow:Add, Button, x+15 w70 h40 gLabelOpenMain, % "Play"
+    
     return
 }
 

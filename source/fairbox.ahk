@@ -17,14 +17,16 @@ SetWorkingDir, %A_ScriptDir%
 #include %A_LineFile%\..\coordinates\coordinates.ahk
 
 #include %A_LineFile%\..\inputViewer
-#include, initializeInputViewerGUI.ahk ; globals
+#include, constructInputViewerWindow.ahk ; globals
 #include, showInputViewer.ahk
 #include, updateInputViewerButton.ahk
+#include, updateInputViewerEnabledControlsAlert.ahk
 
 #include %A_LineFile%\..\limitOutputs\limitOutputs.ahk
 
 #include %A_LineFile%\..\menu
-#include, mainsTrayMenu.ahk
+#include, constructMainsTrayMenu.ahk
+#include, mainIntoControlsWindow.ahk
 
 #include %A_LineFile%\..\system
 #include, fairboxConstants.ahk ; globals
@@ -86,6 +88,7 @@ Maybe we can improve the script by increasing the polling frequency? solution us
 
 */
 currentTimeMS := 0
+isInputViewerOpen := false
 
 ; close the controls editor
 DetectHiddenWindows, On
@@ -102,11 +105,13 @@ FileInstall, install\config.ini, % A_ScriptDir "\config.ini", 0 ; for when confi
 enabledHotkeys := true
 enabledGameControls := true
 showWelcomeTray := true
-loadConfigIniLaunchMode()
+
 loadConfigIniLaunchMode() {
     global enabledHotkeys
     global showWelcomeTray
-    
+    global inputViewerOnLaunch
+    global enabledGameControls
+
     if enabledHotkeys {
         showWelcomeTray := true
     } else {
@@ -123,8 +128,13 @@ loadConfigIniLaunchMode() {
         IniRead, enabledGameControls, config.ini, LaunchMode, EnabledControlsRecall
         showWelcomeTray := false
     }
+
+    IniRead, inputViewerOnLaunch, config.ini, LaunchMode, InputViewerOnLaunch
+    IniWrite, % false           , config.ini, LaunchMode, InputViewerOnLaunch
+
     return
 }
+loadConfigIniLaunchMode()
 
 ; load global UserSettings
 IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey
@@ -141,8 +151,6 @@ constructMainsTrayMenu() ; puts the custom menu items in the tray
 loadHotkeysIni()
 
 initializeHotkeys()
-
-initializeInputViewerGUI()
 
 ; Create an object from vJoy Interface Class.
 vJoyInterface := new CvJoyInterface()
@@ -195,6 +203,10 @@ if showWelcomeTray {
 
 if !enabledHotkeys {
     TrayTip, % "fairbox", % "ATTENTION. enabledHotkeys: " . (enabledHotkeys? "true" : "false"), 3, 0
+}
+
+if inputViewerOnLaunch {
+    showInputViewer()
 }
 
 return ; end of autoexecute
@@ -775,6 +787,7 @@ return
 inputToggleKeyLabel:
     resetAllButtons()
     enabledGameControls := !enabledGameControls
+    updateInputViewerEnabledControlsAlert(enabledGameControls)
 return
 
 inputToggleKeyLabel_UP:
@@ -788,6 +801,11 @@ pivotNerfLiftLabel:
     updateAnalogStick()
     Critical, Off
     Sleep, -1
+return
+
+inputViewerWindowGuiClose:
+    Gui, inputViewerWindow:Destroy
+    isInputViewerOpen := false
 return
 
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls

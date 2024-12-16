@@ -10,8 +10,7 @@ SetWorkingDir, %A_ScriptDir%
 #include %A_LineFile%\..\controls
 #include, loadHotkeysIni.ahk
 
-#include %A_LineFile%\..\menu
-#include, controlsEditorTrayMenu.ahk
+#include %A_LineFile%\..\menu\constructControlsEditorTrayMenu.ahk
 
 #include %A_LineFile%\..\system
 #include, guiFont.ahk
@@ -60,7 +59,12 @@ return
 
 LabelOpenMain:
     IniWrite, % True, config.ini, LaunchMode, ControlsWindowIntoMain
+
+    /*  since we set MainIntoControlsWindow as false when running the program,
+        we must restore its original value
+    */
     IniWrite, % openedFromMain, config.ini, LaunchMode, MainIntoControlsWindow
+    
     Run, fairbox.ahk, % A_ScriptDir, UseErrorLevel
     if (ErrorLevel = "ERROR") {
         Run, fairbox.exe, % A_ScriptDir, UseErrorLevel
@@ -75,6 +79,11 @@ LabelRefreshControlsWindow:
     ; we save this so we don't forget to go back to main automatically
     IniWrite, % openedFromMain, config.ini, LaunchMode, MainIntoControlsWindow 
     Reload
+return
+
+LabelOpenInputViewer:
+    IniWrite, % true, config.ini, LaunchMode, InputViewerOnLaunch
+    Gosub, LabelOpenMain
 return
 
 /*  FYI:

@@ -2,5 +2,12 @@
 
 updateInputViewerButton(hotkeyVarName) {
     global
-    GuiControl, inputViewerWindow:, % "viewer" hotkeyVarName, % "hbitmap:*" (%hotkeyVarName% ? imgBtnPressHandle : imgBtnReleaseHandle)
+    if isInputViewerOpen {
+        GuiControl, inputViewerWindow:, % "viewer" hotkeyVarName, % "hbitmap:*" (%hotkeyVarName% ? imgBtnPressHandle : imgBtnReleaseHandle)
+        /*  to avoid triggering buttons with the keyboard when opening the
+            input viewer with showInputViewer()
+        */
+        GuiControl, inputViewerWindow:Focus, inputViewerInvisibleText
+    }
+    return
 }
