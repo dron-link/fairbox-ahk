@@ -14,9 +14,7 @@ logDate()
 SetWorkingDir, %A_ScriptDir%
 
 ; RunWait commands here
-RunWait, test\slowTargeting.ahk
-RunWait, test\pivotLockouts.ahk
-RunWait, test\crouchUptiltLockouts.ahk
+RunWait, test\testLayout.ahk
 
 logAppend("")
 logAppend("all tests finish")

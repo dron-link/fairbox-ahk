@@ -16,6 +16,11 @@ SetWorkingDir, %A_ScriptDir%
 
 #include %A_LineFile%\..\coordinates\coordinates.ahk
 
+#include %A_LineFile%\..\inputViewer
+#include, initializeInputViewerGUI.ahk ; globals
+#include, showInputViewer.ahk
+#include, updateInputViewerButton.ahk
+
 #include %A_LineFile%\..\limitOutputs\limitOutputs.ahk
 
 #include %A_LineFile%\..\menu
@@ -137,6 +142,8 @@ loadHotkeysIni()
 
 initializeHotkeys()
 
+initializeInputViewerGUI()
+
 ; Create an object from vJoy Interface Class.
 vJoyInterface := new CvJoyInterface()
 
@@ -191,6 +198,8 @@ if !enabledHotkeys {
 }
 
 return ; end of autoexecute
+
+
 
 /*  check what directions, modifiers and buttons we should listen to,
     based on things like opposite cardinal buttons presses, D-Pad mode etc
@@ -407,6 +416,7 @@ buttonUpLabel:
     buttonUp := true, mostRecentVerticalAnalog := "U", updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonUp")
 return
 
 buttonUpLabel_UP:
@@ -414,6 +424,7 @@ buttonUpLabel_UP:
     buttonUp := false, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonUp")
 return
 
 buttonDownLabel:
@@ -421,6 +432,7 @@ buttonDownLabel:
     buttonDown := true, mostRecentVerticalAnalog := "D", updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonDown")
 return
 
 buttonDownLabel_UP:
@@ -428,6 +440,7 @@ buttonDownLabel_UP:
     buttonDown := false, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonDown")
 return
 
 buttonLeftLabel:
@@ -438,6 +451,7 @@ buttonLeftLabel:
     buttonLeft := true, mostRecentHorizontalAnalog := "L", updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonLeft")
 return
 
 buttonLeftLabel_UP:
@@ -445,6 +459,7 @@ buttonLeftLabel_UP:
     buttonLeft := false, opposingHorizontalsModLockout := false, updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonLeft")
 return
 
 buttonRightLabel:
@@ -455,6 +470,7 @@ buttonRightLabel:
     buttonRight := true, mostRecentHorizontalAnalog := "R", updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonRight")
 return
 
 buttonRightLabel_UP:
@@ -462,6 +478,7 @@ buttonRightLabel_UP:
     buttonRight := false, opposingHorizontalsModLockout := false, updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonRight")
 return
 
 ; Dedicated modifiers
@@ -476,6 +493,7 @@ buttonModXLabel:
     buttonModX := true, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonModX")
 return
 
 buttonModXLabel_UP:
@@ -483,6 +501,7 @@ buttonModXLabel_UP:
     buttonModX := false , opposingHorizontalsModLockout := false, updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonModX")
 return
 
 buttonModYLabel:
@@ -490,6 +509,7 @@ buttonModYLabel:
     buttonModY := true, updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonModY")
 return
 
 buttonModYLabel_UP:
@@ -497,15 +517,18 @@ buttonModYLabel_UP:
     buttonModY := false, updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonModY")
 return
 
 ;
 buttonALabel:
     buttonA := true, myStick.SetBtn(1,5)
+    updateInputViewerButton("buttonA")
 return
 
 buttonALabel_UP:
     buttonA := false, myStick.SetBtn(0,5)
+    updateInputViewerButton("buttonA")
 return
 
 buttonBLabel:
@@ -513,6 +536,7 @@ buttonBLabel:
     buttonB := true, myStick.SetBtn(1, 4), updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonB")
 return
 
 buttonBLabel_UP:
@@ -520,6 +544,7 @@ buttonBLabel_UP:
     buttonB := false, myStick.SetBtn(0, 4), updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonB")
 return
 
 buttonLLabel:
@@ -527,6 +552,7 @@ buttonLLabel:
     buttonL := true, myStick.SetBtn(1, 1), updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonL")
 return
 
 buttonLLabel_UP:
@@ -534,6 +560,7 @@ buttonLLabel_UP:
     buttonL := false, myStick.SetBtn(0, 1), updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonL")
 return
 
 buttonRLabel:
@@ -541,6 +568,7 @@ buttonRLabel:
     buttonR := true, myStick.SetBtn(1, 3), updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonR")
 return
 
 buttonRLabel_UP:
@@ -548,30 +576,37 @@ buttonRLabel_UP:
     buttonR := false, myStick.SetBtn(0, 3), updateAnalogStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonR")
 return
 
 buttonXLabel:
     buttonX := true, myStick.SetBtn(1, 6)
+    updateInputViewerButton("buttonX")
 return
 
 buttonXLabel_UP:
     buttonX := false, myStick.SetBtn(0, 6)
+    updateInputViewerButton("buttonX")
 return
 
 buttonYLabel:
     buttonY := true, myStick.SetBtn(1, 2)
+    updateInputViewerButton("buttonY")
 return
 
 buttonYLabel_UP:
     buttonY := false, myStick.SetBtn(0, 2)
+    updateInputViewerButton("buttonY")
 return
 
 buttonZLabel:
     buttonZ := true, myStick.SetBtn(1, 7)
+    updateInputViewerButton("buttonZ")
 return
 
 buttonZLabel_UP:
     buttonZ := false, myStick.SetBtn(0, 7)
+    updateInputViewerButton("buttonZ")
 return
 
 ; C-stick (Rightstick) buttons
@@ -586,6 +621,7 @@ buttonCUpLabel:
     }
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCUp")
 return
 
 buttonCUpLabel_UP:
@@ -593,6 +629,7 @@ buttonCUpLabel_UP:
     buttonCUp := false, myStick.SetBtn(0, 9), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCUp")
 return
 
 buttonCDownLabel:
@@ -606,6 +643,7 @@ buttonCDownLabel:
     }
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCDown")
 return
 
 buttonCDownLabel_UP:
@@ -613,6 +651,7 @@ buttonCDownLabel_UP:
     buttonCDown := false, myStick.SetBtn(0, 11), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCDown")
 return
 
 buttonCLeftLabel:
@@ -626,6 +665,7 @@ buttonCLeftLabel:
     }
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCLeft")
 return
 
 buttonCLeftLabel_UP:
@@ -633,6 +673,7 @@ buttonCLeftLabel_UP:
     buttonCLeft := false, myStick.SetBtn(0, 10), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCLeft")
 return
 
 buttonCRightLabel:
@@ -646,6 +687,7 @@ buttonCRightLabel:
     }
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCRight")
 return
 
 buttonCRightLabel_UP:
@@ -653,32 +695,39 @@ buttonCRightLabel_UP:
     buttonCRight := false, myStick.SetBtn(0, 12), updateAnalogStick(), updateCStick()
     Critical Off
     Sleep -1
+    updateInputViewerButton("buttonCRight")
 return
 
 ; Analog Shielding
 buttonLightShieldLabel:
     buttonLightShield := true, setAnalogR(49)
+    updateInputViewerButton("buttonLightShield")
 return
 
 buttonLightShieldLabel_UP:
     buttonLightShield := false, setAnalogR(0)
+    updateInputViewerButton("buttonLightShield")
 return
 
 buttonMidShieldLabel:
     buttonMidShield := true, setAnalogR(94)
+    updateInputViewerButton("buttonMidShield")
 return
 
 buttonMidShieldLabel_UP:
     buttonMidShield := false, setAnalogR(0)
+    updateInputViewerButton("buttonMidShield")
 Return
 
 ;
 buttonStartLabel:
     buttonStart := true, myStick.SetBtn(1, 8)
+    updateInputViewerButton("buttonStart")
 return
 
 buttonStartLabel_UP:
     buttonStart := false, myStick.SetBtn(0, 8)
+    updateInputViewerButton("buttonStart")
 return
 
 ; D-pad

@@ -2,6 +2,7 @@
 img
 config.ini
 hotkeys.ini
+viewer-layout.ini
 !install
 !install/*
 # other files
