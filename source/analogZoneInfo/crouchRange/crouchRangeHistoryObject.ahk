@@ -30,7 +30,7 @@ class crouchRangeHistoryObject {
                 this.candidate := new crouchRangeHistoryEntry(crouchRangeOfOutput
                 , currentTimeMS, getUncrouchDid(this.saved.in, crouchRangeOfOutput))
                 if this.candidate.uncrouch {
-                    SetTimer, uncrouchNerfLiftLabel, % - TIMELIMIT_DOWNUP
+                    SetTimer, uncrouchNerfLiftTimerLabel, % - TIMELIMIT_DOWNUP
                 }
             }
             

@@ -3,6 +3,7 @@
 constructInputViewerWindow() {
     global hotkeysList, global imgBtnReleaseHandle, global imgBtnPressHandle
     global inputViewerInvisibleText, global inputViewerEnabledControlsAlert
+    global enabledGameControls
 
     FileInstall, install\viewer-layout.ini, % A_ScriptDir "\viewer-layout.ini", 0
 
@@ -58,20 +59,22 @@ constructInputViewerWindow() {
     Gui, inputViewerWindow:Add, Button, % "xm+" viewerWindowWidth - 205 " ym+" viewerWindowHeight - 60 " w80 h40 gMainIntoControlsWindow", % "Go to Controls Editor"
     Gui, inputViewerWindow:Add, Button, x+15 w80 h40 gInputViewerWindowGuiClose, % "Close"
 
+    ; alert message for when controls are toggled off
+    Gui, inputViewerWindow:Add, Text, % "xm+15 ym+" viewerWindowHeight - 40 " w550 vInputViewerEnabledControlsAlert", % ""
+    updateInputViewerEnabledControlsAlert(enabledGameControls)
 
-    /*  to avoid triggering buttons with the keyboard when opening the
+    /*  Gui, Focus on this to avoid triggering buttons with the keyboard when opening the
         input viewer with showInputViewer()
     */
     Gui, inputViewerWindow:Add, Text, xm ym vInputViewerInvisibleText, % ""
 
-    Gui, inputViewerWindow:Add, Text, % "xm+15 ym+" viewerWindowHeight - 40 " w550 vInputViewerEnabledControlsAlert", % ""
-    
-    
+    ; show the input viewer
+    Gui, inputViewerWindow:Show, w%viewerWindowWidth% h%viewerWindowHeight%, % "Input Viewer - fairbox"    
     
     return
 }
 
-addButtonAndItsGlobalVariable(x, y, hotkeyName) {
+addButtonAndItsGlobalVariable(x, y, hotkeyVarName) {
     global
-    Gui, inputViewerWindow:Add, Picture, % "xm+" x " ym+" y " vViewer" hotkeysList[A_Index], % "hbitmap:*" imgBtnReleaseHandle
+    Gui, inputViewerWindow:Add, Picture, % "xm+" x " ym+" y " vViewer" hotkeysList[A_Index], % "hbitmap:*" (%hotkeyVarName% ? imgBtnPressHandle : imgBtnReleaseHandle)
 }

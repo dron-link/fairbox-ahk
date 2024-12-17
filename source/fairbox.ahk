@@ -1,9 +1,13 @@
 #Requires AutoHotkey v1
-#SingleInstance force
 #NoEnv
-SetBatchLines, -1
-ListLines Off
 #MenuMaskKey vke8
+#MaxHotkeysPerInterval 200
+; optimizations from
+; https://www.autohotkey.com/boards/viewtopic.php?t=6413
+SetBatchLines, -1
+SetKeyDelay, -1, -1
+SendMode Input
+
 #include <CvJoyInterface>
 
 SetWorkingDir, %A_ScriptDir%
@@ -35,6 +39,8 @@ SetWorkingDir, %A_ScriptDir%
 #include, guiFont.ahk
 #include, hotkeys.ahk ; globals
 #include, keysModCAngleRole.ahk ; globals
+#include, readIniFairboxLaunchMode.ahk
+#include, resetAllButtons.ahk
 
 #include %A_LineFile%\..\technique\technique.ahk
 
@@ -49,7 +55,7 @@ embark on a project like this.
 contact info:
 Discord
     Aiu     ; over at 20XX Discord server, specifically in #keyboard : https://discord.gg/KydHfzTbdG
-            ; if the link doesnt work try searching for the 20XX invite https://b0xx.com/pages/more-info
+; if the link doesnt work try searching for the 20XX invite https://b0xx.com/pages/more-info
 GitHub
     https://github.com/dron-link
 
@@ -92,8 +98,8 @@ isInputViewerOpen := false
 
 ; close the controls editor
 DetectHiddenWindows, On
-        ;    0x111 = WN_COMMAND code
-        ;           65307 = exit code
+;    0x111 = WN_COMMAND code
+;           65307 = exit code
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairboxControlsEditor.ahk
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairboxControlsEditor.exe
 PostMessage, 0x111, 65307,,, %A_ScriptDir%\fairboxControlsEditorDebug.ahk
@@ -106,35 +112,7 @@ enabledHotkeys := true
 enabledGameControls := true
 showWelcomeTray := true
 
-loadConfigIniLaunchMode() {
-    global enabledHotkeys
-    global showWelcomeTray
-    global inputViewerOnLaunch
-    global enabledGameControls
-
-    if enabledHotkeys {
-        showWelcomeTray := true
-    } else {
-        showWelcomeTray := false
-    }
-
-    ; do we come from Edit Controls?
-    IniRead, openedFromControlsEditor, config.ini, LaunchMode, ControlsWindowIntoMain
-    IniWrite, % false                , config.ini, LaunchMode, ControlsWindowIntoMain
-    IniRead, controlsEditorWasOpenedFromHere, config.ini, LaunchMode, MainIntoControlsWindow
-    IniWrite, % false                       , config.ini, LaunchMode, MainIntoControlsWindow
-    if (openedFromControlsEditor and controlsEditorWasOpenedFromHere) {
-        ; we recall the Input On/Off toggle state
-        IniRead, enabledGameControls, config.ini, LaunchMode, EnabledControlsRecall
-        showWelcomeTray := false
-    }
-
-    IniRead, inputViewerOnLaunch, config.ini, LaunchMode, InputViewerOnLaunch
-    IniWrite, % false           , config.ini, LaunchMode, InputViewerOnLaunch
-
-    return
-}
-loadConfigIniLaunchMode()
+readIniFairboxLaunchMode()
 
 ; load global UserSettings
 IniRead, deleteFailingHotkey, config.ini, UserSettings, DeleteFailingHotkey
@@ -150,8 +128,6 @@ constructMainsTrayMenu() ; puts the custom menu items in the tray
 
 loadHotkeysIni()
 
-initializeHotkeys()
-
 ; Create an object from vJoy Interface Class.
 vJoyInterface := new CvJoyInterface()
 
@@ -164,15 +140,14 @@ if !vJoyInterface.vJoyEnabled() {
 
 myStick := vJoyInterface.Devices[1]
 
-
 ; for 2ip and opposing horizontals modifier lockout
 mostRecentVerticalAnalog := ""
 mostRecentHorizontalAnalog := ""
 
-mostRecentVerticalC := "" 
+mostRecentVerticalC := ""
 mostRecentHorizontalC := ""
 
-opposingHorizontalsModLockout := false 
+opposingHorizontalsModLockout := false
 
 /*  Debug info
     this is how you read its values:
@@ -195,7 +170,6 @@ if enabledHotkeys {
     resetAllButtons()
 }
 
-
 if showWelcomeTray {
     ; Alert User that script has started
     TrayTip, % "fairbox", % "Script Started", 3, 0
@@ -209,9 +183,10 @@ if inputViewerOnLaunch {
     showInputViewer()
 }
 
+Critical
+initializeHotkeys()
+
 return ; end of autoexecute
-
-
 
 /*  check what directions, modifiers and buttons we should listen to,
     based on things like opposite cardinal buttons presses, D-Pad mode etc
@@ -284,12 +259,12 @@ modX() {
     global
     /*  deactivate if either:
         - modY is also physically held
-        - opposingHorizontalsModLockout: both left and right are held (and were pressed after modX) 
+        - opposingHorizontalsModLockout: both left and right are held (and were pressed after modX)
           while neither up or down is active
     */
     if secondIPCleaning {
         return buttonModX and !buttonModY and (!opposingHorizontalsModLockout or anyVert())
-    } ; else 
+    } ; else
     return buttonModX and !buttonModY ; the mod lockout is incompatible with NSOCD
 }
 
@@ -406,398 +381,10 @@ setAnalogR(value) {
 
 ; /// hotkeys, and the subroutines that handle hotkeys
 
-;-------macros
-
-^!r:: Reload ; Ctrl+Alt+R
-SetKeyDelay, 0
-#MaxHotkeysPerInterval 200
-
-/*
-^!s:: ; Ctrl+Alt+S
-    Suspend, Toggle
-    If A_IsSuspended
-        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Disabled (''Suspend'' Mode)", 2, 0
-    Else
-        TrayTip, % "Rectangle Controller Script:", % "Hotkeys Enabled", 2, 0
-Return
-*/
-
-; Control Stick (Leftstick)
-buttonUpLabel:
-    Critical
-    buttonUp := true, mostRecentVerticalAnalog := "U", updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonUp")
-return
-
-buttonUpLabel_UP:
-    Critical
-    buttonUp := false, updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonUp")
-return
-
-buttonDownLabel:
-    Critical
-    buttonDown := true, mostRecentVerticalAnalog := "D", updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonDown")
-return
-
-buttonDownLabel_UP:
-    Critical
-    buttonDown := false, updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonDown")
-return
-
-buttonLeftLabel:
-    Critical
-    if (buttonRight and !buttonLeft){ ; !buttonLeft prevents keyboard resend
-        opposingHorizontalsModLockout := true
-    }
-    buttonLeft := true, mostRecentHorizontalAnalog := "L", updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonLeft")
-return
-
-buttonLeftLabel_UP:
-    Critical
-    buttonLeft := false, opposingHorizontalsModLockout := false, updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonLeft")
-return
-
-buttonRightLabel:
-    Critical
-    if (buttonLeft and !buttonRight) { ; !buttonRight prevents keyboard resend
-        opposingHorizontalsModLockout := true
-    }
-    buttonRight := true, mostRecentHorizontalAnalog := "R", updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonRight")
-return
-
-buttonRightLabel_UP:
-    Critical
-    buttonRight := false, opposingHorizontalsModLockout := false, updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonRight")
-return
-
-; Dedicated modifiers
-buttonModXLabel:
-    Critical
-    /*  opposingHorizontalsModLockout is order dependant,
-        it only applies if modifier isn't pressed after horizontals
-    */
-    if !buttonModX { ; !buttonModX prevents keyboard resend
-        opposingHorizontalsModLockout := false 
-    }
-    buttonModX := true, updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonModX")
-return
-
-buttonModXLabel_UP:
-    Critical
-    buttonModX := false , opposingHorizontalsModLockout := false, updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonModX")
-return
-
-buttonModYLabel:
-    Critical
-    buttonModY := true, updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonModY")
-return
-
-buttonModYLabel_UP:
-    Critical
-    buttonModY := false, updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonModY")
-return
-
-;
-buttonALabel:
-    buttonA := true, myStick.SetBtn(1,5)
-    updateInputViewerButton("buttonA")
-return
-
-buttonALabel_UP:
-    buttonA := false, myStick.SetBtn(0,5)
-    updateInputViewerButton("buttonA")
-return
-
-buttonBLabel:
-    Critical
-    buttonB := true, myStick.SetBtn(1, 4), updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonB")
-return
-
-buttonBLabel_UP:
-    Critical
-    buttonB := false, myStick.SetBtn(0, 4), updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonB")
-return
-
-buttonLLabel:
-    Critical
-    buttonL := true, myStick.SetBtn(1, 1), updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonL")
-return
-
-buttonLLabel_UP:
-    Critical
-    buttonL := false, myStick.SetBtn(0, 1), updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonL")
-return
-
-buttonRLabel:
-    Critical
-    buttonR := true, myStick.SetBtn(1, 3), updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonR")
-return
-
-buttonRLabel_UP:
-    Critical
-    buttonR := false, myStick.SetBtn(0, 3), updateAnalogStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonR")
-return
-
-buttonXLabel:
-    buttonX := true, myStick.SetBtn(1, 6)
-    updateInputViewerButton("buttonX")
-return
-
-buttonXLabel_UP:
-    buttonX := false, myStick.SetBtn(0, 6)
-    updateInputViewerButton("buttonX")
-return
-
-buttonYLabel:
-    buttonY := true, myStick.SetBtn(1, 2)
-    updateInputViewerButton("buttonY")
-return
-
-buttonYLabel_UP:
-    buttonY := false, myStick.SetBtn(0, 2)
-    updateInputViewerButton("buttonY")
-return
-
-buttonZLabel:
-    buttonZ := true, myStick.SetBtn(1, 7)
-    updateInputViewerButton("buttonZ")
-return
-
-buttonZLabel_UP:
-    buttonZ := false, myStick.SetBtn(0, 7)
-    updateInputViewerButton("buttonZ")
-return
-
-; C-stick (Rightstick) buttons
-buttonCUpLabel:
-    Critical
-    buttonCUp := true
-    if bothMods() {
-        ; Pressing ModX and ModY simultaneously changes C buttons to D pad
-        myStick.SetBtn(1, 9)
-    } else {
-        mostRecentVerticalC := "U", updateAnalogStick(), updateCStick()
-    }
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCUp")
-return
-
-buttonCUpLabel_UP:
-    Critical
-    buttonCUp := false, myStick.SetBtn(0, 9), updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCUp")
-return
-
-buttonCDownLabel:
-    Critical
-    buttonCDown := true
-    if bothMods() {
-        ; Pressing ModX and ModY simultaneously changes C buttons to D pad
-        myStick.SetBtn(1, 11)
-    } else {
-        mostRecentVerticalC := "D", updateAnalogStick(), updateCStick()
-    }
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCDown")
-return
-
-buttonCDownLabel_UP:
-    Critical
-    buttonCDown := false, myStick.SetBtn(0, 11), updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCDown")
-return
-
-buttonCLeftLabel:
-    Critical
-    buttonCLeft := true
-    if bothMods() {
-        ; Pressing ModX and ModY simultaneously changes C buttons to D pad
-        myStick.SetBtn(1, 10)
-    } else {
-        mostRecentHorizontalC := "L", updateAnalogStick(), updateCStick()
-    }
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCLeft")
-return
-
-buttonCLeftLabel_UP:
-    Critical
-    buttonCLeft := false, myStick.SetBtn(0, 10), updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCLeft")
-return
-
-buttonCRightLabel:
-    Critical
-    buttonCRight := true
-    if bothMods() {
-        ; Pressing ModX and ModY simultaneously changes C buttons to D pad
-        myStick.SetBtn(1, 12)
-    } else {
-        mostRecentHorizontalC := "R", updateAnalogStick(), updateCStick()
-    }
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCRight")
-return
-
-buttonCRightLabel_UP:
-    Critical
-    buttonCRight := false, myStick.SetBtn(0, 12), updateAnalogStick(), updateCStick()
-    Critical Off
-    Sleep -1
-    updateInputViewerButton("buttonCRight")
-return
-
-; Analog Shielding
-buttonLightShieldLabel:
-    buttonLightShield := true, setAnalogR(49)
-    updateInputViewerButton("buttonLightShield")
-return
-
-buttonLightShieldLabel_UP:
-    buttonLightShield := false, setAnalogR(0)
-    updateInputViewerButton("buttonLightShield")
-return
-
-buttonMidShieldLabel:
-    buttonMidShield := true, setAnalogR(94)
-    updateInputViewerButton("buttonMidShield")
-return
-
-buttonMidShieldLabel_UP:
-    buttonMidShield := false, setAnalogR(0)
-    updateInputViewerButton("buttonMidShield")
-Return
-
-;
-buttonStartLabel:
-    buttonStart := true, myStick.SetBtn(1, 8)
-    updateInputViewerButton("buttonStart")
-return
-
-buttonStartLabel_UP:
-    buttonStart := false, myStick.SetBtn(0, 8)
-    updateInputViewerButton("buttonStart")
-return
-
-; D-pad
-buttonDPadUpLabel:
-    buttonDPadUp := true, myStick.SetBtn(1, 9)
-return
-
-buttonDPadUpLabel_UP:
-    buttonDPadUp := true, myStick.SetBtn(0, 9)
-return
-
-buttonDPadDownLabel:
-    buttonDPadDown := true, myStick.SetBtn(1, 11)
-return
-
-buttonDPadDownLabel_UP:
-    buttonDPadDown := false, myStick.SetBtn(0, 11)
-return
-
-buttonDPadLeftLabel:
-    buttonDPadLeft := true, myStick.SetBtn(1, 10)
-return
-
-buttonDPadLeftLabel_UP:
-    buttonDPadLeft := false, myStick.SetBtn(0, 10)
-return
-
-buttonDPadRightLabel:
-    buttonDPadRight := true, myStick.SetBtn(1, 12)
-return
-
-buttonDPadRightLabel_UP:
-    buttonDPadRight := false, myStick.SetBtn(0, 12)
-return
-
-;
-legacyDebugKeyLabel:
-    Msgbox, % getDebug()
-return
-
-legacyDebugKeyLabel_UP:
-return
-
-; Input On/Off
-inputToggleKeyLabel:
-    resetAllButtons()
-    enabledGameControls := !enabledGameControls
-    updateInputViewerEnabledControlsAlert(enabledGameControls)
-return
-
-inputToggleKeyLabel_UP:
-return
-
 ; timer labels
-uncrouchNerfLiftLabel:
-pivotYDashNerfLiftLabel:
-pivotNerfLiftLabel:
-    Critical
+uncrouchNerfLiftTimerLabel:
+pivotYDashNerfLiftTimerLabel:
+pivotNerfLiftTimerLabel:
     updateAnalogStick()
     Critical, Off
     Sleep, -1
@@ -808,21 +395,505 @@ inputViewerWindowGuiClose:
     isInputViewerOpen := false
 return
 
+; GAME CONTROLS Labels ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+; Control Stick (Leftstick)
+buttonUpLabel:
+    if !buttonUp {
+        buttonUp := true, mostRecentVerticalAnalog := "U", updateAnalogStick(), updateCStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonUp")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonUpLabel_UP:
+    buttonUp := false, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonUp")
+return
+
+buttonDownLabel:
+    if !buttonDown {
+        buttonDown := true, mostRecentVerticalAnalog := "D", updateAnalogStick(), updateCStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonDown")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonDownLabel_UP:
+    buttonDown := false, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonDown")
+return
+
+buttonLeftLabel:
+    if !buttonLeft {
+        if buttonRight {
+            opposingHorizontalsModLockout := true
+        }
+        buttonLeft := true, mostRecentHorizontalAnalog := "L", updateAnalogStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonLeft")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonLeftLabel_UP:
+    buttonLeft := false, opposingHorizontalsModLockout := false, updateAnalogStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonLeft")
+return
+
+buttonRightLabel:
+    if !buttonRight {
+        if buttonLeft {
+            opposingHorizontalsModLockout := true
+        }
+        buttonRight := true, mostRecentHorizontalAnalog := "R", updateAnalogStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonRight")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonRightLabel_UP:
+    buttonRight := false, opposingHorizontalsModLockout := false, updateAnalogStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonRight")
+return
+
+; Dedicated modifiers
+buttonModXLabel:
+    /*  opposingHorizontalsModLockout is order dependant,
+        it only applies if modifier isn't pressed after horizontals
+    */
+    if !buttonModX {
+        opposingHorizontalsModLockout := false
+        buttonModX := true, updateAnalogStick(), updateCStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonModX")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonModXLabel_UP:
+    buttonModX := false , opposingHorizontalsModLockout := false, updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonModX")
+return
+
+buttonModYLabel:
+    if !buttonModY {
+        buttonModY := true, updateAnalogStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonModY")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonModYLabel_UP:
+    buttonModY := false, updateAnalogStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonModY")
+return
+
+;
+buttonALabel:
+    if !buttonA {
+        buttonA := true, myStick.SetBtn(1,5), updateAnalogStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonA")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonALabel_UP:
+    buttonA := false, myStick.SetBtn(0,5)
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonA")
+return
+
+buttonBLabel:
+    if !buttonB {
+        buttonB := true, myStick.SetBtn(1, 4), updateAnalogStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonB")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonBLabel_UP:
+    buttonB := false, myStick.SetBtn(0, 4), updateAnalogStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonB")
+return
+
+buttonLLabel:
+    if !buttonL {
+        buttonL := true, myStick.SetBtn(1, 1), updateAnalogStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonL")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+
+return
+
+buttonLLabel_UP:
+    buttonL := false, myStick.SetBtn(0, 1), updateAnalogStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonL")
+return
+
+buttonRLabel:
+    if !buttonR {
+        buttonR := true, myStick.SetBtn(1, 3), updateAnalogStick()
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonR")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonRLabel_UP:
+    buttonR := false, myStick.SetBtn(0, 3), updateAnalogStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonR")
+return
+
+buttonXLabel:
+    if !buttonX {
+        buttonX := true, myStick.SetBtn(1, 6)
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonX")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonXLabel_UP:
+    buttonX := false, myStick.SetBtn(0, 6)
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonX")
+return
+
+buttonYLabel:
+    if !buttonY {
+        buttonY := true, myStick.SetBtn(1, 2)
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonY")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonYLabel_UP:
+    buttonY := false, myStick.SetBtn(0, 2)
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonY")
+return
+
+buttonZLabel:
+    if !buttonZ {
+        buttonZ := true, myStick.SetBtn(1, 7)
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonZ")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonZLabel_UP:
+    buttonZ := false, myStick.SetBtn(0, 7)
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonZ")
+return
+
+; C-stick (Rightstick) buttons
+buttonCUpLabel:
+    if !buttonCUp {
+        buttonCUp := true
+        if bothMods() {
+            ; Pressing ModX and ModY simultaneously changes C buttons to D pad
+            myStick.SetBtn(1, 9)
+        } else {
+            mostRecentVerticalC := "U", updateAnalogStick(), updateCStick()
+        }
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonCUp")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonCUpLabel_UP:
+    buttonCUp := false, myStick.SetBtn(0, 9), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonCUp")
+return
+
+buttonCDownLabel:
+    if !buttonCDown {
+        buttonCDown := true
+        if bothMods() {
+            ; Pressing ModX and ModY simultaneously changes C buttons to D pad
+            myStick.SetBtn(1, 11)
+        } else {
+            mostRecentVerticalC := "D", updateAnalogStick(), updateCStick()
+        }
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonCDown")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+
+return
+
+buttonCDownLabel_UP:
+    buttonCDown := false, myStick.SetBtn(0, 11), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonCDown")
+return
+
+buttonCLeftLabel:
+    if !buttonCLeft {
+        buttonCLeft := true
+        if bothMods() {
+            ; Pressing ModX and ModY simultaneously changes C buttons to D pad
+            myStick.SetBtn(1, 10)
+        } else {
+            mostRecentHorizontalC := "L", updateAnalogStick(), updateCStick()
+        }
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonCLeft")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+
+return
+
+buttonCLeftLabel_UP:
+    buttonCLeft := false, myStick.SetBtn(0, 10), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonCLeft")
+return
+
+buttonCRightLabel:
+    if !buttonCRight {
+        buttonCRight := true
+        if bothMods() {
+            ; Pressing ModX and ModY simultaneously changes C buttons to D pad
+            myStick.SetBtn(1, 12)
+        } else {
+            mostRecentHorizontalC := "R", updateAnalogStick(), updateCStick()
+        }
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonCRight")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonCRightLabel_UP:
+    buttonCRight := false, myStick.SetBtn(0, 12), updateAnalogStick(), updateCStick()
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonCRight")
+return
+
+; Analog Shielding
+buttonLightShieldLabel:
+    if !buttonLightShield {
+        buttonLightShield := true, setAnalogR(49)
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonLightShield")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonLightShieldLabel_UP:
+    buttonLightShield := false, setAnalogR(0)
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonLightShield")
+return
+
+buttonMidShieldLabel:
+    if !buttonMidShield {
+        buttonMidShield := true, setAnalogR(94)
+        Critical Off
+        Sleep -1
+        updateInputViewerButton("buttonMidShield")
+    } else {
+        Critical Off
+        Sleep -1
+    }
+return
+
+buttonMidShieldLabel_UP:
+    buttonMidShield := false, setAnalogR(0)
+    Critical Off
+    Sleep -1
+    updateInputViewerButton("buttonMidShield")
+Return
+
+;
+buttonStartLabel:
+    if !buttonStart {
+        buttonStart := true, myStick.SetBtn(1, 8)
+        updateInputViewerButton("buttonStart")
+    }
+    Critical Off
+    Sleep -1
+return
+
+buttonStartLabel_UP:
+    buttonStart := false, myStick.SetBtn(0, 8)
+    updateInputViewerButton("buttonStart")
+    Critical Off
+    Sleep -1
+return
+
+; D-pad
+buttonDPadUpLabel:
+    if !buttonDPadUp {
+        buttonDPadUp := true, myStick.SetBtn(1, 9)
+    }
+    Critical Off
+    Sleep -1
+return
+
+buttonDPadUpLabel_UP:
+    buttonDPadUp := false, myStick.SetBtn(0, 9)
+    Critical Off
+    Sleep -1
+return
+
+buttonDPadDownLabel:
+    if !buttonDPadDown {
+        buttonDPadDown := true, myStick.SetBtn(1, 11)
+    }
+    Critical Off
+    Sleep -1
+return
+
+buttonDPadDownLabel_UP:
+    buttonDPadDown := false, myStick.SetBtn(0, 11)
+    Critical Off
+    Sleep -1
+return
+
+buttonDPadLeftLabel:
+    if !buttonDPadLeft {
+        buttonDPadLeft := true, myStick.SetBtn(1, 10)
+    }
+    Critical Off
+    Sleep -1
+return
+
+buttonDPadLeftLabel_UP:
+    buttonDPadLeft := false, myStick.SetBtn(0, 10)
+    Critical Off
+    Sleep -1
+return
+
+buttonDPadRightLabel:
+    if !buttonDPadRight {
+        buttonDPadRight := true, myStick.SetBtn(1, 12)
+    }
+    Critical Off
+    Sleep -1
+return
+
+buttonDPadRightLabel_UP:
+    buttonDPadRight := false, myStick.SetBtn(0, 12)
+    Critical Off
+    Sleep -1
+return
+
+;
+legacyDebugKeyLabel:
+    Msgbox, % getDebug()
+    Critical Off
+return
+
+legacyDebugKeyLabel_UP:
+return
+
+; Input On/Off
+inputToggleKeyLabel:
+    resetAllButtons()
+    enabledGameControls := !enabledGameControls
+    if isInputViewerOpen {
+        updateInputViewerEnabledControlsAlert(enabledGameControls)
+    }
+    Critical Off
+return
+
+inputToggleKeyLabel_UP:
+return
+
 #If enabledGameControls ; because an existing directive was needed to use Hotkey, If, enabledGameControls
 #If
-
-resetAllButtons() {
-    global myStick, global hotkeysList
-    ; method #1
-    Loop, % hotkeysList.Length() {
-        Gosub, % hotkeysList[A_Index] "Label_UP"
-    }
-    ; method #2, why not be extra sure
-    Loop, 12 {
-        myStick.setBtn(0, A_Index)
-    }
-    setAnalogStick([0, 0])
-    setCStick([0, 0])
-    setAnalogR(0)
-    return
-}

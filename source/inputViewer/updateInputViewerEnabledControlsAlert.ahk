@@ -1,11 +1,9 @@
 #Requires AutoHotkey v1
 
-updateInputViewerEnabledControlsAlert(status) {
-    global isInputViewerOpen ;, global inputViewerEnabledControlsAlert
-    if isInputViewerOpen {
-        guiFontDefault("inputViewerWindow")
+updateInputViewerEnabledControlsAlert(state) {
+    guiFontDefault("inputViewerWindow")
         guiControl, Font, inputViewerEnabledControlsAlert
-        if status {
+        if state {
             GuiControl, inputViewerWindow:, inputViewerEnabledControlsAlert, % ""
         } else {
             ; turn the text red
@@ -14,6 +12,5 @@ updateInputViewerEnabledControlsAlert(status) {
 
             GuiControl, inputViewerWindow:, inputViewerEnabledControlsAlert, % "fairbox is disabled. Reenable it with the Input On/Off key."
         }
-    }
     return
 }

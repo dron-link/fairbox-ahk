@@ -47,8 +47,8 @@ class dashZoneHistoryObject {
                 this.candidates[dashZoneOfOutput] := new dashZoneHistoryEntry(dashZoneOfOutput, currentTimeMS
                 , getPivotDid(this.hist, dashZoneOfOutput, currentTimeMS))
                 if this.candidates[dashZoneOfOutput].pivot {
-                    SetTimer, pivotNerfLiftLabel, % -TIMELIMIT_PIVOTTILT
-                    SetTimer, pivotYDashNerfLiftLabel, % -TIMELIMIT_PIVOTTILT_YDASH
+                    SetTimer, pivotNerfLiftTimerLabel, % -TIMELIMIT_PIVOTTILT
+                    SetTimer, pivotYDashNerfLiftTimerLabel, % -TIMELIMIT_PIVOTTILT_YDASH
                 }
             }
 

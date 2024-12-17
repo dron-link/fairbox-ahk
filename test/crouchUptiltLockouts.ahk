@@ -103,11 +103,11 @@ logAppend("crouchUptiltLockouts finish`n")
 
 Return
 
-uncrouchNerfLiftLabel:
+uncrouchNerfLiftTimerLabel:
 return
 
-pivotYDashNerfLiftLabel:
+pivotYDashNerfLiftTimerLabel:
 return
 
-pivotNerfLiftLabel:
+pivotNerfLiftTimerLabel:
 return

@@ -18,7 +18,7 @@ the program won't let you do it, and it will alert you of the control you need t
     addControlsWindowInstructionsParagraph(xOff, "
 ( Join`s
 ''Prevent Default Behavior'' eliminates any side effect of pressing a key or key combination.
-Use it ONLY when you play using keys that can mess up your gaming session.
+Use it when you play using keys that can mess up your gaming session.
 Recommended keys to mark, if you use them: Tab, Esc, Shift, Alt,
 Ctrl, Windows icon, F1, F2, F3, F4, F5, F6...
 )")
@@ -48,12 +48,7 @@ Tip #1: After you're done, check if all of your keybindings work.
 )")
     addControlsWindowInstructionsParagraph(xOff, "
 ( Join`s
-Tip #2: You can reopen the program by right-clicking the tray
-and selecting ''Reload this Script'' or with the key combination Ctrl+Alt+R.
-)")
-    addControlsWindowInstructionsParagraph(xOff, "
-( Join`s
-Tip #3: to restore defaults, close this program, go to the fairbox folder
+Tip #2: to restore defaults, close this program, go to the fairbox folder
 and delete the file named ''hotkeys.ini'', and then, launch the program.
 )")
     addControlsWindowInstructionsParagraph(xOff, "")

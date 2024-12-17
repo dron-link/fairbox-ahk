@@ -1,6 +1,11 @@
 #Requires AutoHotkey v1.1.37.02
 #SingleInstance force
 
+; optimizations from
+; https://www.autohotkey.com/boards/viewtopic.php?t=6413
+#KeyHistory 0
+ListLines Off
+
 ; exit an active debug script
 DetectHiddenWindows, On
         ;    0x111 = WN_COMMAND code
