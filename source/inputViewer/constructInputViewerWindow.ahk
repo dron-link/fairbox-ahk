@@ -11,8 +11,8 @@ constructInputViewerWindow() {
     imgBtnPressPath := A_ScriptDir "\img\button_press.png"
 
     FileCreateDir, % A_ScriptDir "\img"
-    FileInstall, install\img\button.png, % A_ScriptDir imgBtnReleasePath, 0
-    FileInstall, install\img\button_press.png, % A_ScriptDir imgBtnPressPath, 0
+    FileInstall, install\img\button.png, % imgBtnReleasePath, 0
+    FileInstall, install\img\button_press.png, % imgBtnPressPath, 0
 
     imgBtnReleaseHandle := LoadPicture(imgBtnReleasePath, "w-1 h-1")
     imgBtnPressHandle := LoadPicture(imgBtnPressPath, "w-1 h-1")
